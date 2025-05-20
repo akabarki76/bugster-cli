@@ -115,9 +115,6 @@ jobs:
         cd macos && zip ../bugster-macos.zip bugster && cd ..
         
         # Keep the original binaries available as well
-        zip bugster-linux-binary.zip bugster-linux
-        zip bugster-windows-binary.zip bugster-windows.exe
-        zip bugster-macos-binary.zip bugster-macos
         cd ..
         
         ls -la release/

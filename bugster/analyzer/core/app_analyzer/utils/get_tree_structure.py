@@ -11,6 +11,7 @@ def get_paths(dir_path: str) -> List[str]:
     """Get all file paths in a directory, excluding test files, specific directories, and respecting .gitignore rules."""
     try:
         gitignore_path = os.path.join(dir_path, ".gitignore")
+
         if os.path.exists(gitignore_path):
             with open(gitignore_path, "r") as f:
                 gitignore = pathspec.PathSpec.from_lines(

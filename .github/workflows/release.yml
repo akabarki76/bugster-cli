@@ -101,6 +101,14 @@ jobs:
         cp artifacts/bugster-macos/bugster-macos release/
         chmod +x release/bugster-linux
         chmod +x release/bugster-macos
+        
+        # Create zip files for each platform
+        cd release
+        zip bugster-linux.zip bugster-linux
+        zip bugster-windows.zip bugster-windows.exe
+        zip bugster-macos.zip bugster-macos
+        cd ..
+        
         ls -la release/
     
     - name: Get version

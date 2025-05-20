@@ -2,6 +2,10 @@
 """
 Development script for Bugster CLI.
 Helps with local development, testing, and installation.
+
+PURPOSE: This script is for developers working on the Bugster CLI project.
+USAGE:   python scripts/dev.py [command]
+         Commands: setup, test, build, all
 """
 
 import argparse
@@ -39,7 +43,7 @@ def run_tests():
 
 def build_local():
     """Build the project locally using PyInstaller."""
-    run_command("python build.py", "Building executable")
+    run_command("python scripts/build.py", "Building executable")
 
 def main():
     parser = argparse.ArgumentParser(description="Development tools for Bugster CLI")

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
 Build script for Bugster CLI using PyInstaller.
+
+PURPOSE: This script is for developers to build the executable distribution.
+USAGE:   python scripts/build.py
 """
 
 import os

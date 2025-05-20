@@ -19,7 +19,7 @@ This document outlines the development workflow for Bugster CLI.
 
 3. Set up the development environment:
    ```bash
-   ./dev.py setup
+   python scripts/dev.py setup
    ```
 
 4. Make your changes to the codebase.
@@ -28,12 +28,12 @@ This document outlines the development workflow for Bugster CLI.
 
 1. Test your changes locally:
    ```bash
-   ./dev.py test
+   python scripts/dev.py test
    ```
 
 2. Build a local executable to test the full distribution:
    ```bash
-   ./dev.py build
+   python scripts/dev.py build
    ```
 
 3. Run the executable to make sure it works:
@@ -43,7 +43,7 @@ This document outlines the development workflow for Bugster CLI.
 
 4. Alternatively, run all steps at once:
    ```bash
-   ./dev.py all
+   python scripts/dev.py all
    ```
 
 ### 3. Making a Release

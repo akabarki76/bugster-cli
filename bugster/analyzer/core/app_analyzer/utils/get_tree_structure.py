@@ -26,6 +26,7 @@ def get_paths(dir_path: str) -> List[str]:
     os.chdir(dir_path)
     all_paths = glob.glob("**/*", recursive=True)
     ignore_patterns = [
+        # Test files
         "**/*.test.ts",
         "**/*.test.tsx",
         "**/*.test.js",
@@ -34,9 +35,24 @@ def get_paths(dir_path: str) -> List[str]:
         "**/*.spec.tsx",
         "**/*.spec.js",
         "**/*.spec.jsx",
+        # Directories without app logic functionality
         "packages/**",
         "test/**",
         "tests/**",
+        "public/**",         # Static assets
+        "scripts/**",        # Build/utility scripts
+        "cypress/**",        # E2E testing
+        ".github/**",        # GitHub workflows/config
+        "build/**",          # Build output
+        "__pycache__/**",    # Python cache
+        "**/*.egg-info/**",  # Python package metadata
+        "node_modules/**",   # Node.js dependencies
+        ".next/**",          # Next.js build output
+        "coverage/**",       # Test coverage reports
+        "dist/**",           # Distribution files
+        "storybook-static/**", # Storybook build output
+        "**/__snapshots__/**", # Jest snapshots
+        "**/__mocks__/**",   # Jest mocks
     ]
     paths = []
 

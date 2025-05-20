@@ -1,5 +1,8 @@
 altgraph==0.17.4
 click==8.1.8
+gitdb==4.0.12
+GitPython==3.1.44
+loguru==0.7.3
 macholib==1.16.3
 markdown-it-py==3.0.0
 mdurl==0.1.2
@@ -11,5 +14,6 @@ PyYAML==6.0.2
 rich==14.0.0
 setuptools==80.7.1
 shellingham==1.5.4
+smmap==5.0.2
 typer==0.15.4
 typing_extensions==4.13.2

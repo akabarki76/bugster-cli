@@ -1,6 +1,5 @@
 import json
 import os
-from dataclasses import dataclass
 
 from loguru import logger
 from bugster.analyzer.utils.errors import BugsterError
@@ -8,13 +7,6 @@ from bugster.analyzer.utils.errors import BugsterError
 from bugster.analyzer.cache import DOT_BUGSTER_DIR_PATH
 from bugster.analyzer.core.app_analyzer.next_js_analyzer import NextJsAnalyzer
 from bugster.analyzer.core.framework_detector import get_project_info
-
-
-@dataclass
-class FrameworkInfo:
-    id: str
-    name: str
-    dir_path: str
 
 
 SUPPORTED_FRAMEWORKS_IDS = ["next"]
@@ -74,12 +66,16 @@ class AppAnalyzer:
         if options is None:
             options = {}
 
-        logger.info("Analyzing application: {}", {"framework": self.framework_info["id"]})
+        logger.info(
+            "Analyzing application: {}", {"framework": self.framework_info["id"]}
+        )
 
         analysis = None
 
         if not options.get("force"):
-            existing_analysis = get_existing_analysis(framework_id=self.framework_info.id)
+            existing_analysis = get_existing_analysis(
+                framework_id=self.framework_info.id
+            )
 
             if existing_analysis:
                 logger.info("Using existing analysis from cache...")

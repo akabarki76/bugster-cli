@@ -338,10 +338,10 @@ class NextJsAnalyzer:
                         try:
                             # Note: Python's ast module is not equivalent to
                             # JavaScript's babel parser, this is a simplification
-                            # In a real implementation, you'd need a proper JS parser in Python
+                            # In a second iteration, we'll use a proper JS parser in Python
                             file.ast_parsed = file.content
-                            # Placeholder for actual parsing - in reality we'd use
-                            # a JS parser library like esprima-python
+                            # Placeholder for actual parsing — we'll use
+                            # a JS parser library like `esprima-python`
                         except Exception as parse_error:
                             logger.error(
                                 "Error parsing file {}:{}",
@@ -368,7 +368,7 @@ class NextJsAnalyzer:
         for layout_file_info in layout_file_infos:
             content = assert_defined(value=layout_file_info.content)
 
-            # In a real implementation we'd use a JS parser
+            # In a second iteration, we'll use a JS parser
             # This is a simplified approach
             layout_name = self._extract_layout_name(
                 content=content, file_path=layout_file_info.relative_file_path
@@ -533,7 +533,6 @@ class NextJsAnalyzer:
         )
 
         # Simplified extraction methods that would use regex patterns
-        # in a real implementation
         file_detail.details["imports"] = self._extract_imports_from_content(
             file.content
         )

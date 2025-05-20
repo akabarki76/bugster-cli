@@ -1,154 +1,26 @@
-import fnmatch
-import glob
 import json
 import os
 import re
 import time
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from bugster.analyzer.cache import DOT_BUGSTER_DIR_PATH
 from bugster.analyzer.utils.get_git_info import get_git_info
-
-
-@dataclass
-class LayoutInfo:
-    name: str
-    relative_file_path: str
-    relative_dir_path: str
-    content: str
-    components: List[str]
-
-
-@dataclass
-class PageInfo:
-    route_path: str
-    relative_file_path: str
-    components: List[str]
-    has_params: bool
-    has_form_submission: bool
-
-
-@dataclass
-class ApiInfo:
-    route_path: str
-    relative_file_path: str
-    methods: List[str]
-    input_validation: bool
-    dependencies: List[str]
-
-
-@dataclass
-class FileInfo:
-    relative_file_path: str
-    relative_dir_path: str
-    absolute_file_path: str
-    name: str
-    extension: str
-    content: Optional[str] = None
-    ast_parsed: Optional[Any] = None
-
-
-@dataclass
-class FrameworkInfo:
-    id: str
-    name: str
-    version: str
-    dir_path: str
-
-
-@dataclass
-class FileAnalysisResult:
-    framework: str
-    path: str
-    details: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class AppAnalysis:
-    framework: FrameworkInfo
-    router_type: str
-    stats: Dict[str, int]
-    layouts: List[LayoutInfo]
-    routes: List[Dict[str, Any]]
-    api_routes: List[Dict[str, Any]]
-    all_paths: List[str]
-
-
-def assert_defined(value: Optional[Any]) -> Any:
-    if value is None:
-        raise ValueError("Expected a defined value, but got None")
-    return value
-
-
-def get_paths(dir_path: str) -> List[str]:
-    """Get all file paths in a directory, excluding test files, specific directories,
-    and respecting .gitignore rules.
-    """
-    # Process gitignore using pathspec
-    try:
-        import pathspec
-
-        # Read .gitignore file if it exists
-        gitignore_path = os.path.join(dir_path, ".gitignore")
-        if os.path.exists(gitignore_path):
-            with open(gitignore_path, "r") as f:
-                gitignore = pathspec.PathSpec.from_lines(
-                    pathspec.patterns.GitWildMatchPattern, f.readlines()
-                )
-        else:
-            gitignore = None
-    except ImportError:
-        gitignore = None
-
-    # Change to the directory for proper relative paths
-    original_dir = os.getcwd()
-    os.chdir(dir_path)
-
-    # Get all files
-    all_paths = glob.glob("**/*", recursive=True)
-
-    # Ignore patterns matching the JavaScript version
-    ignore_patterns = [
-        "**/*.test.ts",
-        "**/*.test.tsx",
-        "**/*.test.js",
-        "**/*.test.jsx",
-        "**/*.spec.ts",
-        "**/*.spec.tsx",
-        "**/*.spec.js",
-        "**/*.spec.jsx",
-        "packages/**",
-        "test/**",
-        "tests/**",
-    ]
-
-    # Filter out ignored paths
-    paths = []
-    for path in all_paths:
-        # Skip directories
-        if os.path.isdir(path):
-            continue
-
-        # Skip ignored files based on patterns
-        if any(fnmatch.fnmatch(path, pattern) for pattern in ignore_patterns):
-            continue
-
-        # Skip files ignored by gitignore
-        if gitignore and gitignore.match_file(path):
-            continue
-
-        # Normalize path separators to forward slashes
-        normalized_path = path.replace(os.sep, "/")
-        paths.append(normalized_path)
-
-    # Sort the paths
-    paths.sort()
-
-    # Change back to original directory
-    os.chdir(original_dir)
-
-    return paths
+from bugster.analyzer.core.app_analyzer.dataclasses import (
+    AppAnalysis,
+    FileAnalysisResult,
+    FileInfo,
+    LayoutInfo,
+    PageInfo,
+    FrameworkInfo,
+    ApiInfo,
+)
+from bugster.analyzer.utils.assert_utils import assert_defined
+from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
+    get_paths,
+    get_tree_structure,
+)
+from loguru import logger
 
 
 class TreeNode:
@@ -158,64 +30,6 @@ class TreeNode:
         self.type = node_type
         self.children = []
         self.extension = os.path.splitext(name)[1] if node_type == "file" else None
-
-
-def get_tree_structure(source_dir):
-    """Get the tree structure of the source directory."""
-    print("Building application structure tree...")
-    paths = get_paths(dir_path=source_dir)
-    root_node = {
-        "path": "",
-        "name": os.path.basename(source_dir),
-        "type": "directory",
-        "children": [],
-    }
-    dir_map = {"": root_node}
-
-    def ensure_directory_path(dir_path):
-        """Helper function to ensure a directory path exists in the tree and returns the node for that directory."""
-        # If we already have this directory in our map, return it
-        if dir_path in dir_map:
-            return dir_map[dir_path]
-
-        parent_path = os.path.dirname(dir_path)
-        parent_node = (
-            root_node if parent_path == "." else ensure_directory_path(parent_path)
-        )
-        dir_name = os.path.basename(dir_path)
-        dir_node = {
-            "path": dir_path,
-            "name": dir_name,
-            "type": "directory",
-            "children": [],
-        }
-        parent_node["children"].append(dir_node)
-        dir_map[dir_path] = dir_node
-        return dir_node
-
-    for file_path in paths:
-        if not file_path:
-            continue
-
-        is_directory = not os.path.splitext(file_path)[1]
-
-        if is_directory:
-            ensure_directory_path(file_path)
-        else:
-            dir_path = os.path.dirname(file_path)
-            parent_node = (
-                root_node if dir_path == "." else ensure_directory_path(dir_path)
-            )
-            file_name = os.path.basename(file_path)
-            file_node = {
-                "path": file_path,
-                "name": file_name,
-                "type": "file",
-                "extension": os.path.splitext(file_path)[1],
-            }
-            parent_node["children"].append(file_node)
-
-    return root_node
 
 
 class NextJsAnalyzer:
@@ -240,7 +54,7 @@ class NextJsAnalyzer:
 
     def execute(self) -> AppAnalysis:
         """Execute the Next.js analyzer."""
-        print("Executing NextJs analyzer")
+        logger.info("Executing Next.js analyzer...")
         self.layouts = {}
         self.routes = []
         self.api_routes = []
@@ -251,14 +65,16 @@ class NextJsAnalyzer:
         self.is_pages_router = False
         self.set_paths()
         self.set_tree_structure()
-        print(f"Processing {len(self.file_infos)} files")
+        logger.info("Processing {} files", len(self.file_infos))
         self.detect_router_type()
         self.parse_files()
         self.process_layout_files()
         self.process_route_files()
-        print(
-            f"Analysis generated: {len(self.pages)} pages, "
-            f"{len(self.apis)} API routes, {len(self.layouts)} layouts"
+        logger.info(
+            "Analysis generated: {} pages, {} API routes, {} layouts",
+            len(self.pages),
+            len(self.apis),
+            len(self.layouts),
         )
         analysis = self.generate_analysis()
         self.save_analysis_to_file(analysis)
@@ -266,7 +82,7 @@ class NextJsAnalyzer:
 
     def set_paths(self) -> None:
         """Set the paths for the NextJs analyzer."""
-        print("Retrieving folder paths for NextJs analyzer...")
+        logger.info("Retrieving folder paths for Next.js analyzer...")
         self.paths = get_paths(dir_path=self.framework_info["dir_path"])
         os.makedirs(self.cache_framework_dir, exist_ok=True)
         paths_output = {
@@ -284,8 +100,8 @@ class NextJsAnalyzer:
         with open(os.path.join(self.cache_framework_dir, "paths.json"), "w") as f:
             json.dump(paths_output, f, indent=2)
 
-        print(
-            "Paths saved",
+        logger.info(
+            "Paths saved: {}",
             {
                 "path": os.path.join(self.cache_framework_dir, "paths.json"),
             },
@@ -293,15 +109,14 @@ class NextJsAnalyzer:
 
     def set_tree_structure(self) -> None:
         """Set the tree structure for the NextJs analyzer."""
-        print("Building tree structure for NextJs analyzer...")
+        logger.info("Building tree structure for Next.js analyzer...")
 
         try:
-            tree_node = get_tree_structure(self.framework_info["dir_path"])
-            self.set_file_infos(tree_node)
+            tree_node = get_tree_structure(source_dir=self.framework_info["dir_path"])
+            self.set_file_infos(node=tree_node)
             os.makedirs(self.cache_framework_dir, exist_ok=True)
             tree_json_path = os.path.join(self.cache_framework_dir, "tree.json")
 
-            # Convert TreeNode to dict for JSON serialization
             def node_to_dict(node):
                 result = {
                     "name": node["name"],
@@ -334,9 +149,9 @@ class NextJsAnalyzer:
             with open(tree_json_path, "w") as f:
                 json.dump(tree_output, f, indent=2)
 
-            print("Tree structure saved", {"path": tree_json_path})
+            logger.info("Tree structure saved: {}", {"path": tree_json_path})
         except Exception as error:
-            print("Failed to build tree structure", error)
+            logger.error("Failed to build tree structure: {}", error)
             raise error
 
     def set_file_infos(self, node: TreeNode) -> None:
@@ -417,7 +232,7 @@ class NextJsAnalyzer:
                 "name": name,
                 "relative_dir_path": layout.relative_dir_path,
                 "distance": self.get_directory_distance(
-                    file_dir_path, layout.relative_dir_path
+                    from_path=file_dir_path, to_path=layout.relative_dir_path
                 ),
             }
             for name, layout in self.layouts.items()
@@ -476,16 +291,16 @@ class NextJsAnalyzer:
             with open(analysis_json_path, "w") as f:
                 json.dump(output, f, indent=2)
 
-            print(f"Analysis saved to {analysis_json_path}")
+            logger.info("Analysis saved to {}", {"path": analysis_json_path})
         except Exception as error:
-            print("Failed to save analysis to file", error)
+            logger.error("Failed to save analysis to file: {}", error)
             raise error
 
     def parse_files(self) -> None:
         """Parse the files for the NextJs analyzer."""
         file_extensions = [".js", ".jsx", ".ts", ".tsx"]
-        print(
-            "Parsing eligible files",
+        logger.info(
+            "Parsing eligible files: {}",
             {
                 "extensions": file_extensions,
             },
@@ -493,13 +308,15 @@ class NextJsAnalyzer:
 
         for ext in file_extensions:
             files = [file for file in self.file_infos if file.extension == ext]
-            print(f"Found {len(files)} files with extension: {ext}")
+            logger.info("Found {} files with extension: {}", len(files), ext)
 
             for file in files:
                 try:
                     if not file.content:
                         try:
-                            print("Reading file", {"path": file.relative_file_path})
+                            logger.info(
+                                "Reading file: {}", {"path": file.relative_file_path}
+                            )
                             with open(
                                 os.path.join(
                                     self.framework_info["dir_path"],
@@ -510,8 +327,9 @@ class NextJsAnalyzer:
                             ) as f:
                                 file.content = f.read()
                         except Exception as read_error:
-                            print(
-                                f"Error reading file {file.relative_file_path}:",
+                            logger.error(
+                                "Error reading file {}: {}",
+                                file.relative_file_path,
                                 read_error,
                             )
                             continue
@@ -525,17 +343,19 @@ class NextJsAnalyzer:
                             # Placeholder for actual parsing - in reality we'd use
                             # a JS parser library like esprima-python
                         except Exception as parse_error:
-                            print(
-                                f"Error parsing file {file.relative_file_path}:",
+                            logger.error(
+                                "Error parsing file {}:{}",
+                                file.relative_file_path,
                                 parse_error,
                             )
                 except Exception as error:
-                    print(
-                        f"Unexpected error processing file {file.relative_file_path}:",
+                    logger.error(
+                        "Unexpected error processing file {}:{}",
+                        file.relative_file_path,
                         error,
                     )
 
-        print("File parsing complete")
+        logger.info("File parsing complete!")
 
     def process_layout_files(self) -> None:
         """Process the layout files for the NextJs analyzer."""
@@ -546,17 +366,17 @@ class NextJsAnalyzer:
         ]
 
         for layout_file_info in layout_file_infos:
-            content = assert_defined(layout_file_info.content)
+            content = assert_defined(value=layout_file_info.content)
 
             # In a real implementation we'd use a JS parser
             # This is a simplified approach
             layout_name = self._extract_layout_name(
-                content, layout_file_info.relative_file_path
+                content=content, file_path=layout_file_info.relative_file_path
             )
 
             if not layout_name:
-                print(
-                    "Could not determine layout name",
+                logger.error(
+                    "Could not determine layout name: {}",
                     {
                         "path": layout_file_info.relative_file_path,
                     },
@@ -570,7 +390,7 @@ class NextJsAnalyzer:
                 relative_file_path=layout_file_info.relative_file_path,
                 relative_dir_path=layout_file_info.relative_dir_path,
                 content=content,
-                components=self._extract_components_from_content(content),
+                components=self._extract_components_from_content(content=content),
             )
             self.layouts[layout_name] = layout_info
 
@@ -614,20 +434,20 @@ class NextJsAnalyzer:
         )
 
         if self.is_app_router and self.is_pages_router:
-            print(
-                "Detected both App Router and Pages Router. Prioritizing App Router for analysis."
+            logger.info(
+                "Detected both App Router and Pages Router. Prioritizing App Router for analysis..."
             )
         elif self.is_app_router:
-            print("Detected Next.js App Router")
+            logger.info("Detected Next.js App Router!")
         elif self.is_pages_router:
-            print("Detected Next.js Pages Router")
+            logger.info("Detected Next.js Pages Router!")
         else:
-            print("Could not determine Next.js router type")
+            logger.warning("Could not determine Next.js router type!")
 
     def process_route_files(self) -> None:
         """Process the route files for the NextJs analyzer."""
-        print(
-            "Processing route files",
+        logger.info(
+            "Processing route files: {}",
             {
                 "is_app_router": self.is_app_router,
                 "is_pages_router": self.is_pages_router,
@@ -652,7 +472,7 @@ class NextJsAnalyzer:
 
         if app_router_files or self.is_app_router:
             self.is_app_router = True
-            print(f"Found {len(app_router_files)} App Router files")
+            logger.info("Found {} App Router files", len(app_router_files))
 
             for file in app_router_files:
                 self.process_app_router_file(file)
@@ -670,7 +490,7 @@ class NextJsAnalyzer:
 
         if pages_files or self.is_pages_router:
             self.is_pages_router = True
-            print(f"Found {len(pages_files)} Pages Router files")
+            logger.info("Found {} Pages Router files", len(pages_files))
 
             for file in pages_files:
                 self.process_pages_router_file(file)
@@ -678,7 +498,7 @@ class NextJsAnalyzer:
         api_files = [
             file for file in self.file_infos if "/api/" in file.relative_file_path
         ]
-        print(f"Found {len(api_files)} API files")
+        logger.info("Found {} API files", len(api_files))
 
         for file in api_files:
             if file.relative_file_path.startswith("pages/api/"):
@@ -686,8 +506,10 @@ class NextJsAnalyzer:
             else:
                 self.process_app_router_file(file)
 
-        print(
-            f"Processed {len(self.routes)} routes and {len(self.api_routes)} API routes"
+        logger.info(
+            "Processed {} routes and {} API routes",
+            len(self.routes),
+            len(self.api_routes),
         )
 
     def process_app_router_file(self, file: FileInfo) -> None:
@@ -730,7 +552,6 @@ class NextJsAnalyzer:
             file_detail.details["isRoute"] = True
             route_path = self.get_route_path_from_file_app(file.relative_file_path)
             self.routes.append(route_path)
-
             page_info = PageInfo(
                 route_path=route_path,
                 relative_file_path=file.relative_file_path,
@@ -738,12 +559,10 @@ class NextJsAnalyzer:
                 has_params=self.has_route_params(route_path),
                 has_form_submission=self.has_form_submission_in_content(file.content),
             )
-
             self.pages.append(page_info)
             file_detail.details["pageInfo"] = page_info.__dict__
         elif file.name in ["layout.js", "layout.tsx"]:
             file_detail.details["isLayout"] = True
-
             layout_name = None
             exports = self._extract_exports_from_content(file.content)
             default_export = next((e for e in exports if "(default)" in e), None)
@@ -768,7 +587,6 @@ class NextJsAnalyzer:
             file_detail.details["isApiRoute"] = True
             route_path = self.get_route_path_from_file_app(file.relative_file_path)
             self.api_routes.append(route_path)
-
             api_info = ApiInfo(
                 route_path=route_path,
                 relative_file_path=file.relative_file_path,
@@ -776,7 +594,6 @@ class NextJsAnalyzer:
                 input_validation=self.has_input_validation_in_content(file.content),
                 dependencies=file_detail.details["imports"] or [],
             )
-
             self.apis.append(api_info)
             file_detail.details["apiInfo"] = api_info.__dict__
 
@@ -800,7 +617,6 @@ class NextJsAnalyzer:
                 "eventHandlers": [],
             },
         )
-
         file_detail.details["imports"] = self._extract_imports_from_content(
             file.content
         )
@@ -903,10 +719,7 @@ class NextJsAnalyzer:
         return hooks
 
     def _extract_event_handlers_from_content(self, content: str) -> List[str]:
-        """Extract the event handlers from the content.
-
-        TODO: This is a workaround that MUST be improved.
-        """
+        """Extract the event handlers from the content."""
         # Find event handlers based on naming patterns
         handlers = []
 
@@ -959,7 +772,6 @@ class NextJsAnalyzer:
             r"\bzod\b",
             r"\bjoi\b",
         ]
-
         return any(re.search(pattern, content) for pattern in validation_patterns)
 
     def has_route_params(self, route: str) -> bool:

@@ -2,48 +2,59 @@ import os
 from typing import Dict, List, Literal, TypedDict, Union
 
 from loguru import logger
+import pathspec
+import fnmatch
+import glob
 
 
-def get_paths(source_dir):
-    """Get the paths of the files in the source directory."""
-    all_files = []
+def get_paths(dir_path: str) -> List[str]:
+    """Get all file paths in a directory, excluding test files, specific directories, and respecting .gitignore rules."""
+    try:
+        gitignore_path = os.path.join(dir_path, ".gitignore")
+        if os.path.exists(gitignore_path):
+            with open(gitignore_path, "r") as f:
+                gitignore = pathspec.PathSpec.from_lines(
+                    pathspec.patterns.GitWildMatchPattern, f.readlines()
+                )
+        else:
+            gitignore = None
+    except ImportError:
+        gitignore = None
 
-    for root, _, files in os.walk(source_dir):
-        for file in files:
-            full_path = os.path.join(root, file)
-            rel_path = os.path.relpath(full_path, source_dir)
-            ignore_patterns = [
-                "**/*.test.ts",
-                "**/*.test.tsx",
-                "**/*.test.js",
-                "**/*.test.jsx",
-                "**/*.spec.ts",
-                "**/*.spec.tsx",
-                "**/*.spec.js",
-                "**/*.spec.jsx",
-                "packages/**",
-                "test/**",
-                "tests/**",
-            ]
-            should_ignore = False
+    original_dir = os.getcwd()
+    os.chdir(dir_path)
+    all_paths = glob.glob("**/*", recursive=True)
+    ignore_patterns = [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.test.js",
+        "**/*.test.jsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx",
+        "**/*.spec.js",
+        "**/*.spec.jsx",
+        "packages/**",
+        "test/**",
+        "tests/**",
+    ]
+    paths = []
 
-            for pattern in ignore_patterns:
-                if pattern.startswith("**/*"):
-                    ext = pattern[4:]
-                    if rel_path.endswith(ext):
-                        should_ignore = True
-                        break
-                elif pattern.endswith("/**"):
-                    dir_prefix = pattern[:-3]
-                    if rel_path.startswith(dir_prefix):
-                        should_ignore = True
-                        break
+    for path in all_paths:
+        if os.path.isdir(path):
+            continue
 
-            if not should_ignore:
-                all_files.append(rel_path)
+        if any(fnmatch.fnmatch(path, pattern) for pattern in ignore_patterns):
+            continue
 
-    all_files.sort()
-    return all_files
+        if gitignore and gitignore.match_file(path):
+            continue
+
+        normalized_path = path.replace(os.sep, "/")
+        paths.append(normalized_path)
+
+    paths.sort()
+    os.chdir(original_dir)
+    return paths
 
 
 class FileNode(TypedDict):

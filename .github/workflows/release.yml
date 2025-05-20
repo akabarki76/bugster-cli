@@ -102,6 +102,11 @@ jobs:
         chmod +x release/bugster-linux
         chmod +x release/bugster-macos
         
+        # Copy installation wrapper scripts
+        cp install.sh release/
+        cp install.bat release/
+        chmod +x release/install.sh
+        
         # Create zip files for each platform
         # Rename binaries to 'bugster' or 'bugster.exe' inside the zip files as expected by the installer
         cd release

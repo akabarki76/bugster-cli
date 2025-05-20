@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal, Optional, Union, Any
 from pydantic import BaseModel
 
 
@@ -65,3 +65,4 @@ class WebSocketCompleteMessage(WebSocketMessage):
 
 class NamedTestResult(TestResult):
     name: str
+    time: Optional[float] = None

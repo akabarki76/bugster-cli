@@ -33,3 +33,6 @@ ENV/
 
 # Bugster
 .bugster/
+
+# PyInstaller build files
+*.zip

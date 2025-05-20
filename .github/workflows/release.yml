@@ -103,10 +103,21 @@ jobs:
         chmod +x release/bugster-macos
         
         # Create zip files for each platform
+        # Rename binaries to 'bugster' or 'bugster.exe' inside the zip files as expected by the installer
         cd release
-        zip bugster-linux.zip bugster-linux
-        zip bugster-windows.zip bugster-windows.exe
-        zip bugster-macos.zip bugster-macos
+        mkdir -p linux windows macos
+        cp bugster-linux linux/bugster
+        cp bugster-windows.exe windows/bugster.exe
+        cp bugster-macos macos/bugster
+        
+        cd linux && zip ../bugster-linux.zip bugster && cd ..
+        cd windows && zip ../bugster-windows.zip bugster.exe && cd ..
+        cd macos && zip ../bugster-macos.zip bugster && cd ..
+        
+        # Keep the original binaries available as well
+        zip bugster-linux-binary.zip bugster-linux
+        zip bugster-windows-binary.zip bugster-windows.exe
+        zip bugster-macos-binary.zip bugster-macos
         cd ..
         
         ls -la release/

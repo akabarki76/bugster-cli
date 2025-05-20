@@ -40,7 +40,14 @@ def get_existing_analysis(framework_id):
         analysis_json_path = os.path.join(cache_framework_dir, "analysis.json")
 
         try:
-            os.access(analysis_json_path, os.F_OK)
+            exists = os.access(analysis_json_path, os.F_OK)
+
+            if not exists:
+                logger.info(
+                    "Analysis file does not exist at: {}. Creating new analysis...",
+                    analysis_json_path,
+                )
+                return None
         except Exception as err:
             logger.error("Failed to check if analysis file exists: {}", err)
             return None
@@ -76,7 +83,6 @@ class AppAnalyzer:
             if existing_analysis:
                 logger.info("Using existing analysis from cache...")
                 return existing_analysis
-
         if self.framework_info["id"] == "next":
             analysis = self.analyze_next_js()
         else:

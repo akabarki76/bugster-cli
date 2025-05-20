@@ -21,15 +21,9 @@ class GitInfo:
 def get_git_info() -> GitInfo:
     """Get Git repository information."""
     try:
-        # Initialize a repo object from the current directory
         repo = Repo(".")
-
-        # Get current branch
         branch = repo.active_branch.name
-
-        # Get current commit SHA
         commit = repo.head.commit.hexsha
-
         return GitInfo(branch=branch, commit=commit).to_dict()
     except (InvalidGitRepositoryError, Exception) as error:
         print("Failed to get git info", error)

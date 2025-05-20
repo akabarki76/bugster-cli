@@ -11,9 +11,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-20.04
             asset_name: bugster-linux
           - os: windows-latest
             asset_name: bugster-windows.exe

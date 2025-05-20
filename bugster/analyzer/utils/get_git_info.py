@@ -1,0 +1,36 @@
+from dataclasses import dataclass
+
+from git import InvalidGitRepositoryError, Repo
+
+
+@dataclass
+class GitInfo:
+    """Git repository information class."""
+
+    branch: str
+    commit: str
+
+    def to_dict(self) -> dict:
+        """Convert the GitInfo object to a dictionary."""
+        return {
+            "branch": self.branch,
+            "commit": self.commit,
+        }
+
+
+def get_git_info() -> GitInfo:
+    """Get Git repository information."""
+    try:
+        # Initialize a repo object from the current directory
+        repo = Repo(".")
+
+        # Get current branch
+        branch = repo.active_branch.name
+
+        # Get current commit SHA
+        commit = repo.head.commit.hexsha
+
+        return GitInfo(branch=branch, commit=commit).to_dict()
+    except (InvalidGitRepositoryError, Exception) as error:
+        print("Failed to get git info", error)
+        return GitInfo(branch=None, commit=None).to_dict()

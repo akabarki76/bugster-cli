@@ -2,8 +2,10 @@
 Command-line interface for Bugster.
 """
 
+import asyncio
 import typer
 from rich.console import Console
+from typing import Optional
 
 from bugster.commands.init import init_command
 from bugster.commands.test import test_command
@@ -19,9 +21,11 @@ def init():
 
 
 @app.command()
-def test():
-    """Run Bugster CLI configuration."""
-    test_command()
+def test(
+    path: Optional[str] = typer.Argument(None, help="Path to test file or directory")
+):
+    """Run Bugster tests. If no path is provided, runs all tests in .bugster/tests."""
+    asyncio.run(test_command(path))
 
 
 def main():

@@ -45,9 +45,27 @@ jobs:
       shell: bash
       run: |
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          cp dist/bugster/bugster.exe ${{ matrix.asset_name }}
+          # Try multiple possible locations for Windows executable
+          if [ -f "dist/bugster.exe" ]; then
+            cp dist/bugster.exe ${{ matrix.asset_name }}
+          elif [ -f "dist/bugster/bugster.exe" ]; then
+            cp dist/bugster/bugster.exe ${{ matrix.asset_name }}
+          else
+            echo "Windows executable not found in expected locations"
+            find dist -name "*.exe" -type f
+            exit 1
+          fi
         else
-          cp dist/bugster/bugster ${{ matrix.asset_name }}
+          # Try multiple possible locations for Linux/macOS executable
+          if [ -f "dist/bugster" ]; then
+            cp dist/bugster ${{ matrix.asset_name }}
+          elif [ -f "dist/bugster/bugster" ]; then
+            cp dist/bugster/bugster ${{ matrix.asset_name }}
+          else
+            echo "Executable not found in expected locations"
+            find dist -type f -executable
+            exit 1
+          fi
           chmod +x ${{ matrix.asset_name }}
         fi
     

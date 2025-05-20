@@ -10,11 +10,11 @@ Our installers will check for Python and automatically install it if needed (wit
 
 #### macOS/Linux
 ```bash
-curl -sSL https://github.com/Bugsterapp/bugster-cli/releases/latest/download/install.sh | bash
+curl -sSL https://github.com/Bugsterapp/bugster-cli/releases/latest/download/scripts/install.sh | bash
 ```
 
 #### Windows
-1. Download [install.bat](https://github.com/Bugsterapp/bugster-cli/releases/latest/download/install.bat)
+1. Download [install.bat](https://github.com/Bugsterapp/bugster-cli/releases/latest/download/scripts/install.bat)
 2. Right-click the downloaded file and select "Run as administrator"
 
 ### Manual Installation
@@ -22,7 +22,7 @@ curl -sSL https://github.com/Bugsterapp/bugster-cli/releases/latest/download/ins
 If you already have Python installed:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/install.py | python3
+curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | python3
 ```
 
 ## Usage

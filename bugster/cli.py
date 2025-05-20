@@ -32,9 +32,15 @@ def analyze(
         "--show-logs",
         help="Show detailed logs during analysis",
     ),
+    force: bool = typer.Option(
+        False,
+        "-f",
+        "--force",
+        help="Force analysis even if the codebase has already been analyzed",
+    ),
 ):
     """Run Bugster CLI analysis command."""
-    analyze_command(options={"show_logs": show_logs})
+    analyze_command(options={"show_logs": show_logs, "force": force})
 
 
 def main():

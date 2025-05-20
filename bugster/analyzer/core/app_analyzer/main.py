@@ -61,20 +61,16 @@ class AppAnalyzer:
     def __init__(self, framework_info):
         self.framework_info = framework_info
 
-    def execute(self, options=None):
+    def execute(self, options: dict = {}):
         """Execute the analysis."""
-        if options is None:
-            options = {}
-
         logger.info(
             "Analyzing application: {}", {"framework": self.framework_info["id"]}
         )
-
         analysis = None
 
         if not options.get("force"):
             existing_analysis = get_existing_analysis(
-                framework_id=self.framework_info.id
+                framework_id=self.framework_info["id"]
             )
 
             if existing_analysis:
@@ -84,7 +80,7 @@ class AppAnalyzer:
         if self.framework_info["id"] == "next":
             analysis = self.analyze_next_js()
         else:
-            raise BugsterError(f"Unsupported framework: {self.framework_info.id}")
+            raise BugsterError(f"Unsupported framework: {self.framework_info['id']}")
 
         logger.info("Analysis complete for {} framework", self.framework_info["name"])
         return analysis

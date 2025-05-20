@@ -11,6 +11,7 @@ import sys
 import tempfile
 import shutil
 from urllib.request import urlretrieve
+import zipfile
 
 GITHUB_REPO = "https://github.com/Bugsterapp/bugster-cli"  # Update with your actual repo
 
@@ -58,13 +59,16 @@ def download_release(version):
     temp_dir = tempfile.mkdtemp()
     
     if system == "Windows":
-        asset_name = "bugster-windows.exe"
+        asset_name = "bugster-windows.exe.zip"
+        zip_path = os.path.join(temp_dir, "bugster.zip")
         dest_path = os.path.join(temp_dir, "bugster.exe")
     elif system == "Darwin":  # macOS
-        asset_name = "bugster-macos"
+        asset_name = "bugster-macos.zip"
+        zip_path = os.path.join(temp_dir, "bugster.zip")
         dest_path = os.path.join(temp_dir, "bugster")
     elif system == "Linux":
-        asset_name = "bugster-linux"
+        asset_name = "bugster-linux.zip"
+        zip_path = os.path.join(temp_dir, "bugster.zip")
         dest_path = os.path.join(temp_dir, "bugster")
     else:
         print(f"Unsupported platform: {system}")
@@ -74,14 +78,33 @@ def download_release(version):
     
     try:
         print(f"Downloading {download_url}...")
-        urlretrieve(download_url, dest_path)
+        urlretrieve(download_url, zip_path)
+        
+        # Extract the zip file
+        print(f"Extracting zip file...")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(temp_dir)
+        
+        # The macOS zip contains just a single 'bugster' file
+        # other platforms might have different structures
+        if system == "Darwin":  # macOS
+            dest_path = os.path.join(temp_dir, "bugster")
+        elif system == "Windows":
+            dest_path = os.path.join(temp_dir, "bugster.exe")
+        else:  # Linux
+            dest_path = os.path.join(temp_dir, "bugster")
+        
+        if not os.path.exists(dest_path):
+            print(f"Could not find executable in zip file at: {dest_path}")
+            sys.exit(1)
         
         if system != "Windows":
             os.chmod(dest_path, 0o755)  # Make executable
         
         return dest_path
     except Exception as e:
-        print(f"Error downloading release: {e}")
+        print(f"Error downloading or extracting release: {e}")
+        print(f"Please make sure the asset {asset_name} exists in the release {version}")
         sys.exit(1)
 
 def install_executable(executable_path):
@@ -102,6 +125,7 @@ def install_executable(executable_path):
             print(f"\nPlease add {bin_dir} to your PATH to use 'bugster' from any terminal.")
     else:
         bin_dir = os.path.join(home, ".local", "bin")
+        # Ensure the directory exists
         if not os.path.exists(bin_dir):
             os.makedirs(bin_dir)
         

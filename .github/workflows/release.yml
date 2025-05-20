@@ -103,8 +103,8 @@ jobs:
         chmod +x release/bugster-macos
         
         # Copy installation wrapper scripts
-        cp install.sh release/
-        cp install.bat release/
+        cp scripts/install.sh release/
+        cp scripts/install.bat release/
         chmod +x release/install.sh
         
         # Create zip files for each platform

@@ -52,6 +52,7 @@ jobs:
       with:
         name: ${{ matrix.asset_name }}
         path: ${{ matrix.asset_name }}
+        if-no-files-found: error
 
   release:
     needs: build
@@ -62,6 +63,21 @@ jobs:
     
     - name: Download all artifacts
       uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+    
+    - name: List downloaded artifacts
+      run: ls -la artifacts/
+    
+    - name: Prepare artifacts for release
+      run: |
+        mkdir -p release
+        cp artifacts/bugster-linux/bugster-linux release/
+        cp artifacts/bugster-windows.exe/bugster-windows.exe release/
+        cp artifacts/bugster-macos/bugster-macos release/
+        chmod +x release/bugster-linux
+        chmod +x release/bugster-macos
+        ls -la release/
     
     - name: Get version
       id: get_version
@@ -74,7 +90,4 @@ jobs:
         name: Bugster CLI v${{ steps.get_version.outputs.VERSION }}
         draft: false
         prerelease: false
-        files: |
-          bugster-linux
-          bugster-windows.exe
-          bugster-macos 
+        files: release/* 

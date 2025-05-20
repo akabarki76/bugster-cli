@@ -2,7 +2,6 @@ import json
 import os
 import re
 import time
-from dataclasses import dataclass
 
 from loguru import logger
 
@@ -14,28 +13,12 @@ from bugster.analyzer.utils.get_git_info import get_git_info
 PROJECT_JSON_PATH = os.path.join(DOT_BUGSTER_DIR_PATH, "project.json")
 
 
-@dataclass
-class Metadata:
-    timestamp: int
-    version: int
-    git: dict
-
-
-@dataclass
-class Data:
-    frameworks: list
-
-
-@dataclass
-class ProjectInfo:
-
-    metadata: Metadata
-    data: Data
 
 
 def get_project_info():
     """Get the project info."""
     logger.info("Getting project info...")
+
     try:
         with open(PROJECT_JSON_PATH, "r", encoding="utf-8") as f:
             return json.load(f)

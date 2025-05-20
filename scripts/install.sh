@@ -87,53 +87,79 @@ install_python_linux() {
     fi
 }
 
-# Check if Python 3 is installed
+# Check for minimum Python version
+check_python_version() {
+    local version=$1
+    if [[ $version =~ ^Python\ 3\.([0-9]+) ]]; then
+        local minor=${BASH_REMATCH[1]}
+        if (( minor >= 10 )); then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Check if Python 3.10+ is installed
 if command -v python3 &>/dev/null; then
-    echo "✅ Python 3 is installed, continuing with installation..."
-elif command -v python &>/dev/null && python --version 2>&1 | grep -q "Python 3"; then
-    echo "✅ Python 3 is installed, continuing with installation..."
+    version=$(python3 --version 2>&1)
+    if check_python_version "$version"; then
+        echo "✅ Python 3.10+ is installed ($version), continuing with installation..."
+    else
+        echo "❌ Python 3.10 or higher is required (found $version)"
+        echo "Please install Python 3.10 or higher and try again."
+        exit 1
+    fi
+elif command -v python &>/dev/null; then
+    version=$(python --version 2>&1)
+    if check_python_version "$version"; then
+        echo "✅ Python 3.10+ is installed ($version), continuing with installation..."
+    else
+        echo "❌ Python 3.10 or higher is required (found $version)"
+        echo "Please install Python 3.10 or higher and try again."
+        exit 1
+    fi
 else
     echo "❌ Python 3 is not installed or not in your PATH"
     echo ""
     
     # Try to install Python automatically
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "Would you like to install Python 3 automatically? (y/n)"
+        echo "Would you like to install Python 3.12 automatically? (y/n)"
         read -r choice
         if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
             if install_python_macos; then
-                echo "Python 3 installed successfully, continuing with Bugster installation..."
+                echo "Python 3.12 installed successfully, continuing with Bugster installation..."
             else
                 echo "Unable to install Python automatically."
-                echo "Please install Python 3 manually and run this script again."
+                echo "Please install Python 3.10 or higher manually and run this script again."
                 exit 1
             fi
         else
-            echo "Please install Python 3 manually and run this script again."
+            echo "Please install Python 3.10 or higher manually and run this script again."
             echo "To install Python on macOS, you can use Homebrew:"
             echo "  1. Install Homebrew (if not already installed):"
             echo "     /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
-            echo "  2. Install Python 3:"
+            echo "  2. Install Python 3.12:"
             echo "     brew install python@3.12"
             exit 1
         fi
     else
         # Linux
-        echo "Would you like to install Python 3 automatically? (y/n)"
+        echo "Would you like to install Python 3.12 automatically? (y/n)"
         read -r choice
         if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
             if install_python_linux; then
-                echo "Python 3 installed successfully, continuing with Bugster installation..."
+                echo "Python 3.12 installed successfully, continuing with Bugster installation..."
             else
                 echo "Unable to install Python automatically."
-                echo "Please install Python 3 manually and run this script again."
+                echo "Please install Python 3.10 or higher manually and run this script again."
                 exit 1
             fi
         else
-            echo "Please install Python 3 manually and run this script again."
+            echo "Please install Python 3.10 or higher manually and run this script again."
             echo "To install Python on your Linux distribution:"
-            echo "  - Ubuntu/Debian: sudo apt-get update && sudo apt-get install python3 python3-pip"
-            echo "  - Fedora: sudo dnf install python3 python3-pip"
+            echo "  - Ubuntu/Debian: sudo apt-get update && sudo apt-get install python3.10 python3-pip"
+            echo "  - Fedora: sudo dnf install python3.10 python3-pip"
             echo "  - Arch Linux: sudo pacman -S python python-pip"
             exit 1
         fi
@@ -142,6 +168,6 @@ fi
 
 # Download and run the Python installer script
 echo "Downloading the Bugster CLI installer..."
-curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/install.py | python3
+curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | python3
 
 exit $? 

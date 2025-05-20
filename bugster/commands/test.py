@@ -4,6 +4,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.style import Style
 from typing import Optional, List
+import time
 
 from bugster.clients.ws_client import WebSocketClient
 from bugster.clients.mcp_client import MCPStdioClient
@@ -27,12 +28,14 @@ def create_results_table(results: List[NamedTestResult]) -> Table:
     table.add_column("Name", justify="left")
     table.add_column("Result", justify="left")
     table.add_column("Reason", justify="left")
+    table.add_column("Time (s)", justify="right")
 
     for result in results:
         table.add_row(
             result.name,
             result.result,
             result.reason,
+            f"{result.time:.2f}" if hasattr(result, 'time') else "N/A",
             style=Style(color="green" if result.result == "pass" else "red"),
         )
 
@@ -59,25 +62,28 @@ async def handle_step_request(
 
 
 def handle_complete_message(
-    complete_message: WebSocketCompleteMessage, test_name: str
+    complete_message: WebSocketCompleteMessage, test_name: str, elapsed_time: float
 ) -> NamedTestResult:
     """Handle a complete message from the WebSocket server."""
     if complete_message.result.result == "pass":
-        console.print(f"[green]Test passed: {complete_message.result.reason}[/green]")
+        console.print(f"[green]Test passed: {complete_message.result.reason} (Time: {elapsed_time:.2f}s)[/green]")
     else:
-        console.print(f"[red]Test failed: {complete_message.result.reason}[/red]")
+        console.print(f"[red]Test failed: {complete_message.result.reason} (Time: {elapsed_time:.2f}s)[/red]")
 
-    return NamedTestResult(
+    result = NamedTestResult(
         name=test_name,
         result=complete_message.result.result,
         reason=complete_message.result.reason,
     )
+    result.time = elapsed_time  # Add time attribute
+    return result
 
 
 async def execute_test(test: Test, config: Config) -> NamedTestResult:
     """Execute a single test using WebSocket and MCP clients."""
     ws_client = WebSocketClient()
     mcp_client = MCPStdioClient()
+    start_time = time.time()
 
     try:
         # Connect to WebSocket and initialize MCP
@@ -101,8 +107,9 @@ async def execute_test(test: Test, config: Config) -> NamedTestResult:
                 await handle_step_request(step_request, mcp_client, ws_client)
 
             elif message["action"] == "complete":
+                elapsed_time = time.time() - start_time
                 complete_message = WebSocketCompleteMessage(**message)
-                return handle_complete_message(complete_message, test.name)
+                return handle_complete_message(complete_message, test.name, elapsed_time)
 
     finally:
         await ws_client.close()
@@ -111,6 +118,8 @@ async def execute_test(test: Test, config: Config) -> NamedTestResult:
 
 async def test_command(test_path: Optional[str] = None):
     """Run Bugster tests."""
+    start_time = time.time()
+    
     try:
         # Load configuration and test files
         config = await load_config()
@@ -134,6 +143,10 @@ async def test_command(test_path: Optional[str] = None):
 
         # Display results table
         console.print(create_results_table(results))
+        
+        # Display total time
+        total_time = time.time() - start_time
+        console.print(f"\n[blue]Total execution time: {total_time:.2f}s[/blue]")
 
     except Exception as e:
         console.print(f"[red]Error: {str(e)}[/red]")

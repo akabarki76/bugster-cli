@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   build:
     name: Build on ${{ matrix.os }}
@@ -48,7 +52,7 @@ jobs:
         fi
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.asset_name }}
         path: ${{ matrix.asset_name }}
@@ -57,12 +61,14 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
     - uses: actions/checkout@v3
     
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: artifacts
     
@@ -90,4 +96,5 @@ jobs:
         name: Bugster CLI v${{ steps.get_version.outputs.VERSION }}
         draft: false
         prerelease: false
-        files: release/* 
+        files: release/*
+        token: ${{ secrets.GITHUB_TOKEN }} 

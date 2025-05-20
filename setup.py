@@ -43,7 +43,6 @@ setup(
         "typing_extensions==4.13.2",
         "uvicorn==0.34.2",
         "websockets==15.0.1",
-    
     ],
     entry_points={
         "console_scripts": [
@@ -55,5 +54,5 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     keywords="testing, cli, automation",
-    python_requires=">=3.7",
+    python_requires=">=3.10",
 )

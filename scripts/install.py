@@ -5,7 +5,7 @@ Can be run directly:
     python install.py
 
 Or via curl:
-    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/install.py | python3
+    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | python3
 """
 import os
 import platform
@@ -15,6 +15,13 @@ import tempfile
 import zipfile
 import shutil
 from urllib.request import urlretrieve
+
+# Check Python version
+if sys.version_info < (3, 10):
+    print("Error: Python 3.10 or higher is required.")
+    print(f"Current Python version: {platform.python_version()}")
+    print("Please upgrade your Python installation and try again.")
+    sys.exit(1)
 
 GITHUB_REPO = "https://github.com/Bugsterapp/bugster-cli"
 DEFAULT_VERSION = "v0.1.0"

@@ -5,16 +5,16 @@ echo ============================================================
 echo Bugster CLI Installer
 echo ============================================================
 
-:: Check if Python is installed
-python --version >nul 2>&1
+:: Check if Python 3.10+ is installed
+python -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    echo ✅ Python is installed, continuing with installation...
+    echo ✅ Python 3.10 or higher is installed, continuing with installation...
 ) else (
-    python3 --version >nul 2>&1
+    python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1
     if %ERRORLEVEL% EQU 0 (
-        echo ✅ Python is installed, continuing with installation...
+        echo ✅ Python 3.10 or higher is installed, continuing with installation...
     ) else (
-        echo ❌ Python is not installed or not in your PATH
+        echo ❌ Python 3.10 or higher is required
         echo.
         
         :: Check if we have winget available for automated installation
@@ -36,11 +36,11 @@ if %ERRORLEVEL% EQU 0 (
                 echo set PATH=%%PATH%%;%%LOCALAPPDATA%%\Programs\Python\Python312;%%LOCALAPPDATA%%\Programs\Python\Python312\Scripts >> %TEMP%\continue_install.bat
                 echo set PATH=%%PATH%%;%%PROGRAMFILES%%\Python312;%%PROGRAMFILES%%\Python312\Scripts >> %TEMP%\continue_install.bat
                 echo echo Checking for Python... >> %TEMP%\continue_install.bat
-                echo python --version >> %TEMP%\continue_install.bat
+                echo python -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >> %TEMP%\continue_install.bat
                 echo if %%ERRORLEVEL%% EQU 0 ( >> %TEMP%\continue_install.bat
                 echo   echo Python installed successfully >> %TEMP%\continue_install.bat
                 echo   echo Downloading Bugster CLI installer... >> %TEMP%\continue_install.bat
-                echo   curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/install.py ^> %%TEMP%%\bugster_install.py >> %TEMP%\continue_install.bat
+                echo   curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py ^> %%TEMP%%\bugster_install.py >> %TEMP%\continue_install.bat
                 echo   python %%TEMP%%\bugster_install.py >> %TEMP%\continue_install.bat
                 echo   del %%TEMP%%\bugster_install.py >> %TEMP%\continue_install.bat
                 echo ) else ( >> %TEMP%\continue_install.bat
@@ -61,7 +61,7 @@ if %ERRORLEVEL% EQU 0 (
             :manual_install
             echo.
             echo To install Python on Windows:
-            echo   1. Download the latest Python installer from https://www.python.org/downloads/windows/
+            echo   1. Download the latest Python installer (3.10 or higher) from https://www.python.org/downloads/windows/
             echo   2. Run the installer and make sure to check "Add Python to PATH"
             echo   3. Restart your computer and run this installer again
             echo.
@@ -73,7 +73,7 @@ if %ERRORLEVEL% EQU 0 (
 
 :: Download and run the Python installer script
 echo Downloading the Bugster CLI installer...
-curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/install.py > %TEMP%\bugster_install.py
+curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py > %TEMP%\bugster_install.py
 python %TEMP%\bugster_install.py
 del %TEMP%\bugster_install.py
 

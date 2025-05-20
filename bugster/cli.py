@@ -24,10 +24,18 @@ def test():
     """Run Bugster CLI configuration."""
     test_command()
 
+
 @app.command()
-def analyze():
-    """Run Bugster CLI configuration."""
-    analyze_command()
+def analyze(
+    show_logs: bool = typer.Option(
+        False,
+        "--show-logs",
+        help="Show detailed logs during analysis",
+    ),
+):
+    """Run Bugster CLI analysis command."""
+    analyze_command(options={"show_logs": show_logs})
+
 
 def main():
     app()

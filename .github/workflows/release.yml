@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-latest
             asset_name: bugster-linux
           - os: windows-latest
             asset_name: bugster-windows.exe
@@ -75,6 +75,6 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          bugster-linux/*
-          bugster-windows.exe/*
-          bugster-macos/* 
+          bugster-linux
+          bugster-windows.exe
+          bugster-macos 

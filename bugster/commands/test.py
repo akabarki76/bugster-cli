@@ -3,12 +3,13 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from rich.style import Style
+from rich.status import Status
 from typing import Optional, List
 import time
 
 from bugster.clients.ws_client import WebSocketClient
 from bugster.clients.mcp_client import MCPStdioClient
-from bugster.utils.file import load_config, load_test_files
+from bugster.utils.file import load_config, load_test_files, get_mcp_config_path
 from bugster.types import (
     Config,
     NamedTestResult,
@@ -35,7 +36,7 @@ def create_results_table(results: List[NamedTestResult]) -> Table:
             result.name,
             result.result,
             result.reason,
-            f"{result.time:.2f}" if hasattr(result, 'time') else "N/A",
+            f"{result.time:.2f}" if hasattr(result, "time") else "N/A",
             style=Style(color="green" if result.result == "pass" else "red"),
         )
 
@@ -46,9 +47,11 @@ async def handle_step_request(
     step_request: WebSocketStepRequestMessage,
     mcp_client: MCPStdioClient,
     ws_client: WebSocketClient,
+    silent: bool = False,
 ) -> None:
     """Handle a step request from the WebSocket server."""
-    console.print(step_request.message)
+    if not silent:
+        console.print(step_request.message)
     result = await mcp_client.execute(step_request.tool)
 
     await ws_client.send(
@@ -65,11 +68,6 @@ def handle_complete_message(
     complete_message: WebSocketCompleteMessage, test_name: str, elapsed_time: float
 ) -> NamedTestResult:
     """Handle a complete message from the WebSocket server."""
-    if complete_message.result.result == "pass":
-        console.print(f"[green]Test passed: {complete_message.result.reason} (Time: {elapsed_time:.2f}s)[/green]")
-    else:
-        console.print(f"[red]Test failed: {complete_message.result.reason} (Time: {elapsed_time:.2f}s)[/red]")
-
     result = NamedTestResult(
         name=test_name,
         result=complete_message.result.result,
@@ -79,16 +77,45 @@ def handle_complete_message(
     return result
 
 
-async def execute_test(test: Test, config: Config) -> NamedTestResult:
+async def execute_test(test: Test, config: Config, **kwargs) -> NamedTestResult:
     """Execute a single test using WebSocket and MCP clients."""
     ws_client = WebSocketClient()
     mcp_client = MCPStdioClient()
-    start_time = time.time()
+    silent = kwargs.get("silent", False)
 
     try:
         # Connect to WebSocket and initialize MCP
-        await ws_client.connect()
-        await mcp_client.init_client("npx", ["@playwright/mcp@latest", "--isolated"])
+        with Status(
+            "[yellow]Connecting to Bugster Agent. Sometimes this may take a few seconds...[/yellow]",
+            spinner="dots",
+        ) as status:
+            await ws_client.connect()
+            status.update("[green]Connected successfully!")
+        # ================================
+        # TODO: We should inject the config, command, args and env vars from the web socket
+        mcp_config = {
+            "browser": {
+                "contextOptions": {
+                    "viewport": {"width": 1280, "height": 720},
+                    "recordVideo": {
+                        "dir": ".bugster/videos/",
+                        "size": {"width": 1280, "height": 720},
+                    },
+                }
+            }
+        }
+        playwright_config = get_mcp_config_path(mcp_config, version="v1")
+        mcp_command = "npx"
+        mcp_args = [
+            "@playwright/mcp@latest",
+            "--isolated",
+            "--config",
+            playwright_config,
+        ]
+        if kwargs.get("headless"):
+            mcp_args.append("--headless")
+        # ================================
+        await mcp_client.init_client(mcp_command, mcp_args)
 
         # Send initial test data with config
         await ws_client.send(
@@ -99,27 +126,38 @@ async def execute_test(test: Test, config: Config) -> NamedTestResult:
         )
 
         # Main test loop
-        while True:
-            message = await ws_client.receive()
+        with Status(f"[blue]Running test: {test.name}[/blue]", spinner="line") as status:
+            while True:
+                message = await ws_client.receive()
 
-            if message["action"] == "step_request":
-                step_request = WebSocketStepRequestMessage(**message)
-                await handle_step_request(step_request, mcp_client, ws_client)
+                if message["action"] == "step_request":
+                    step_request = WebSocketStepRequestMessage(**message)
+                    await handle_step_request(step_request, mcp_client, ws_client, silent)
+                    if not silent:
+                        status.update(f"[blue]Running test: {test.name} - {step_request.message}[/blue]")
 
-            elif message["action"] == "complete":
-                elapsed_time = time.time() - start_time
-                complete_message = WebSocketCompleteMessage(**message)
-                return handle_complete_message(complete_message, test.name, elapsed_time)
+                elif message["action"] == "complete":
+                    complete_message = WebSocketCompleteMessage(**message)
+                    result = handle_complete_message(complete_message, test.name, 0)  # time is added later
+                    return result
+                else:
+                    if not silent:
+                        console.print(f"[red]Internal error: {message}[/red]")
+                    raise typer.Exit(1)
 
     finally:
         await ws_client.close()
         await mcp_client.close()
 
 
-async def test_command(test_path: Optional[str] = None):
+async def test_command(
+    test_path: Optional[str] = None,
+    headless: Optional[bool] = False,
+    silent: Optional[bool] = False,
+):
     """Run Bugster tests."""
-    start_time = time.time()
-    
+    total_start_time = time.time()
+
     try:
         # Load configuration and test files
         config = await load_config()
@@ -134,31 +172,38 @@ async def test_command(test_path: Optional[str] = None):
 
         # Execute each test
         for test_file in test_files:
-            console.print(f"\n[blue]Running tests from {test_file['file']}[/blue]")
-            
+            if not silent:
+                console.print(f"\n[blue]Running tests from {test_file['file']}[/blue]")
             # Handle either a single test dict or a list of test dicts
             content = test_file["content"]
             test_data_list = [content] if isinstance(content, dict) else content
             
             for test_data in test_data_list:
-                console.print(f"\n[green]Test: {test_data['name']}[/green]")
+                if not silent:
+                    console.print(f"\n[green]Test: {test_data['name']}[/green]")
+                
                 test = Test(**test_data)
-                try:
-                    results.append(await execute_test(test, config))
-                except Exception as test_error:
-                    console.print(f"[red]Test execution error: {str(test_error)}[/red]")
-                    results.append(NamedTestResult(
-                        name=test_data['name'],
-                        result="error",
-                        reason=f"Execution error: {str(test_error)}"
-                    ))
+                test_start_time = time.time()
+                result = await execute_test(test, config, headless=headless, silent=silent)
+                test_elapsed_time = time.time() - test_start_time
+                
+                # Add elapsed time to result
+                result.time = test_elapsed_time
+                
+                status_color = "green" if result.result == "pass" else "red"
+                console.print(f"[{status_color}]Test: {test.name} -> {result.result} (Time: {test_elapsed_time:.2f}s)[/{status_color}]")
+                results.append(result)
 
         # Display results table
         console.print(create_results_table(results))
-        
+
         # Display total time
-        total_time = time.time() - start_time
+        total_time = time.time() - total_start_time
         console.print(f"\n[blue]Total execution time: {total_time:.2f}s[/blue]")
+
+        # Exit with non-zero status if any test failed
+        if any(result.result == "fail" for result in results):
+            raise typer.Exit(1)
 
     except Exception as e:
         console.print(f"[red]Error: {str(e)}[/red]")

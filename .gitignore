@@ -37,3 +37,4 @@ ENV/
 # PyInstaller build files
 *.zip
 release.sh
+dummy

@@ -3,12 +3,13 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from rich.style import Style
+from rich.status import Status
 from typing import Optional, List
 import time
 
 from bugster.clients.ws_client import WebSocketClient
 from bugster.clients.mcp_client import MCPStdioClient
-from bugster.utils.file import load_config, load_test_files
+from bugster.utils.file import load_config, load_test_files, get_mcp_config_path
 from bugster.types import (
     Config,
     NamedTestResult,
@@ -35,7 +36,7 @@ def create_results_table(results: List[NamedTestResult]) -> Table:
             result.name,
             result.result,
             result.reason,
-            f"{result.time:.2f}" if hasattr(result, 'time') else "N/A",
+            f"{result.time:.2f}" if hasattr(result, "time") else "N/A",
             style=Style(color="green" if result.result == "pass" else "red"),
         )
 
@@ -66,9 +67,13 @@ def handle_complete_message(
 ) -> NamedTestResult:
     """Handle a complete message from the WebSocket server."""
     if complete_message.result.result == "pass":
-        console.print(f"[green]Test passed: {complete_message.result.reason} (Time: {elapsed_time:.2f}s)[/green]")
+        console.print(
+            f"[green]Test passed: {complete_message.result.reason} (Time: {elapsed_time:.2f}s)[/green]"
+        )
     else:
-        console.print(f"[red]Test failed: {complete_message.result.reason} (Time: {elapsed_time:.2f}s)[/red]")
+        console.print(
+            f"[red]Test failed: {complete_message.result.reason} (Time: {elapsed_time:.2f}s)[/red]"
+        )
 
     result = NamedTestResult(
         name=test_name,
@@ -79,7 +84,7 @@ def handle_complete_message(
     return result
 
 
-async def execute_test(test: Test, config: Config) -> NamedTestResult:
+async def execute_test(test: Test, config: Config, **kwargs) -> NamedTestResult:
     """Execute a single test using WebSocket and MCP clients."""
     ws_client = WebSocketClient()
     mcp_client = MCPStdioClient()
@@ -87,8 +92,37 @@ async def execute_test(test: Test, config: Config) -> NamedTestResult:
 
     try:
         # Connect to WebSocket and initialize MCP
-        await ws_client.connect()
-        await mcp_client.init_client("npx", ["@playwright/mcp@latest", "--isolated"])
+        with Status(
+            "[yellow]Connecting to Bugster Agent. Sometimes this may take a few seconds...[/yellow]",
+            spinner="dots",
+        ) as status:
+            await ws_client.connect()
+            status.update("[green]Connected successfully!")
+        # ================================
+        # TODO: We should inject the config, command, args and env vars from the web socket
+        mcp_config = {
+            "browser": {
+                "contextOptions": {
+                    "viewport": {"width": 1280, "height": 720},
+                    "recordVideo": {
+                        "dir": ".bugster/videos/",
+                        "size": {"width": 1280, "height": 720},
+                    },
+                }
+            }
+        }
+        playwright_config = get_mcp_config_path(mcp_config, version="v1")
+        mcp_command = "npx"
+        mcp_args = [
+            "@playwright/mcp@latest",
+            "--isolated",
+            "--config",
+            playwright_config,
+        ]
+        if kwargs.get("headless"):
+            mcp_args.append("--headless")
+        # ================================
+        await mcp_client.init_client(mcp_command, mcp_args)
 
         # Send initial test data with config
         await ws_client.send(
@@ -109,17 +143,22 @@ async def execute_test(test: Test, config: Config) -> NamedTestResult:
             elif message["action"] == "complete":
                 elapsed_time = time.time() - start_time
                 complete_message = WebSocketCompleteMessage(**message)
-                return handle_complete_message(complete_message, test.name, elapsed_time)
+                return handle_complete_message(
+                    complete_message, test.name, elapsed_time
+                )
 
     finally:
         await ws_client.close()
         await mcp_client.close()
 
 
-async def test_command(test_path: Optional[str] = None):
+async def test_command(
+    test_path: Optional[str] = None,
+    headless: Optional[bool] = False,
+):
     """Run Bugster tests."""
     start_time = time.time()
-    
+
     try:
         # Load configuration and test files
         config = await load_config()
@@ -139,11 +178,11 @@ async def test_command(test_path: Optional[str] = None):
             for test_data in test_file["content"]:
                 console.print(f"\n[green]Test: {test_data['name']}[/green]")
                 test = Test(**test_data)
-                results.append(await execute_test(test, config))
+                results.append(await execute_test(test, config, headless=headless))
 
         # Display results table
         console.print(create_results_table(results))
-        
+
         # Display total time
         total_time = time.time() - start_time
         console.print(f"\n[blue]Total execution time: {total_time:.2f}s[/blue]")

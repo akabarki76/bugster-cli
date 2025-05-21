@@ -135,11 +135,23 @@ async def test_command(test_path: Optional[str] = None):
         # Execute each test
         for test_file in test_files:
             console.print(f"\n[blue]Running tests from {test_file['file']}[/blue]")
-
-            for test_data in test_file["content"]:
+            
+            # Handle either a single test dict or a list of test dicts
+            content = test_file["content"]
+            test_data_list = [content] if isinstance(content, dict) else content
+            
+            for test_data in test_data_list:
                 console.print(f"\n[green]Test: {test_data['name']}[/green]")
                 test = Test(**test_data)
-                results.append(await execute_test(test, config))
+                try:
+                    results.append(await execute_test(test, config))
+                except Exception as test_error:
+                    console.print(f"[red]Test execution error: {str(test_error)}[/red]")
+                    results.append(NamedTestResult(
+                        name=test_data['name'],
+                        result="error",
+                        reason=f"Execution error: {str(test_error)}"
+                    ))
 
         # Display results table
         console.print(create_results_table(results))

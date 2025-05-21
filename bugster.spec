@@ -12,8 +12,11 @@ a = Analysis(
         'rich',
         'bugster.commands.init',
         'bugster.commands.test',
+        'tiktoken_ext.openai_public',
     ],
-    hookspath=[],
+    hookspath=[
+      "./hooks"
+    ],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],

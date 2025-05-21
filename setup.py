@@ -43,6 +43,9 @@ setup(
         "typing_extensions==4.13.2",
         "uvicorn==0.34.2",
         "websockets==15.0.1",
+        "openai-agents==0.0.15",
+        "litellm==1.67.5",
+        "openai==1.79.0",
     ],
     entry_points={
         "console_scripts": [

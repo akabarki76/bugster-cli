@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from agents import Agent, Runner
 from dotenv import load_dotenv
 from agents.extensions.models.litellm_model import LitellmModel
+from bugster.analyzer.cache.main import DOT_BUGSTER_DIR_PATH
 
 load_dotenv()
 
@@ -74,63 +75,67 @@ Based on this JSON structure representing a NextJS codebase, generate a list of 
 ]
 Focus on key functionality including authentication, admin features, organization/project management, and critical user workflows. """
 
+
 def generate_test_query(codebase_json_content):
     """
     Generate the query string with the codebase JSON injected
-    
+
     Args:
         codebase_json_content (str): JSON string containing the codebase structure
-        
+
     Returns:
         str: Formatted query with codebase JSON injected
     """
     return USER_QUERY.format(codebase_json=codebase_json_content)
 
+
 def load_codebase_json_from_file(file_path):
     """
     Load codebase JSON content from a file
-    
+
     Args:
         file_path (str): Path to the JSON file
-        
+
     Returns:
         str: JSON content as a string
     """
-    import json
     from pathlib import Path
-    
+
     file_path = Path(file_path)
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
-    
-    with open(file_path, 'r') as f:
+
+    with open(file_path, "r") as f:
         return f.read()
+
 
 def save_test_cases_as_yaml(test_cases):
     """
     Save test cases as individual YAML files
-    
+
     Args:
         test_cases (list): List of TestCase objects
     """
     output_dir = Path("test_cases")
     output_dir.mkdir(exist_ok=True)
-    
+
     for i, test_case in enumerate(test_cases):
-        file_name = f"{i+1}_{test_case.name.lower().replace(' ', '_')}.yaml"
+        file_name = f"{i + 1}_{test_case.name.lower().replace(' ', '_')}.yaml"
         file_path = output_dir / file_name
-        
+
         # Convert the test case to a dictionary
         test_case_dict = test_case.dict()
-        
-        with open(file_path, 'w') as f:
+
+        with open(file_path, "w") as f:
             yaml.dump(test_case_dict, f, default_flow_style=False)
-        
+
         print(f"Saved test case to {file_path}")
+
 
 # Example of how to use these functions:
 # json_content = load_codebase_json_from_file('path/to/codebase.json')
 # query = generate_test_query(json_content)
+
 
 class TestCase(BaseModel):
     name: str
@@ -153,19 +158,23 @@ analyzer_agent = Agent(
     model=LitellmModel(model=model, api_key=api_key),
 )
 
+
 async def main():
     # Load the codebase JSON from the analysis.json file
-    json_content = load_codebase_json_from_file('analysis.json')
-    
+    project_json_path = os.path.join(DOT_BUGSTER_DIR_PATH, "project.json")
+
+    json_content = load_codebase_json_from_file(project_json_path)
+
     # Generate the query with the codebase JSON content
     formatted_query = generate_test_query(json_content)
-    
+
     # Run the analyzer agent with the formatted query
     result = await Runner.run(analyzer_agent, formatted_query)
     print(result.final_output)
-    
+
     # Save test cases as YAML files
     save_test_cases_as_yaml(result.final_output.test_cases)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

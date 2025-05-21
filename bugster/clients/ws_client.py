@@ -13,7 +13,7 @@ class WebSocketClient:
     def __init__(self):
         """Initialize WebSocket client"""
         self.ws: Optional[ClientConnection] = None
-        self.url = "wss://5jkw97w149.execute-api.us-east-1.amazonaws.com/dev"
+        self.url = "wss://websocket.bugster.app/prod/"
         # self.url = "ws://localhost:8765"
         self.connected = False
 
@@ -49,16 +49,3 @@ class WebSocketClient:
             raise RuntimeError("WebSocket not connected")
         message = await self.ws.recv()
         return json.loads(message)
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    async def main():
-        client = WebSocketClient()
-        await client.connect()
-        await client.send({"action": "test", "description": "Hello, world!"})
-        print(await client.receive())
-        await client.close()
-
-    asyncio.run(main())

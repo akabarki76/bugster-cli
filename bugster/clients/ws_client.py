@@ -13,7 +13,7 @@ class WebSocketClient:
     def __init__(self):
         """Initialize WebSocket client"""
         self.ws: Optional[ClientConnection] = None
-        self.url = "wss://5jkw97w149.execute-api.us-east-1.amazonaws.com/dev"
+        self.url = "wss://websocket.bugster.app/prod/"
         # self.url = "ws://localhost:8765"
         self.connected = False
 

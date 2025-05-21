@@ -49,16 +49,3 @@ class WebSocketClient:
             raise RuntimeError("WebSocket not connected")
         message = await self.ws.recv()
         return json.loads(message)
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    async def main():
-        client = WebSocketClient()
-        await client.connect()
-        await client.send({"action": "test", "description": "Hello, world!"})
-        print(await client.receive())
-        await client.close()
-
-    asyncio.run(main())

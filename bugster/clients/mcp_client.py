@@ -50,22 +50,3 @@ class MCPStdioClient:
         """Close MCP client"""
         if self.session:
             await self.exit_stack.aclose()
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    async def main():
-        client = MCPStdioClient()
-        await client.init_client("npx", ["@playwright/mcp@latest", "--isolated"])
-        print(await client.list_tools())
-        print(
-            await client.execute(
-                {
-                    "name": "browser_close",
-                }
-            )
-        )
-        await client.close()
-
-    asyncio.run(main())

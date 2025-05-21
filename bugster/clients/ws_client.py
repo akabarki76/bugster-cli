@@ -48,7 +48,10 @@ class WebSocketClient:
         if not self.ws:
             raise RuntimeError("WebSocket not connected")
         message = await self.ws.recv()
-        return json.loads(message)
+        try:
+            return json.loads(message)
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"Failed to parse WebSocket message as JSON: {str(e)}. Raw message: {message[:100]}...")
 
 
 if __name__ == "__main__":

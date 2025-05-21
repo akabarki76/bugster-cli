@@ -22,10 +22,16 @@ def init():
 
 @app.command()
 def test(
-    path: Optional[str] = typer.Argument(None, help="Path to test file or directory")
+    path: Optional[str] = typer.Argument(None, help="Path to test file or directory"),
+    headless: Optional[bool] = typer.Option(
+        False, "--headless", help="Run tests in headless mode"
+    ),
+    silent: Optional[bool] = typer.Option(
+        False, "--silent", "-s", help="Run in silent mode (less verbose output)"
+    ),
 ):
     """Run Bugster tests. If no path is provided, runs all tests in .bugster/tests."""
-    asyncio.run(test_command(path))
+    asyncio.run(test_command(path, headless, silent))
 
 
 def main():

@@ -7,6 +7,8 @@ from typing import Optional, List
 import yaml
 import typer
 from rich.console import Console
+import json
+import tempfile
 
 from bugster.constants import CONFIG_PATH, TESTS_DIR
 from bugster.types import Config
@@ -48,3 +50,19 @@ async def load_test_files(test_path: Optional[Path] = None) -> List[dict]:
                 test_files.append({"file": file, "content": yaml.safe_load(f)})
 
     return test_files
+
+
+def get_mcp_config_path(mcp_config: dict, version: str) -> str:
+    """Get the MCP config file path. Creates a temporary config file with browser settings."""
+
+    # Create a temporary file with a specific name
+    temp_dir = tempfile.gettempdir()
+    config_path = Path(temp_dir) / f"bugster_mcp_{version}.config.json"
+
+    # Only create the file if it doesn't exist
+    if not config_path.exists():
+        # Write the configuration
+        with open(config_path, "w") as f:
+            json.dump(mcp_config, f, indent=2)
+
+    return str(config_path)

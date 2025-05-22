@@ -7,8 +7,6 @@ import typer
 from rich.console import Console
 from typing import Optional
 
-from bugster.commands.init import init_command
-from bugster.commands.test import test_command
 
 app = typer.Typer()
 console = Console()
@@ -17,6 +15,8 @@ console = Console()
 @app.command()
 def init():
     """Initialize Bugster CLI configuration."""
+    from bugster.commands.init import init_command
+
     init_command()
 
 
@@ -31,6 +31,8 @@ def test(
     ),
 ):
     """Run Bugster tests. If no path is provided, runs all tests in .bugster/tests."""
+    from bugster.commands.test import test_command
+
     asyncio.run(test_command(path, headless, silent))
 
 

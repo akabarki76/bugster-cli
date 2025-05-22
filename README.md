@@ -16,7 +16,7 @@ curl -sSL https://github.com/Bugsterapp/bugster-cli/releases/latest/download/ins
 
 #### Windows
 
-1. Download [install.bat](https://github.com/Bugsterapp/bugster-cli/releases/latest/download/scripts/install.bat)
+1. Download [install.bat](https://github.com/Bugsterapp/bugster-cli/releases/latest/download/install.bat)
 2. Right-click the downloaded file and select "Run as administrator"
 
 ### Manual Installation

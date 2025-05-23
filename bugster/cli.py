@@ -21,6 +21,14 @@ def init():
 
 
 @app.command()
+def login():
+    """Login to Bugster by setting up your API key."""
+    from bugster.commands.login import login_command
+
+    login_command()
+
+
+@app.command()
 def test(
     path: Optional[str] = typer.Argument(None, help="Path to test file or directory"),
     headless: Optional[bool] = typer.Option(

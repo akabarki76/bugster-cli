@@ -7,6 +7,7 @@ import ssl
 from typing import Dict, Any, Optional
 import websockets
 from websockets.asyncio.client import ClientConnection
+from bugster.utils.user_config import get_api_key
 
 
 class WebSocketClient:
@@ -24,10 +25,24 @@ class WebSocketClient:
 
     async def connect(self):
         """Connect to WebSocket server"""
+        # Get API key from config
+        api_key = get_api_key()
+        if not api_key:
+            raise RuntimeError(
+                "API key not found. Please run 'bugster login' to set up your API key."
+            )
+
+        # Add API key to headers
+        additional_headers = {"X-API-Key": api_key}
+
         if self.url.startswith("wss"):
-            self.ws = await websockets.connect(self.url, ssl=self.ssl_context)
+            self.ws = await websockets.connect(
+                self.url, ssl=self.ssl_context, additional_headers=additional_headers
+            )
         else:
-            self.ws = await websockets.connect(self.url)
+            self.ws = await websockets.connect(
+                self.url, additional_headers=additional_headers
+            )
         self.connected = True
 
     async def close(self):

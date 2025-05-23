@@ -13,8 +13,6 @@ from bugster.analyzer.utils.get_git_info import get_git_info
 PROJECT_JSON_PATH = os.path.join(DOT_BUGSTER_DIR_PATH, "project.json")
 
 
-
-
 def get_project_info():
     """Get the project info."""
     logger.info("Getting project info...")

@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-import httpx
+import requests
 import yaml
 from loguru import logger
 
@@ -26,11 +26,11 @@ class TestCasesService:
         """Set the `analysis.json` file path."""
         project_info = get_project_info()
         cache_framework_dir = os.path.join(
-            DOT_BUGSTER_DIR_PATH, project_info["data"]["framework_id"]
+            DOT_BUGSTER_DIR_PATH, project_info["data"]["frameworks"][0]["id"]
         )
         self.analysis_json_path = os.path.join(cache_framework_dir, "analysis.json")
 
-    async def _post_analysis_json(self) -> list[dict[Any, str]]:
+    def _post_analysis_json(self) -> list[dict[Any, str]]:
         """Post the `analysis.json` file to the API and receive the test cases."""
         logger.info("Posting analysis.json file to the API...")
         if not self.analysis_json_path:
@@ -41,20 +41,19 @@ class TestCasesService:
                 "Analysis JSON file not found, execute bugster analyze first"
             )
 
-        async with httpx.AsyncClient() as client:
-            with open(self.analysis_json_path, "rb") as file:
-                files = {"file": ("analysis.json", file, "application/json")}
-                full_url = f"{libs_settings.bugster_api_url}{BugsterApiPath.TEST_CASES}"
-                response = await client.post(
-                    full_url,
-                    files=files,
-                )
+        with open(self.analysis_json_path, "rb") as file:
+            files = {"file": ("analysis.json", file, "application/json")}
+            full_url = (
+                f"{libs_settings.bugster_api_url}{BugsterApiPath.TEST_CASES.value}"
+            )
+            logger.info("Full URL: {}", full_url)
+            response = requests.post(full_url, files=files)
 
-            logger.info("Response status code: {}", response.status_code)
-            response.raise_for_status()
-            data = response.json()
-            logger.info("Received test cases from the API: {}", data)
-            return data
+        logger.info("Response status code: {}", response.status_code)
+        response.raise_for_status()
+        data = response.json()
+        logger.info("Received test cases from the API: {}", data)
+        return data
 
     def _save_test_cases_as_yaml(self, test_cases: list[dict[Any, str]]):
         """Save test cases as individual YAML files."""
@@ -63,12 +62,11 @@ class TestCasesService:
         output_dir.mkdir(exist_ok=True)
 
         for i, test_case in enumerate(test_cases):
-            file_name = f"{i + 1}_{test_case.name.lower().replace(' ', '_')}.yaml"
+            file_name = f"{i + 1}_{test_case['name'].lower().replace(' ', '_')}.yaml"
             file_path = output_dir / file_name
-            test_case_dict = test_case.dict()
 
             with open(file_path, "w") as f:
-                yaml.dump(test_case_dict, f, default_flow_style=False)
+                yaml.dump(test_case, f, default_flow_style=False)
 
             logger.info("Saved test case to {}", file_path)
 

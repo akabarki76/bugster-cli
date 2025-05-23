@@ -8,25 +8,35 @@ from rich.console import Console
 from typing import Optional
 
 
-app = typer.Typer()
+HELP_TEXT = """
+🐛 [bold cyan]Bugster CLI[/bold cyan]
+"""
+app = typer.Typer(
+    name="bugster",
+    help=HELP_TEXT,
+    add_completion=False,
+    rich_markup_mode="rich",
+    context_settings={
+        "help_option_names": ["-h", "--help"]
+    }
+)
 console = Console()
 
 
 @app.command()
-def init():
-    """Initialize Bugster CLI configuration."""
-    from bugster.commands.init import init_command
-
-    init_command()
-
-
-@app.command()
 def login():
-    """Login to Bugster by setting up your API key."""
+    """[bold blue]Login[/bold blue] to Bugster by setting up your API key."""
     from bugster.commands.login import login_command
 
     login_command()
 
+
+@app.command()
+def init():
+    """[bold green]Initialize[/bold green] Bugster CLI configuration in your project."""
+    from bugster.commands.init import init_command
+
+    init_command()
 
 @app.command()
 def test(
@@ -38,7 +48,7 @@ def test(
         False, "--silent", "-s", help="Run in silent mode (less verbose output)"
     ),
 ):
-    """Run Bugster tests. If no path is provided, runs all tests in .bugster/tests."""
+    """[bold yellow]Run[/bold yellow] Bugster tests. If no path is provided, runs all tests in .bugster/tests."""
     from bugster.commands.test import test_command
 
     asyncio.run(test_command(path, headless, silent))
@@ -58,7 +68,7 @@ def analyze(
         help="Force analysis even if the codebase has already been analyzed",
     ),
 ):
-    """Run Bugster CLI analysis command."""
+    """[bold magenta]Analyze[/bold magenta] your codebase generates test specs"""
     from bugster.commands.analyze import analyze_command
 
     analyze_command(options={"show_logs": show_logs, "force": force})

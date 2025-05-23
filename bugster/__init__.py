@@ -2,4 +2,4 @@
 Bugster CLI - A command-line interface tool for managing test cases.
 """
 
-__version__ = "0.1.12"
+__version__ = "0.1.13"

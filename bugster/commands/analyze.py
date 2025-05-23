@@ -15,5 +15,6 @@ def analyze_command(options: dict = {}):
     console.print("✅ Analysis completed!")
     console.print("🔍 Running test cases generation...")
     test_cases_dir_path = TestCasesService().generate_test_cases()
-    console.print("✅ Test cases generation completed!")
-    console.print(f"💾 Test cases saved to {test_cases_dir_path}")
+    console.print(
+        f"✅ Test cases generation completed. 💾 Test cases saved to {test_cases_dir_path}"
+    )

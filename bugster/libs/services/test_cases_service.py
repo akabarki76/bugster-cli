@@ -9,8 +9,8 @@ from loguru import logger
 from bugster.analyzer.cache import DOT_BUGSTER_DIR_PATH
 from bugster.analyzer.core.framework_detector import get_project_info
 from bugster.libs.settings import libs_settings
-from bugster.utils.enums import BugsterApiPath
-from bugster.utils.errors import BugsterError
+from bugster.libs.utils.enums import BugsterApiPath
+from bugster.libs.utils.errors import BugsterError
 
 
 class TestCasesService:

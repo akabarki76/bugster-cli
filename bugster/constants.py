@@ -5,7 +5,8 @@ Bugster CLI constants and configurations.
 from pathlib import Path
 
 # Directory Structure
-BUGSTER_DIR = Path.cwd() / ".bugster"
+WORKING_DIR = Path.cwd()
+BUGSTER_DIR = WORKING_DIR / ".bugster"
 CONFIG_PATH = BUGSTER_DIR / "config.yaml"
 TESTS_DIR = BUGSTER_DIR / "tests"
 EXAMPLE_DIR = TESTS_DIR / "example"

@@ -37,11 +37,16 @@ class WebSocketClient:
 
         if self.url.startswith("wss"):
             self.ws = await websockets.connect(
-                self.url, ssl=self.ssl_context, additional_headers=additional_headers
+                self.url,
+                ssl=self.ssl_context,
+                open_timeout=30,
+                additional_headers=additional_headers,
             )
         else:
             self.ws = await websockets.connect(
-                self.url, additional_headers=additional_headers
+                self.url,
+                open_timeout=30,
+                additional_headers=additional_headers,
             )
         self.connected = True
 

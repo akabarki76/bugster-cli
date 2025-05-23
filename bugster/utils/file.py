@@ -34,11 +34,9 @@ async def load_test_files(test_path: Optional[Path] = None) -> List[dict]:
 
     if test_path is None:
         test_path = TESTS_DIR
-
     if not test_path.exists():
         console.print(f"[red]Error: Path {test_path} does not exist[/red]")
         raise typer.Exit(1)
-
     if test_path.is_file():
         if test_path.suffix == ".yaml":
             with open(test_path) as f:

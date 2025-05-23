@@ -184,7 +184,6 @@ async def test_command(
         for test_file in test_files:
             if not silent:
                 console.print(f"\n[blue]Running tests from {test_file['file']}[/blue]")
-
             for test_data in test_file["content"]:
                 if not silent:
                     console.print(f"\n[green]Test: {test_data['name']}[/green]")

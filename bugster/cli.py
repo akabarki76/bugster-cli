@@ -36,6 +36,26 @@ def test(
     asyncio.run(test_command(path, headless, silent))
 
 
+@app.command()
+def analyze(
+    show_logs: bool = typer.Option(
+        False,
+        "--show-logs",
+        help="Show detailed logs during analysis",
+    ),
+    force: bool = typer.Option(
+        False,
+        "-f",
+        "--force",
+        help="Force analysis even if the codebase has already been analyzed",
+    ),
+):
+    """Run Bugster CLI analysis command."""
+    from bugster.commands.analyze import analyze_command
+
+    analyze_command(options={"show_logs": show_logs, "force": force})
+
+
 def main():
     app()
 

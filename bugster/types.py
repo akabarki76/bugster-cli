@@ -20,6 +20,8 @@ class Credential(BaseModel):
 class Config(BaseModel):
     base_url: str
     credentials: list[Credential]
+    project_id: str
+    project_name: str
 
 
 class WebSocketMessage(BaseModel):

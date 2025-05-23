@@ -9,6 +9,7 @@ import time
 
 from bugster.clients.ws_client import WebSocketClient
 from bugster.clients.mcp_client import MCPStdioClient
+from bugster.commands.middleware import require_api_key
 from bugster.utils.file import load_config, load_test_files, get_mcp_config_path
 from bugster.types import (
     Config,
@@ -158,6 +159,7 @@ async def execute_test(test: Test, config: Config, **kwargs) -> NamedTestResult:
         await mcp_client.close()
 
 
+@require_api_key
 async def test_command(
     test_path: Optional[str] = None,
     headless: Optional[bool] = False,

@@ -3,6 +3,8 @@ Initialize command implementation.
 """
 
 import yaml
+import time
+import os
 from rich.prompt import Prompt
 from rich.console import Console
 from rich.table import Table
@@ -22,20 +24,61 @@ def create_credential_entry(
     identifier="admin",
     username="admin",
     password="admin",
-    description="Default admin user",
 ):
     """Create a credential entry with a slug identifier."""
     return {
         "id": identifier.lower().replace(" ", "-"),
         "username": username,
         "password": password,
-        "description": description,
     }
+
+
+def generate_project_id(name):
+    """Generate a unique project ID from the project name.
+
+    Combines the slugified project name with a timestamp to ensure uniqueness.
+    """
+    slug = name.lower().replace(" ", "-")
+    timestamp = str(int(time.time()))
+    return f"{slug}-{timestamp}"
+
+
+def update_gitignore():
+    """Create or update .gitignore to ignore videos directory."""
+    gitignore_path = BUGSTER_DIR / ".gitignore"
+    videos_ignore = "videos/"
+
+    # Check if .gitignore exists
+    if os.path.exists(gitignore_path):
+        # Read existing content
+        with open(gitignore_path, "r") as f:
+            content = f.read()
+
+        # Check if videos/ is already ignored
+        if videos_ignore not in content:
+            # Add videos/ to ignore list
+            with open(gitignore_path, "a") as f:
+                if not content.endswith("\n"):
+                    f.write("\n")
+                f.write(f"{videos_ignore}\n")
+    else:
+        # Create new .gitignore with videos/
+        with open(gitignore_path, "w") as f:
+            f.write(f"{videos_ignore}\n")
 
 
 def init_command():
     """Initialize Bugster CLI configuration."""
+    # Ask for project name and generate ID
+    project_name = Prompt.ask("Project name", default="My Project")
+    project_id = generate_project_id(project_name)
+
     base_url = Prompt.ask("Base URL", default="http://localhost:3000")
+
+    # Get API key from environment or ask for it
+    api_key = os.getenv("BUGSTER_API_KEY")
+    if not api_key:
+        api_key = Prompt.ask("Enter your API key", password=True)
 
     # Initialize empty credentials array
     credentials = []
@@ -48,19 +91,16 @@ def init_command():
             )
             username = Prompt.ask("Username")
             password = Prompt.ask("Password", password=True)
-            description = Prompt.ask("Description", default=f"Custom user {identifier}")
 
             credentials.append(
                 create_credential_entry(
                     identifier=identifier,
                     username=username,
                     password=password,
-                    description=description,
                 )
             )
+            break
 
-            if Prompt.ask("Add another credential? (y/n)", default="n").lower() != "y":
-                break
     else:
         # If no custom credentials, use default admin
         credentials.append(create_credential_entry())
@@ -68,8 +108,17 @@ def init_command():
     # Create folders
     EXAMPLE_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Update .gitignore
+    update_gitignore()
+
     # Save config
-    config = {"base_url": base_url, "credentials": credentials}
+    config = {
+        "project_name": project_name,
+        "project_id": project_id,
+        "base_url": base_url,
+        "api_key": api_key,
+        "credentials": credentials,
+    }
     with open(CONFIG_PATH, "w") as f:
         yaml.dump(config, f, default_flow_style=False)
 
@@ -86,11 +135,8 @@ def init_command():
     table.add_column("ID", style="cyan")
     table.add_column("Username", style="green")
     table.add_column("Password", style="yellow")
-    table.add_column("Description", style="blue")
 
     for cred in credentials:
-        table.add_row(
-            cred["id"], cred["username"], cred["password"], cred["description"]
-        )
+        table.add_row(cred["id"], cred["username"], cred["password"])
 
     console.print(table)

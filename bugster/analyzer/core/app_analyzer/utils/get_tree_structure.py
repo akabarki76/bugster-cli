@@ -43,6 +43,7 @@ def get_paths(dir_path: str) -> List[str]:
         "scripts/**",        # Build/utility scripts
         "cypress/**",        # E2E testing
         ".github/**",        # GitHub workflows/config
+        ".bugster/**",       # Bugster CLI folder
         "build/**",          # Build output
         "__pycache__/**",    # Python cache
         "**/*.egg-info/**",  # Python package metadata

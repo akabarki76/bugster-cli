@@ -5,12 +5,12 @@ import time
 
 from loguru import logger
 
-from bugster.analyzer.cache import DOT_BUGSTER_DIR_PATH
+from bugster.constants import BUGSTER_DIR
 from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import get_paths
 from bugster.analyzer.utils.errors import BugsterError
 from bugster.analyzer.utils.get_git_info import get_git_info
 
-PROJECT_JSON_PATH = os.path.join(DOT_BUGSTER_DIR_PATH, "project.json")
+PROJECT_JSON_PATH = os.path.join(BUGSTER_DIR, "project.json")
 
 
 def get_project_info():
@@ -80,7 +80,7 @@ def detect_framework(options={}):
         )
 
     logger.info("Frameworks detected: {}", {"frameworkInfos": framework_infos})
-    os.makedirs(DOT_BUGSTER_DIR_PATH, exist_ok=True)
+    os.makedirs(BUGSTER_DIR, exist_ok=True)
 
     try:
         VERSION = 2

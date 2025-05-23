@@ -4,7 +4,7 @@ import os
 from loguru import logger
 from bugster.analyzer.utils.errors import BugsterError
 
-from bugster.analyzer.cache import DOT_BUGSTER_DIR_PATH
+from bugster.constants import BUGSTER_DIR
 from bugster.analyzer.core.app_analyzer.next_js_analyzer import NextJsAnalyzer
 from bugster.analyzer.core.framework_detector import get_project_info
 
@@ -36,7 +36,7 @@ def get_existing_analysis(framework_id):
     logger.info("Getting existing analysis: {}", {"frameworkId": framework_id})
 
     try:
-        cache_framework_dir = os.path.join(DOT_BUGSTER_DIR_PATH, framework_id)
+        cache_framework_dir = os.path.join(BUGSTER_DIR, framework_id)
         analysis_json_path = os.path.join(cache_framework_dir, "analysis.json")
 
         try:

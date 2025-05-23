@@ -4,7 +4,7 @@ import re
 import time
 from typing import Dict, List, Optional
 
-from bugster.analyzer.cache import DOT_BUGSTER_DIR_PATH
+from bugster.constants import BUGSTER_DIR
 from bugster.analyzer.utils.get_git_info import get_git_info
 from bugster.analyzer.core.app_analyzer.dataclasses import (
     AppAnalysis,
@@ -49,7 +49,7 @@ class NextJsAnalyzer:
         self.NEXT_ANALYSIS_VERSION = 2
         self.framework_info = framework_info
         self.cache_framework_dir = os.path.join(
-            DOT_BUGSTER_DIR_PATH, self.framework_info["id"]
+            BUGSTER_DIR, self.framework_info["id"]
         )
 
     def execute(self) -> AppAnalysis:

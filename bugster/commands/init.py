@@ -10,7 +10,7 @@ from rich.console import Console
 from rich.table import Table
 
 from bugster.constants import (
-    BUGSTER_DIR,
+    WORKING_DIR,
     CONFIG_PATH,
     EXAMPLE_DIR,
     EXAMPLE_TEST_FILE,
@@ -44,9 +44,14 @@ def generate_project_id(name):
 
 
 def update_gitignore():
-    """Create or update .gitignore to ignore videos directory."""
-    gitignore_path = BUGSTER_DIR / ".gitignore"
-    videos_ignore = "videos/"
+    """Create or update .gitignore to ignore videos, next, and example directories."""
+    gitignore_path = WORKING_DIR / ".gitignore"
+    ignore_patterns = [
+        "videos/",
+        ".bugster/next/",
+        ".bugster/tests/example/",
+        ".bugster/project.json",
+    ]
 
     # Check if .gitignore exists
     if os.path.exists(gitignore_path):
@@ -54,17 +59,24 @@ def update_gitignore():
         with open(gitignore_path, "r") as f:
             content = f.read()
 
-        # Check if videos/ is already ignored
-        if videos_ignore not in content:
-            # Add videos/ to ignore list
+        # Check which patterns need to be added
+        patterns_to_add = []
+        for pattern in ignore_patterns:
+            if pattern not in content:
+                patterns_to_add.append(pattern)
+
+        # Add missing patterns
+        if patterns_to_add:
             with open(gitignore_path, "a") as f:
                 if not content.endswith("\n"):
                     f.write("\n")
-                f.write(f"{videos_ignore}\n")
+                for pattern in patterns_to_add:
+                    f.write(f"{pattern}\n")
     else:
-        # Create new .gitignore with videos/
+        # Create new .gitignore with all patterns
         with open(gitignore_path, "w") as f:
-            f.write(f"{videos_ignore}\n")
+            for pattern in ignore_patterns:
+                f.write(f"{pattern}\n")
 
 
 def init_command():

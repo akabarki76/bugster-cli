@@ -6,8 +6,8 @@ import requests
 import yaml
 from loguru import logger
 
-from bugster.analyzer.cache import DOT_BUGSTER_DIR_PATH
 from bugster.analyzer.core.framework_detector import get_project_info
+from bugster.constants import BUGSTER_DIR, TESTS_DIR
 from bugster.libs.settings import libs_settings
 from bugster.libs.utils.enums import BugsterApiPath
 from bugster.libs.utils.errors import BugsterError
@@ -26,7 +26,7 @@ class TestCasesService:
         """Set the `analysis.json` file path."""
         project_info = get_project_info()
         cache_framework_dir = os.path.join(
-            DOT_BUGSTER_DIR_PATH, project_info["data"]["frameworks"][0]["id"]
+            BUGSTER_DIR, project_info["data"]["frameworks"][0]["id"]
         )
         self.analysis_json_path = os.path.join(cache_framework_dir, "analysis.json")
 
@@ -58,8 +58,8 @@ class TestCasesService:
     def _save_test_cases_as_yaml(self, test_cases: list[dict[Any, str]]):
         """Save test cases as individual YAML files."""
         logger.info("Saving test cases as YAML files...")
-        output_dir = Path(self.TEST_CASES_DIR_NAME)
-        output_dir.mkdir(exist_ok=True)
+        output_dir = TESTS_DIR
+        output_dir.mkdir(parents=True, exist_ok=True)
 
         for i, test_case in enumerate(test_cases):
             file_name = f"{i + 1}_{test_case['name'].lower().replace(' ', '_')}.yaml"

@@ -75,11 +75,6 @@ def init_command():
 
     base_url = Prompt.ask("Base URL", default="http://localhost:3000")
 
-    # Get API key from environment or ask for it
-    api_key = os.getenv("BUGSTER_API_KEY")
-    if not api_key:
-        api_key = Prompt.ask("Enter your API key", password=True)
-
     # Initialize empty credentials array
     credentials = []
 
@@ -116,7 +111,6 @@ def init_command():
         "project_name": project_name,
         "project_id": project_id,
         "base_url": base_url,
-        "api_key": api_key,
         "credentials": credentials,
     }
     with open(CONFIG_PATH, "w") as f:

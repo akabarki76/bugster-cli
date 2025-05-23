@@ -1,40 +1,48 @@
 # Bugster CLI
 
-A command-line interface tool for managing test cases.
+Command line interface for Bugster
 
 ## Installation
 
+### Automated Installation (Recommended)
+
+Our installers will check for Python and automatically install it if needed (with your permission).
+
+#### macOS/Linux
+
 ```bash
-pip install bugster
+curl -sSL https://github.com/Bugsterapp/bugster-cli/releases/latest/download/install.sh | bash
+```
+
+#### Windows
+
+1. Download [install.bat](https://github.com/Bugsterapp/bugster-cli/releases/latest/download/install.bat)
+2. Right-click the downloaded file and select "Run as administrator"
+
+### Manual Installation
+
+If you already have Python installed:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | python3
 ```
 
 ## Usage
 
-Initialize Bugster configuration:
-
 ```bash
-bugster init
+bugster --help
 ```
-
-This will:
-
-1. Create a `.bugster` directory in your current working directory
-2. Set up configuration (base URL and optional credentials)
-3. Create an example test case
 
 ## Development
 
-To set up the development environment:
+### Setup
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd bugster-cli
-
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
 pip install -e .
+```
+
+### Building
+
+```bash
+pyinstaller bugster.spec
 ```

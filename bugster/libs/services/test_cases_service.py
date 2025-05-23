@@ -1,20 +1,22 @@
-from bugster.libs.settings import libs_settings
-from bugster.utils.enums import BugsterApiPath
+import os
+from pathlib import Path
+from typing import Any
+
+import httpx
+import yaml
+from loguru import logger
+
 from bugster.analyzer.cache import DOT_BUGSTER_DIR_PATH
 from bugster.analyzer.core.framework_detector import get_project_info
-import os
-from loguru import logger
-import httpx
-from typing import Any
-import yaml
-from pathlib import Path
+from bugster.libs.settings import libs_settings
+from bugster.utils.enums import BugsterApiPath
 from bugster.utils.errors import BugsterError
-
-TEST_CASES_DIR_NAME = "test_cases"
 
 
 class TestCasesService:
     """Service to generate test cases for a given codebase analysis."""
+
+    TEST_CASES_DIR_NAME = "test_cases"
 
     def __init__(self):
         """Initialize the service."""
@@ -57,7 +59,7 @@ class TestCasesService:
     def _save_test_cases_as_yaml(self, test_cases: list[dict[Any, str]]):
         """Save test cases as individual YAML files."""
         logger.info("Saving test cases as YAML files...")
-        output_dir = Path(TEST_CASES_DIR_NAME)
+        output_dir = Path(self.TEST_CASES_DIR_NAME)
         output_dir.mkdir(exist_ok=True)
 
         for i, test_case in enumerate(test_cases):

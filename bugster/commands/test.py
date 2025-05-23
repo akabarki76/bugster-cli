@@ -184,11 +184,7 @@ async def test_command(
         for test_file in test_files:
             if not silent:
                 console.print(f"\n[blue]Running tests from {test_file['file']}[/blue]")
-            # Handle either a single test dict or a list of test dicts
-            content = test_file["content"]
-            test_data_list = [content] if isinstance(content, dict) else content
-            
-            for test_data in test_data_list:
+            for test_data in test_file["content"]:
                 if not silent:
                     console.print(f"\n[green]Test: {test_data['name']}[/green]")
 

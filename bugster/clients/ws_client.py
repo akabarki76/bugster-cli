@@ -7,13 +7,14 @@ import ssl
 from typing import Dict, Any, Optional
 import websockets
 from websockets.asyncio.client import ClientConnection
+from bugster.utils.user_config import get_api_key
 
 
 class WebSocketClient:
     def __init__(self):
         """Initialize WebSocket client"""
         self.ws: Optional[ClientConnection] = None
-        self.url = "wss://5jkw97w149.execute-api.us-east-1.amazonaws.com/dev"
+        self.url = "wss://websocket.bugster.app/prod/"
         # self.url = "ws://localhost:8765"
         self.connected = False
 
@@ -24,10 +25,24 @@ class WebSocketClient:
 
     async def connect(self):
         """Connect to WebSocket server"""
+        # Get API key from config
+        api_key = get_api_key()
+        if not api_key:
+            raise RuntimeError(
+                "API key not found. Please run 'bugster login' to set up your API key."
+            )
+
+        # Add API key to headers
+        additional_headers = {"X-API-Key": api_key}
+
         if self.url.startswith("wss"):
-            self.ws = await websockets.connect(self.url, ssl=self.ssl_context)
+            self.ws = await websockets.connect(
+                self.url, ssl=self.ssl_context, additional_headers=additional_headers
+            )
         else:
-            self.ws = await websockets.connect(self.url)
+            self.ws = await websockets.connect(
+                self.url, additional_headers=additional_headers
+            )
         self.connected = True
 
     async def close(self):
@@ -48,20 +63,4 @@ class WebSocketClient:
         if not self.ws:
             raise RuntimeError("WebSocket not connected")
         message = await self.ws.recv()
-        try:
-            return json.loads(message)
-        except json.JSONDecodeError as e:
-            raise RuntimeError(f"Failed to parse WebSocket message as JSON: {str(e)}. Raw message: {message[:100]}...")
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    async def main():
-        client = WebSocketClient()
-        await client.connect()
-        await client.send({"action": "test", "description": "Hello, world!"})
-        print(await client.receive())
-        await client.close()
-
-    asyncio.run(main())
+        return json.loads(message)

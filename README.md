@@ -9,12 +9,14 @@ Command line interface for Bugster
 Our installers will check for Python and automatically install it if needed (with your permission).
 
 #### macOS/Linux
+
 ```bash
-curl -sSL https://github.com/Bugsterapp/bugster-cli/releases/latest/download/scripts/install.sh | bash
+curl -sSL https://github.com/Bugsterapp/bugster-cli/releases/latest/download/install.sh | bash
 ```
 
 #### Windows
-1. Download [install.bat](https://github.com/Bugsterapp/bugster-cli/releases/latest/download/scripts/install.bat)
+
+1. Download [install.bat](https://github.com/Bugsterapp/bugster-cli/releases/latest/download/install.bat)
 2. Right-click the downloaded file and select "Run as administrator"
 
 ### Manual Installation

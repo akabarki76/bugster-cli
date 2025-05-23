@@ -7,9 +7,6 @@ import typer
 from rich.console import Console
 from typing import Optional
 
-from bugster.commands.analyze import analyze_command
-from bugster.commands.init import init_command
-from bugster.commands.test import test_command
 
 app = typer.Typer()
 console = Console()
@@ -18,7 +15,17 @@ console = Console()
 @app.command()
 def init():
     """Initialize Bugster CLI configuration."""
+    from bugster.commands.init import init_command
+
     init_command()
+
+
+@app.command()
+def login():
+    """Login to Bugster by setting up your API key."""
+    from bugster.commands.login import login_command
+
+    login_command()
 
 
 @app.command()
@@ -32,6 +39,8 @@ def test(
     ),
 ):
     """Run Bugster tests. If no path is provided, runs all tests in .bugster/tests."""
+    from bugster.commands.test import test_command
+
     asyncio.run(test_command(path, headless, silent))
 
 
@@ -50,6 +59,8 @@ def analyze(
     ),
 ):
     """Run Bugster CLI analysis command."""
+    from bugster.commands.analyze import analyze_command
+
     analyze_command(options={"show_logs": show_logs, "force": force})
 
 

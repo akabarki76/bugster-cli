@@ -9,6 +9,7 @@ import time
 
 from bugster.clients.ws_client import WebSocketClient
 from bugster.clients.mcp_client import MCPStdioClient
+from bugster.commands.middleware import require_api_key
 from bugster.utils.file import load_config, load_test_files, get_mcp_config_path
 from bugster.types import (
     Config,
@@ -126,19 +127,27 @@ async def execute_test(test: Test, config: Config, **kwargs) -> NamedTestResult:
         )
 
         # Main test loop
-        with Status(f"[blue]Running test: {test.name}[/blue]", spinner="line") as status:
+        with Status(
+            f"[blue]Running test: {test.name}[/blue]", spinner="line"
+        ) as status:
             while True:
                 message = await ws_client.receive()
 
-                if message["action"] == "step_request":
+                if message.get("action") == "step_request":
                     step_request = WebSocketStepRequestMessage(**message)
-                    await handle_step_request(step_request, mcp_client, ws_client, silent)
+                    await handle_step_request(
+                        step_request, mcp_client, ws_client, silent
+                    )
                     if not silent:
-                        status.update(f"[blue]Running test: {test.name} - {step_request.message}[/blue]")
+                        status.update(
+                            f"[blue]Running test: {test.name} - {step_request.message}[/blue]"
+                        )
 
-                elif message["action"] == "complete":
+                elif message.get("action") == "complete":
                     complete_message = WebSocketCompleteMessage(**message)
-                    result = handle_complete_message(complete_message, test.name, 0)  # time is added later
+                    result = handle_complete_message(
+                        complete_message, test.name, 0
+                    )  # time is added later
                     return result
                 else:
                     if not silent:
@@ -150,6 +159,7 @@ async def execute_test(test: Test, config: Config, **kwargs) -> NamedTestResult:
         await mcp_client.close()
 
 
+@require_api_key
 async def test_command(
     test_path: Optional[str] = None,
     headless: Optional[bool] = False,
@@ -181,17 +191,21 @@ async def test_command(
             for test_data in test_data_list:
                 if not silent:
                     console.print(f"\n[green]Test: {test_data['name']}[/green]")
-                
+
                 test = Test(**test_data)
                 test_start_time = time.time()
-                result = await execute_test(test, config, headless=headless, silent=silent)
+                result = await execute_test(
+                    test, config, headless=headless, silent=silent
+                )
                 test_elapsed_time = time.time() - test_start_time
-                
+
                 # Add elapsed time to result
                 result.time = test_elapsed_time
-                
+
                 status_color = "green" if result.result == "pass" else "red"
-                console.print(f"[{status_color}]Test: {test.name} -> {result.result} (Time: {test_elapsed_time:.2f}s)[/{status_color}]")
+                console.print(
+                    f"[{status_color}]Test: {test.name} -> {result.result} (Time: {test_elapsed_time:.2f}s)[/{status_color}]"
+                )
                 results.append(result)
 
         # Display results table

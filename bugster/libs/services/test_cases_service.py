@@ -73,8 +73,8 @@ class TestCasesService:
         logger.info("Test cases saved successfully")
         return output_dir
 
-    def generate(self):
+    def generate_test_cases(self):
         """Generate test cases for the given codebase analysis."""
         self._set_analysis_json_path()
         test_cases = self._post_analysis_json()
-        self._save_test_cases_as_yaml(test_cases=test_cases)
+        return self._save_test_cases_as_yaml(test_cases=test_cases)

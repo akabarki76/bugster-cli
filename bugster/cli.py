@@ -3,10 +3,10 @@ Command-line interface for Bugster.
 """
 
 import asyncio
-import typer
-from rich.console import Console
 from typing import Optional
 
+import typer
+from rich.console import Console
 
 HELP_TEXT = """
 🐛 [bold cyan]Bugster CLI[/bold cyan]
@@ -16,9 +16,7 @@ app = typer.Typer(
     help=HELP_TEXT,
     add_completion=False,
     rich_markup_mode="rich",
-    context_settings={
-        "help_option_names": ["-h", "--help"]
-    }
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 console = Console()
 
@@ -37,6 +35,7 @@ def init():
     from bugster.commands.init import init_command
 
     init_command()
+
 
 @app.command()
 def test(
@@ -72,6 +71,14 @@ def analyze(
     from bugster.commands.analyze import analyze_command
 
     analyze_command(options={"show_logs": show_logs, "force": force})
+
+
+@app.command()
+def update():
+    """[bold magenta]Update[/bold magenta] your codebase with the latest changes"""
+    from bugster.commands.update import update_command
+
+    update_command()
 
 
 def main():

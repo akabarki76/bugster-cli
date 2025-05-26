@@ -1,14 +1,45 @@
+import fnmatch
+import glob
 import os
 from typing import Dict, List, Literal, TypedDict, Union
 
-from loguru import logger
 import pathspec
-import fnmatch
-import glob
+from loguru import logger
+
+IGNORE_PATTERNS = [
+    # Test files
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.test.js",
+    "**/*.test.jsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/*.spec.js",
+    "**/*.spec.jsx",
+    # Directories without app logic functionality
+    "packages/**",
+    "test/**",
+    "tests/**",
+    "public/**",  # Static assets
+    "scripts/**",  # Build/utility scripts
+    "cypress/**",  # E2E testing
+    ".github/**",  # GitHub workflows/config
+    ".bugster/**",  # Bugster CLI folder
+    "build/**",  # Build output
+    "__pycache__/**",  # Python cache
+    "**/*.egg-info/**",  # Python package metadata
+    "node_modules/**",  # Node.js dependencies
+    ".next/**",  # Next.js build output
+    "coverage/**",  # Test coverage reports
+    "dist/**",  # Distribution files
+    "storybook-static/**",  # Storybook build output
+    "**/__snapshots__/**",  # Jest snapshots
+    "**/__mocks__/**",  # Jest mocks
+]
 
 
-def get_paths(dir_path: str) -> List[str]:
-    """Get all file paths in a directory, excluding test files, specific directories, and respecting .gitignore rules."""
+def get_gitignore(dir_path: str):
+    """Get the gitignore rules for a directory."""
     try:
         gitignore_path = os.path.join(dir_path, ".gitignore")
 
@@ -22,55 +53,37 @@ def get_paths(dir_path: str) -> List[str]:
     except ImportError:
         gitignore = None
 
-    original_dir = os.getcwd()
-    os.chdir(dir_path)
-    all_paths = glob.glob("**/*", recursive=True)
-    ignore_patterns = [
-        # Test files
-        "**/*.test.ts",
-        "**/*.test.tsx",
-        "**/*.test.js",
-        "**/*.test.jsx",
-        "**/*.spec.ts",
-        "**/*.spec.tsx",
-        "**/*.spec.js",
-        "**/*.spec.jsx",
-        # Directories without app logic functionality
-        "packages/**",
-        "test/**",
-        "tests/**",
-        "public/**",         # Static assets
-        "scripts/**",        # Build/utility scripts
-        "cypress/**",        # E2E testing
-        ".github/**",        # GitHub workflows/config
-        ".bugster/**",       # Bugster CLI folder
-        "build/**",          # Build output
-        "__pycache__/**",    # Python cache
-        "**/*.egg-info/**",  # Python package metadata
-        "node_modules/**",   # Node.js dependencies
-        ".next/**",          # Next.js build output
-        "coverage/**",       # Test coverage reports
-        "dist/**",           # Distribution files
-        "storybook-static/**", # Storybook build output
-        "**/__snapshots__/**", # Jest snapshots
-        "**/__mocks__/**",   # Jest mocks
-    ]
-    paths = []
+    return gitignore
+
+
+def filter_paths(all_paths: List[str], gitignore=None):
+    """Filter paths based on ignore patterns and .gitignore rules."""
+    filtered_paths = []
 
     for path in all_paths:
         if os.path.isdir(path):
             continue
 
-        if any(fnmatch.fnmatch(path, pattern) for pattern in ignore_patterns):
+        if any(fnmatch.fnmatch(path, pattern) for pattern in IGNORE_PATTERNS):
             continue
 
         if gitignore and gitignore.match_file(path):
             continue
 
         normalized_path = path.replace(os.sep, "/")
-        paths.append(normalized_path)
+        filtered_paths.append(normalized_path)
 
-    paths.sort()
+    filtered_paths.sort()
+    return filtered_paths
+
+
+def get_paths(dir_path: str) -> List[str]:
+    """Get all file paths in a directory, excluding test files, specific directories, and respecting .gitignore rules."""
+    gitignore = get_gitignore(dir_path=dir_path)
+    original_dir = os.getcwd()
+    os.chdir(dir_path)
+    all_paths = glob.glob("**/*", recursive=True)
+    paths = filter_paths(all_paths=all_paths, gitignore=gitignore)
     os.chdir(original_dir)
     return paths
 

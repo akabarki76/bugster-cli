@@ -9,6 +9,7 @@ from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
     filter_paths,
     get_gitignore,
 )
+from bugster.libs.services.test_cases_service import TestCasesService
 
 console = Console()
 
@@ -46,7 +47,7 @@ def find_specs_that_use_file(file: str) -> list[str]:
 
 def update_command(options: dict = {}):
     """Run Bugster CLI update command."""
-    # 1. Get the modified files
+    console.print("✓ Analyzing code changes...")
     gitignore = get_gitignore(dir_path=DIR_PATH)
     repo = Repo(DIR_PATH)
     cmd = ["git", "diff", "--", "."]
@@ -64,8 +65,7 @@ def update_command(options: dict = {}):
     diff_files = repo.git.diff("--name-only")
     diff_files_paths = diff_files.split("\n") if diff_files else []
     diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
-
-    # 2. Analyze what pages (ultimate unit of measurement) were affected by the changes (components, layouts, hooks, pages, etc.)
+    console.print(f"✓ Found {len(diff_files_paths)} modified files")
     affected_pages = set()
 
     for file in diff_files_paths:
@@ -78,14 +78,16 @@ def update_command(options: dict = {}):
                 for page in pages:
                     affected_pages.add(page)
 
-    # 3. Link specs to pages
     specs_files_paths = get_all_files(directory=TEST_CASES_PATH)
-    d = {}
+    pages_specs = {}
 
     for spec_path in specs_files_paths:
         with open(spec_path, "r", encoding="utf-8") as file:
             data = yaml.safe_load(file)
-            d[data["page"]] = spec_path
+            page = data["page"]
+            pages_specs[page] = spec_path
 
-    # 4. Send to LLM
-    pass
+    for page in affected_pages:
+        service = TestCasesService()
+        console.print(f"Updating: {pages_specs[page]}")
+        service.update_test_case_by_page(page=page, diff_changes=diff_changes)

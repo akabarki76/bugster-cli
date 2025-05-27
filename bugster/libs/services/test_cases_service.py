@@ -78,10 +78,6 @@ class TestCasesService:
         test_cases = self._post_analysis_json()
         return self._save_test_cases_as_yaml(test_cases=test_cases)
 
-    def update_test_case(self):
-        """Update a test case."""
-        pass
-
-    def update_test_cases(self):
-        """Update test cases."""
+    def update_test_case_by_page(self, page, diff_changes):
+        """Update a test case by page."""
         pass

@@ -1,3 +1,5 @@
+import json
+import os
 import subprocess
 
 import yaml
@@ -10,6 +12,8 @@ from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
 )
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.files import get_all_files
+from bugster.libs.utils.nextjs.finder import find_pages_using_file
+from bugster.libs.utils.nextjs.import_tree_generator import ImportTreeGenerator
 
 console = Console()
 
@@ -18,10 +22,25 @@ DIR_PATH = "."
 TEST_CASES_PATH = "test_cases"
 
 
-def find_pages_that_use_file(file: str) -> list[str]:
+def find_pages_that_use_file(file_path: str) -> list[str]:
     """Find pages that use a file."""
-    # TODO
-    pass
+    output_file = "import_tree.json"
+
+    if not os.path.exists(output_file):
+        generator = ImportTreeGenerator()
+        tree = generator.generate_tree()
+        generator.save_to_json(tree=tree, filename=output_file)
+    else:
+        with open(output_file, "r", encoding="utf-8") as file:
+            tree = json.load(file)
+
+    results = find_pages_using_file(tree_data=tree, target_file=file_path)
+
+    if results:
+        return [result["page"] for result in results]
+    else:
+        console.print(f"✗ File '{file_path}' is not imported by any page")
+        return []
 
 
 def update_command(options: dict = {}):
@@ -49,10 +68,10 @@ def update_command(options: dict = {}):
     is_page_file = lambda file: file.endswith(".page.js")
 
     for file in diff_files_paths:
-        if is_page_file(file):
+        if is_page_file(file=file):
             affected_pages.add(file)
         else:
-            pages = find_pages_that_use_file(file=file)
+            pages = find_pages_that_use_file(file_path=file)
 
             if pages:
                 for page in pages:
@@ -69,5 +88,9 @@ def update_command(options: dict = {}):
 
     for page in affected_pages:
         service = TestCasesService()
-        console.print(f"Updating: {pages_specs[page]}")
-        service.update_test_case_by_page(page=page, diff_changes=diff_changes)
+
+        if page in pages_specs:
+            console.print(f"Updating: {pages_specs[page]}")
+            service.update_test_case_by_page(page=page, diff_changes=diff_changes)
+        else:
+            console.print(f"✗ Page '{page}' not found in test cases")

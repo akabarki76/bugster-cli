@@ -29,19 +29,9 @@ def get_all_files(directory):
     return file_paths
 
 
-def is_page_file(file: str) -> bool:
-    """Check if a file is a page file."""
-    return file.endswith(".page.js")
-
-
 def find_pages_that_use_file(file: str) -> list[str]:
     """Find pages that use a file."""
     # TODO
-    pass
-
-
-def find_specs_that_use_file(file: str) -> list[str]:
-    """Find specs that use a file."""
     pass
 
 
@@ -67,9 +57,10 @@ def update_command(options: dict = {}):
     diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
     console.print(f"✓ Found {len(diff_files_paths)} modified files")
     affected_pages = set()
+    is_page_file = lambda file: file.endswith(".page.js")
 
     for file in diff_files_paths:
-        if is_page_file(file=file):
+        if is_page_file(file):
             affected_pages.add(file)
         else:
             pages = find_pages_that_use_file(file=file)

@@ -2,13 +2,14 @@
 File utility functions for Bugster.
 """
 
-from pathlib import Path
-from typing import Optional, List
-import yaml
-import typer
-from rich.console import Console
 import json
 import tempfile
+from pathlib import Path
+from typing import List, Optional
+
+import typer
+import yaml
+from rich.console import Console
 
 from bugster.constants import CONFIG_PATH, TESTS_DIR
 from bugster.types import Config

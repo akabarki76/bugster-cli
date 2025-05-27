@@ -33,7 +33,7 @@ class TreeNode:
         self.extension = os.path.splitext(name)[1] if node_type == "file" else None
 
 
-class NextJsAnalyzer:
+class NextjsAnalyzer:
     """Analyze the Next.js application."""
 
     def __init__(self, framework_info: FrameworkInfo):

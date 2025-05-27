@@ -3,7 +3,6 @@ import os
 import subprocess
 
 import yaml
-from git import Repo
 from rich.console import Console
 
 from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
@@ -47,7 +46,6 @@ def update_command(options: dict = {}):
     """Run Bugster CLI update command."""
     console.print("✓ Analyzing code changes...")
     gitignore = get_gitignore(dir_path=DIR_PATH)
-    repo = Repo(DIR_PATH)
     cmd = ["git", "diff", "--", "."]
 
     for pattern in ["package-lock.json", ".env.local", ".gitignore"]:
@@ -60,7 +58,14 @@ def update_command(options: dict = {}):
         check=True,
     )
     diff_changes = result.stdout
-    diff_files = repo.git.diff("--name-only")
+    cmd.insert(2, "--name-only")
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    diff_files = result.stdout
     diff_files_paths = diff_files.split("\n") if diff_files else []
     diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
     console.print(f"✓ Found {len(diff_files_paths)} modified files")
@@ -93,4 +98,4 @@ def update_command(options: dict = {}):
             console.print(f"Updating: {pages_specs[page]}")
             service.update_test_case_by_page(page=page, diff_changes=diff_changes)
         else:
-            console.print(f"✗ Page '{page}' not found in test cases")
+            console.print(f"✗ Page '{page}' not found in test cases", markup=False)

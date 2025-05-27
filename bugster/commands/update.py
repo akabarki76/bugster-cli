@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 import yaml
 from git import Repo
@@ -34,6 +35,7 @@ def is_page_file(file: str) -> bool:
 
 def find_pages_that_use_file(file: str) -> list[str]:
     """Find pages that use a file."""
+    # TODO
     pass
 
 
@@ -47,6 +49,18 @@ def update_command(options: dict = {}):
     # 1. Get the modified files
     gitignore = get_gitignore(dir_path=DIR_PATH)
     repo = Repo(DIR_PATH)
+    cmd = ["git", "diff", "--", "."]
+
+    for pattern in ["package-lock.json", ".env.local", ".gitignore"]:
+        cmd.append(f":!{pattern}")
+
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    diff_changes = result.stdout
     diff_files = repo.git.diff("--name-only")
     diff_files_paths = diff_files.split("\n") if diff_files else []
     diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
@@ -72,3 +86,6 @@ def update_command(options: dict = {}):
         with open(spec_path, "r", encoding="utf-8") as file:
             data = yaml.safe_load(file)
             d[data["page"]] = spec_path
+
+    # 4. Send to LLM
+    pass

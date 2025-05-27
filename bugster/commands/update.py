@@ -7,7 +7,6 @@ from rich.console import Console
 
 from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
     filter_paths,
-    get_gitignore,
 )
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.files import get_all_files
@@ -45,7 +44,6 @@ def find_pages_that_use_file(file_path: str) -> list[str]:
 def update_command(options: dict = {}):
     """Run Bugster CLI update command."""
     console.print("✓ Analyzing code changes...")
-    gitignore = get_gitignore(dir_path=DIR_PATH)
     cmd = ["git", "diff", "--", "."]
 
     for pattern in ["package-lock.json", ".env.local", ".gitignore"]:
@@ -66,8 +64,8 @@ def update_command(options: dict = {}):
         check=True,
     )
     diff_files = result.stdout
-    diff_files_paths = diff_files.split("\n") if diff_files else []
-    diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
+    diff_files_paths = [path for path in diff_files.split("\n") if path.strip()]
+    diff_files_paths = filter_paths(all_paths=diff_files_paths)
     console.print(f"✓ Found {len(diff_files_paths)} modified files")
     affected_pages = set()
     is_page_file = lambda file: file.endswith(".page.js")

@@ -4,23 +4,24 @@ import re
 import time
 from typing import Dict, List, Optional
 
-from bugster.constants import BUGSTER_DIR
-from bugster.analyzer.utils.get_git_info import get_git_info
+from loguru import logger
+
 from bugster.analyzer.core.app_analyzer.dataclasses import (
+    ApiInfo,
     AppAnalysis,
     FileAnalysisResult,
     FileInfo,
+    FrameworkInfo,
     LayoutInfo,
     PageInfo,
-    FrameworkInfo,
-    ApiInfo,
 )
-from bugster.analyzer.utils.assert_utils import assert_defined
 from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
     get_paths,
     get_tree_structure,
 )
-from loguru import logger
+from bugster.analyzer.utils.assert_utils import assert_defined
+from bugster.analyzer.utils.get_git_info import get_git_info
+from bugster.constants import BUGSTER_DIR
 
 
 class TreeNode:
@@ -48,9 +49,7 @@ class NextJsAnalyzer:
         self.file_infos: List[FileInfo] = []
         self.NEXT_ANALYSIS_VERSION = 2
         self.framework_info = framework_info
-        self.cache_framework_dir = os.path.join(
-            BUGSTER_DIR, self.framework_info["id"]
-        )
+        self.cache_framework_dir = os.path.join(BUGSTER_DIR, self.framework_info["id"])
 
     def execute(self) -> AppAnalysis:
         """Execute the Next.js analyzer."""

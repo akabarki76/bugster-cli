@@ -290,41 +290,6 @@ class ImportTreeGenerator:
 
         return tree
 
-    def print_tree(self, tree: Dict, indent: int = 0, visited: Set[str] = None):
-        """Print the import tree in a readable format."""
-        if visited is None:
-            visited = set()
-
-        for key, value in tree.items():
-            prefix = "  " * indent + "├── " if indent > 0 else ""
-
-            if isinstance(value, dict) and "path" in value:
-                path = value["path"]
-                circular = value.get("circular", False)
-                unresolved = value.get("unresolved", False)
-                import_count = value.get("import_count", 0)
-
-                status = ""
-                if circular:
-                    status = " (circular)"
-                elif unresolved:
-                    status = " (unresolved)"
-                elif import_count > 0:
-                    status = f" ({import_count} imports)"
-
-                print(f"{prefix}{key} -> {path}{status}")
-
-                if (
-                    not circular
-                    and not unresolved
-                    and path not in visited
-                    and "imports" in value
-                ):
-                    visited.add(path)
-                    self.print_tree(value["imports"], indent + 1, visited)
-            else:
-                print(f"{prefix}{key}")
-
     def save_to_json(self, tree: Dict, filename: str = "import_tree.json"):
         """Save the import tree to a JSON file."""
         with open(filename, "w", encoding="utf-8") as f:

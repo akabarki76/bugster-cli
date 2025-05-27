@@ -7,6 +7,7 @@ from rich.console import Console
 
 from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
     filter_paths,
+    get_gitignore,
 )
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.files import get_all_files
@@ -65,7 +66,8 @@ def update_command(options: dict = {}):
     )
     diff_files = result.stdout
     diff_files_paths = [path for path in diff_files.split("\n") if path.strip()]
-    diff_files_paths = filter_paths(all_paths=diff_files_paths)
+    gitignore = get_gitignore(dir_path=DIR_PATH)
+    diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
     console.print(f"✓ Found {len(diff_files_paths)} modified files")
     affected_pages = set()
     is_page_file = lambda file: file.endswith(".page.js")

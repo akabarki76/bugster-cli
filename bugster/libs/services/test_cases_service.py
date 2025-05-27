@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from typing import Any
 
 import requests
@@ -78,3 +77,11 @@ class TestCasesService:
         self._set_analysis_json_path()
         test_cases = self._post_analysis_json()
         return self._save_test_cases_as_yaml(test_cases=test_cases)
+
+    def update_test_case(self):
+        """Update a test case."""
+        pass
+
+    def update_test_cases(self):
+        """Update test cases."""
+        pass

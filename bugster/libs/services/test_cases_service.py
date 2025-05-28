@@ -87,6 +87,15 @@ class TestCasesService:
         test_cases = self._post_analysis_json()
         return self._save_test_cases_as_yaml(test_cases=test_cases)
 
+    def _update_spec_yaml_file(self, spec_path: str, spec_data: dict[Any, str]):
+        """Update the spec .yaml file."""
+        with open(spec_path, "w") as f:
+            # TODO: See what is different between the spec data and the file
+            logger.info("file.read() {}", f.read())
+            logger.info("Spec data: {}", spec_data)
+
+            yaml.dump(spec_data, f, default_flow_style=False)
+
     def update_spec_by_diff(
         self, spec_data: dict[Any, str], diff_changes: str, spec_path: str
     ):
@@ -97,7 +106,8 @@ class TestCasesService:
             logger.info("Response status code: {}", response.status_code)
             response.raise_for_status()
             data = response.json()
-            logger.info("Received test cases from the API: {}", data)
+            logger.info("Received new test case from the API: {}", data)
+            self._update_spec_yaml_file(spec_path=spec_path, spec_data=data)
             return data
         except requests.exceptions.HTTPError as err:
             logger.error(

@@ -124,21 +124,32 @@ def update_command(options: dict = {}):
                         file_change=diff
                     )
 
-    for page in affected_pages:
-        service = TestCasesService()
+    service = TestCasesService()
+    updated_specs = 0
 
+    for page in affected_pages:
         if page in specs_pages:
             spec = specs_pages[page]
             spec_data = spec["data"]
             spec_path = spec["path"]
 
-            with yaspin(text=f"Updating: '{spec_path}'", color="yellow") as spinner:
+            with yaspin(text=f"Updating: {spec_path}", color="yellow") as spinner:
+                import time
+
+                time.sleep(5)
                 diff = diff_changes_per_page[page]
                 service.update_spec_by_diff(
                     spec_data=spec_data, diff_changes=diff, spec_path=spec_path
                 )
 
                 with spinner.hidden():
-                    console.print(f"✓ '{spec_path}' updated!")
+                    console.print(f"✓ [green]{spec_path}[/green] updated")
+
+                updated_specs += 1
         else:
-            console.print(f"✗ Page '{page}' not found in test cases", markup=False)
+            console.print(f"✗ Page [red]{page}[/red] not found in test cases")
+
+    if updated_specs > 0:
+        console.print(
+            f"✓ Updated {updated_specs} spec{'' if updated_specs == 1 else 's'}"
+        )

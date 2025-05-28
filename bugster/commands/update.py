@@ -92,13 +92,13 @@ def update_command(options: dict = {}):
                     affected_pages.add(page)
 
     specs_files_paths = get_all_files(directory=TESTS_PATH)
-    pages_specs = {}
+    specs_pages = {}
 
     for spec_path in specs_files_paths:
         with open(spec_path, "r", encoding="utf-8") as file:
             data = yaml.safe_load(file)
             page = data["page"]
-            pages_specs[page] = spec_path
+            specs_pages[page] = spec_path
 
     diff_changes_per_page = {}
     parsed_diff = parse_git_diff(diff_text=diff_changes)
@@ -122,8 +122,8 @@ def update_command(options: dict = {}):
     for page in affected_pages:
         service = TestCasesService()
 
-        if page in pages_specs:
-            console.print(f"Updating: {pages_specs[page]}")
+        if page in specs_pages:
+            console.print(f"Updating: {specs_pages[page]}")
             service.update_test_case_by_page(
                 page=page, diff_changes=diff_changes_per_page[page]
             )

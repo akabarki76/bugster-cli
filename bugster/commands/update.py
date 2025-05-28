@@ -14,6 +14,7 @@ from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
 from bugster.analyzer.core.framework_detector.main import get_project_info
 from bugster.constants import BUGSTER_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
+from bugster.libs.utils.diff_parser import parse_git_diff
 from bugster.libs.utils.files import get_all_files
 from bugster.libs.utils.nextjs.finder import find_pages_using_file
 from bugster.libs.utils.nextjs.import_tree_generator import ImportTreeGenerator
@@ -99,11 +100,32 @@ def update_command(options: dict = {}):
             page = data["page"]
             pages_specs[page] = spec_path
 
+    diff_changes_per_page = {}
+    parsed_diff = parse_git_diff(diff_text=diff_changes)
+
+    for diff in parsed_diff.files:
+        old_path = diff.old_path
+
+        if is_page_file(file=old_path):
+            diff_changes_per_page[old_path] = parsed_diff.to_llm_format(
+                file_change=diff
+            )
+        else:
+            pages = find_pages_that_use_file(file_path=old_path)
+
+            if pages:
+                for page in pages:
+                    diff_changes_per_page[page] = parsed_diff.to_llm_format(
+                        file_change=diff
+                    )
+
     for page in affected_pages:
         service = TestCasesService()
 
         if page in pages_specs:
             console.print(f"Updating: {pages_specs[page]}")
-            service.update_test_case_by_page(page=page, diff_changes=diff_changes)
+            service.update_test_case_by_page(
+                page=page, diff_changes=diff_changes_per_page[page]
+            )
         else:
             console.print(f"✗ Page '{page}' not found in test cases", markup=False)

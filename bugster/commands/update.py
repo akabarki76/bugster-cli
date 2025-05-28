@@ -1,14 +1,18 @@
 import json
 import os
 import subprocess
+import sys
 
 import yaml
+from loguru import logger
 from rich.console import Console
 
 from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
     filter_paths,
     get_gitignore,
 )
+from bugster.analyzer.core.framework_detector.main import get_project_info
+from bugster.constants import BUGSTER_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.files import get_all_files
 from bugster.libs.utils.nextjs.finder import find_pages_using_file
@@ -18,12 +22,14 @@ console = Console()
 
 
 DIR_PATH = "."
-TEST_CASES_PATH = "test_cases"
+TESTS_PATH = os.path.join(BUGSTER_DIR, "tests")
 
 
 def find_pages_that_use_file(file_path: str) -> list[str]:
     """Find pages that use a file."""
-    output_file = "import_tree.json"
+    framework_id = get_project_info()["data"]["frameworks"][0]["id"]
+    cache_framework_dir = os.path.join(BUGSTER_DIR, framework_id)
+    output_file = os.path.join(cache_framework_dir, "import_tree.json")
 
     if not os.path.exists(output_file):
         generator = ImportTreeGenerator()
@@ -44,10 +50,12 @@ def find_pages_that_use_file(file_path: str) -> list[str]:
 
 def update_command(options: dict = {}):
     """Run Bugster CLI update command."""
+    logger.remove()
+    logger.add(sys.stderr, level="CRITICAL")
     console.print("✓ Analyzing code changes...")
     cmd = ["git", "diff", "--", "."]
 
-    for pattern in ["package-lock.json", ".env.local", ".gitignore"]:
+    for pattern in ["package-lock.json", ".env.local", ".gitignore", "tsconfig.json"]:
         cmd.append(f":!{pattern}")
 
     result = subprocess.run(
@@ -82,7 +90,7 @@ def update_command(options: dict = {}):
                 for page in pages:
                     affected_pages.add(page)
 
-    specs_files_paths = get_all_files(directory=TEST_CASES_PATH)
+    specs_files_paths = get_all_files(directory=TESTS_PATH)
     pages_specs = {}
 
     for spec_path in specs_files_paths:

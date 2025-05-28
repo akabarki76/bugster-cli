@@ -73,12 +73,17 @@ class ImportTreeGenerator:
     def resolve_import_path(
         self, import_path: str, current_file: Path
     ) -> Optional[Path]:
-        """Resolve import path to actual file path."""
+        """Resolve import path to actual file path, including TypeScript path mappings."""
+        self.load_tsconfig_paths()
         current_dir = current_file.parent
         resolved_path = None
 
+        # Handle TypeScript path mappings (e.g., ~/components/*)
+        if self._is_path_mapping(import_path):
+            resolved_path = self._resolve_path_mapping(import_path)
+
         # Handle relative imports (starting with . or ..)
-        if import_path.startswith("./") or import_path.startswith("../"):
+        elif import_path.startswith("./") or import_path.startswith("../"):
             resolved_path = (current_dir / import_path).resolve()
 
         # Handle absolute imports from root (starting with /)
@@ -87,28 +92,120 @@ class ImportTreeGenerator:
 
         # Handle project-relative imports (no leading . or /)
         else:
-            # First try from current directory
-            test_from_current = (current_dir / import_path).resolve()
-            if self._check_file_exists(test_from_current):
-                resolved_path = test_from_current
-            else:
-                # Try from project root
-                test_from_root = (self.root_path / import_path).resolve()
-                if self._check_file_exists(test_from_root):
-                    resolved_path = test_from_root
-                else:
-                    # Try from src directory if it exists
-                    src_path = self.root_path / "src"
-                    if src_path.exists():
-                        test_from_src = (src_path / import_path).resolve()
-                        if self._check_file_exists(test_from_src):
-                            resolved_path = test_from_src
+            resolved_path = self._resolve_project_relative(import_path, current_dir)
 
         # If we found a potential path, validate it exists with proper extension
         if resolved_path:
             return self._resolve_with_extensions(resolved_path)
 
         return None
+
+    def _is_path_mapping(self, import_path: str) -> bool:
+        """Check if import path matches any TypeScript path mapping patterns."""
+        if not hasattr(self, "path_mappings") or not self.path_mappings:
+            return False
+
+        for alias_pattern in self.path_mappings.keys():
+            # Convert TypeScript glob pattern to prefix check
+            if alias_pattern.endswith("/*"):
+                alias_prefix = alias_pattern[:-2]  # Remove /*
+                if import_path.startswith(alias_prefix + "/"):
+                    return True
+            elif import_path == alias_pattern:
+                return True
+
+        return False
+
+    def _resolve_path_mapping(self, import_path: str) -> Optional[Path]:
+        """Resolve TypeScript path mapping to actual file path."""
+        if not hasattr(self, "path_mappings") or not self.path_mappings:
+            return None
+
+        for alias_pattern, target_patterns in self.path_mappings.items():
+            # Handle glob patterns (e.g., ~/components/*)
+            if alias_pattern.endswith("/*"):
+                alias_prefix = alias_pattern[:-2]  # Remove /*
+                if import_path.startswith(alias_prefix + "/"):
+                    # Extract the remaining path after the alias
+                    remaining_path = import_path[len(alias_prefix) + 1 :]
+
+                    # Try each target pattern
+                    for target_pattern in target_patterns:
+                        if target_pattern.endswith("/*"):
+                            target_base = target_pattern[:-2]  # Remove /*
+                            full_target = f"{target_base}/{remaining_path}"
+                        else:
+                            full_target = f"{target_pattern}/{remaining_path}"
+
+                        # Resolve relative to project root
+                        if full_target.startswith("./"):
+                            resolved_path = (self.root_path / full_target[2:]).resolve()
+                        else:
+                            resolved_path = (self.root_path / full_target).resolve()
+
+                        if self._check_file_exists(resolved_path):
+                            return resolved_path
+
+            # Handle exact matches (e.g., ~/configuration)
+            elif import_path == alias_pattern:
+                for target_pattern in target_patterns:
+                    if target_pattern.startswith("./"):
+                        resolved_path = (self.root_path / target_pattern[2:]).resolve()
+                    else:
+                        resolved_path = (self.root_path / target_pattern).resolve()
+
+                    if self._check_file_exists(resolved_path):
+                        return resolved_path
+
+        return None
+
+    def _resolve_project_relative(
+        self, import_path: str, current_dir: Path
+    ) -> Optional[Path]:
+        """Resolve project-relative imports with fallback hierarchy."""
+        # First try from current directory
+        test_from_current = (current_dir / import_path).resolve()
+        if self._check_file_exists(test_from_current):
+            return test_from_current
+
+        # Try from project root
+        test_from_root = (self.root_path / import_path).resolve()
+        if self._check_file_exists(test_from_root):
+            return test_from_root
+
+        # Try from src directory if it exists
+        src_path = self.root_path / "src"
+        if src_path.exists():
+            test_from_src = (src_path / import_path).resolve()
+            if self._check_file_exists(test_from_src):
+                return test_from_src
+
+        return None
+
+    def load_tsconfig_paths(self, tsconfig_path: Optional[Path] = None) -> None:
+        """Load TypeScript path mappings from tsconfig.json."""
+        if tsconfig_path is None:
+            tsconfig_path = self.root_path / "tsconfig.json"
+
+        if not tsconfig_path.exists():
+            self.path_mappings = {}
+            return
+
+        try:
+            import json
+
+            with open(tsconfig_path, "r") as f:
+                tsconfig = json.load(f)
+
+            compiler_options = tsconfig.get("compilerOptions", {})
+            self.path_mappings = compiler_options.get("paths", {})
+
+            # Store base URL if present
+            self.base_url = compiler_options.get("baseUrl", "./")
+
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Warning: Could not load tsconfig.json: {e}")
+            self.path_mappings = {}
 
     def _check_file_exists(self, path: Path) -> bool:
         """Check if a file exists with any valid extension."""

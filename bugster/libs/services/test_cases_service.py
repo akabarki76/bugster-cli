@@ -90,10 +90,6 @@ class TestCasesService:
     def _update_spec_yaml_file(self, spec_path: str, spec_data: dict[Any, str]):
         """Update the spec .yaml file."""
         with open(spec_path, "w") as f:
-            # TODO: See what is different between the spec data and the file
-            logger.info("file.read() {}", f.read())
-            logger.info("Spec data: {}", spec_data)
-
             yaml.dump(spec_data, f, default_flow_style=False)
 
     def update_spec_by_diff(

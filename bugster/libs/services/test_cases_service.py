@@ -78,6 +78,8 @@ class TestCasesService:
         test_cases = self._post_analysis_json()
         return self._save_test_cases_as_yaml(test_cases=test_cases)
 
-    def update_test_case_by_page(self, page: str, diff_changes: list[str]):
-        """Update a test case by page."""
+    def update_spec_by_diff(
+        self, spec_data: dict[Any, str], diff_changes: str, spec_path: str
+    ):
+        """Update a spec file by diff changes."""
         pass

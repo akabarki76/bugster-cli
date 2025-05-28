@@ -6,6 +6,7 @@ import sys
 import yaml
 from loguru import logger
 from rich.console import Console
+from yaspin import yaspin
 
 from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
     filter_paths,
@@ -98,7 +99,11 @@ def update_command(options: dict = {}):
         with open(spec_path, "r", encoding="utf-8") as file:
             data = yaml.safe_load(file)
             page = data["page"]
-            specs_pages[page] = spec_path
+            relative_path = os.path.relpath(spec_path, TESTS_PATH)
+            specs_pages[page] = {
+                "data": data,
+                "path": relative_path,
+            }
 
     diff_changes_per_page = {}
     parsed_diff = parse_git_diff(diff_text=diff_changes)
@@ -123,9 +128,17 @@ def update_command(options: dict = {}):
         service = TestCasesService()
 
         if page in specs_pages:
-            console.print(f"Updating: {specs_pages[page]}")
-            service.update_test_case_by_page(
-                page=page, diff_changes=diff_changes_per_page[page]
-            )
+            spec = specs_pages[page]
+            spec_data = spec["data"]
+            spec_path = spec["path"]
+
+            with yaspin(text=f"Updating: '{spec_path}'", color="yellow") as spinner:
+                diff = diff_changes_per_page[page]
+                service.update_spec_by_diff(
+                    spec_data=spec_data, diff_changes=diff, spec_path=spec_path
+                )
+
+                with spinner.hidden():
+                    console.print(f"✓ '{spec_path}' updated!")
         else:
             console.print(f"✗ Page '{page}' not found in test cases", markup=False)

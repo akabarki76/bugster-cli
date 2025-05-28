@@ -82,4 +82,10 @@ class TestCasesService:
         self, spec_data: dict[Any, str], diff_changes: str, spec_path: str
     ):
         """Update a spec file by diff changes."""
+        import pdb
+
+        pdb.set_trace()
+        # 1. Send the diff changes to the API
+        # 2. Receive the updated spec data
+        # 3. Save the updated spec data to the spec file
         pass

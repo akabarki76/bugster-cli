@@ -134,9 +134,6 @@ def update_command(options: dict = {}):
             spec_path = spec["path"]
 
             with yaspin(text=f"Updating: {spec_path}", color="yellow") as spinner:
-                import time
-
-                time.sleep(5)
                 diff = diff_changes_per_page[page]
                 service.update_spec_by_diff(
                     spec_data=spec_data, diff_changes=diff, spec_path=spec_path

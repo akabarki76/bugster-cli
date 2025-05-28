@@ -98,9 +98,9 @@ def update_command(options: dict = {}):
     for spec_path in specs_files_paths:
         with open(spec_path, "r", encoding="utf-8") as file:
             data = yaml.safe_load(file)
-            page = data["page"]
+            page_path = data["page_path"]
             relative_path = os.path.relpath(spec_path, TESTS_PATH)
-            specs_pages[page] = {
+            specs_pages[page_path] = {
                 "data": data,
                 "path": relative_path,
             }

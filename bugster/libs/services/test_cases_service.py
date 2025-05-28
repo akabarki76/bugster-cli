@@ -20,6 +20,9 @@ class TestCasesService:
     def __init__(self):
         """Initialize the service."""
         self.analysis_json_path = None
+        self.full_url = (
+            f"{libs_settings.bugster_api_url}{BugsterApiPath.TEST_CASES.value}"
+        )
 
     def _set_analysis_json_path(self) -> str:
         """Set the `analysis.json` file path."""
@@ -40,19 +43,25 @@ class TestCasesService:
                 "Analysis JSON file not found, execute bugster analyze first"
             )
 
-        with open(self.analysis_json_path, "rb") as file:
-            files = {"file": ("analysis.json", file, "application/json")}
-            full_url = (
-                f"{libs_settings.bugster_api_url}{BugsterApiPath.TEST_CASES.value}"
-            )
-            logger.info("Full URL: {}", full_url)
-            response = requests.post(full_url, files=files)
+        try:
+            with open(self.analysis_json_path, "rb") as file:
+                files = {"file": ("analysis.json", file, "application/json")}
+                response = requests.post(self.full_url, files=files)
 
-        logger.info("Response status code: {}", response.status_code)
-        response.raise_for_status()
-        data = response.json()
-        logger.info("Received test cases from the API: {}", data)
-        return data
+            logger.info("Response status code: {}", response.status_code)
+            response.raise_for_status()
+            data = response.json()
+            logger.info("Received test cases from the API: {}", data)
+            return data
+        except requests.exceptions.HTTPError as err:
+            logger.error(
+                "Error posting analysis.json file to the API: {}. Response text: {}",
+                err,
+                response.text,
+            )
+        except Exception as err:
+            logger.error("Error posting analysis.json file to the API: {}", err)
+            raise err
 
     def _save_test_cases_as_yaml(self, test_cases: list[dict[Any, str]]):
         """Save test cases as individual YAML files."""
@@ -82,10 +91,19 @@ class TestCasesService:
         self, spec_data: dict[Any, str], diff_changes: str, spec_path: str
     ):
         """Update a spec file by diff changes."""
-        import pdb
-
-        pdb.set_trace()
-        # 1. Send the diff changes to the API
-        # 2. Receive the updated spec data
-        # 3. Save the updated spec data to the spec file
-        pass
+        try:
+            payload = {"test_case": spec_data, "git_diff": diff_changes}
+            response = requests.put(self.full_url, json=payload)
+            logger.info("Response status code: {}", response.status_code)
+            response.raise_for_status()
+            data = response.json()
+            logger.info("Received test cases from the API: {}", data)
+            return data
+        except requests.exceptions.HTTPError as err:
+            logger.error(
+                "Error updating spec by diff: {}. Response text: {}", err, response.text
+            )
+            raise err
+        except Exception as err:
+            logger.error("Error updating spec by diff: {}", err)
+            raise err

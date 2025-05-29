@@ -89,7 +89,9 @@ class TestCasesService:
 
     def _update_spec_yaml_file(self, spec_path: str, spec_data: dict[Any, str]):
         """Update the spec .yaml file."""
-        with open(spec_path, "w") as f:
+        path = os.path.join(TESTS_DIR, spec_path)
+
+        with open(path, "w") as f:
             yaml.dump(spec_data, f, default_flow_style=False)
 
     def update_spec_by_diff(

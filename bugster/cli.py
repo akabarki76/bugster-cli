@@ -3,6 +3,7 @@ Command-line interface for Bugster.
 """
 
 import asyncio
+import click
 import typer
 from rich.console import Console
 from typing import Optional
@@ -16,9 +17,7 @@ app = typer.Typer(
     help=HELP_TEXT,
     add_completion=False,
     rich_markup_mode="rich",
-    context_settings={
-        "help_option_names": ["-h", "--help"]
-    }
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 console = Console()
 
@@ -37,6 +36,7 @@ def init():
     from bugster.commands.init import init_command
 
     init_command()
+
 
 @app.command()
 def test(
@@ -72,6 +72,32 @@ def analyze(
     from bugster.commands.analyze import analyze_command
 
     analyze_command(options={"show_logs": show_logs, "force": force})
+
+
+@app.command()
+def sync(
+    branch: Optional[str] = typer.Option(
+        None, help="Branch to sync with (defaults to current git branch or 'main')"
+    ),
+    pull: bool = typer.Option(False, help="Only pull specs from remote"),
+    push: bool = typer.Option(False, help="Only push specs to remote"),
+    clean_remote: bool = typer.Option(
+        False, help="Delete remote specs that don't exist locally"
+    ),
+    dry_run: bool = typer.Option(
+        False, help="Show what would happen without making changes"
+    ),
+    prefer: str = typer.Option(
+        None,
+        "--prefer",
+        help="Prefer 'local' or 'remote' when resolving conflicts",
+        click_type=click.Choice(["local", "remote"]),
+    ),
+):
+    """[bold magenta]Sync[/bold magenta] your codebase with Bugster."""
+    from bugster.commands.sync import sync_command
+
+    sync_command(branch, pull, push, clean_remote, dry_run, prefer)
 
 
 def main():

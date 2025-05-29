@@ -170,9 +170,9 @@ async def test_command(
 
     try:
         # Load configuration and test files
-        config = await load_config()
+        config = load_config()
         path = Path(test_path) if test_path else None
-        test_files = await load_test_files(path)
+        test_files = load_test_files(path)
 
         if not test_files:
             console.print("[yellow]No test files found[/yellow]")
@@ -184,20 +184,23 @@ async def test_command(
         for test_file in test_files:
             if not silent:
                 console.print(f"\n[blue]Running tests from {test_file['file']}[/blue]")
-            
+
             # Handle both single test object and list of test objects
             content = test_file["content"]
-            if isinstance(content, dict):
-                # Single test object, wrap it in a list
-                test_list = [content]
-            elif isinstance(content, list):
-                # Already a list of test objects
-                test_list = content
-            else:
-                console.print(f"[red]Error: Invalid test file format in {test_file['file']}[/red]")
+            if not isinstance(content, list):
+                console.print(
+                    f"[red]Error: Invalid test file format in {test_file['file']}[/red]"
+                )
                 continue
-                
-            for test_data in test_list:
+
+            for test_data in content:
+                # Extract metadata before creating Test object
+                metadata = (
+                    test_data.pop("_metadata", {})
+                    if isinstance(test_data, dict)
+                    else {}
+                )
+
                 if not silent:
                     console.print(f"\n[green]Test: {test_data['name']}[/green]")
 

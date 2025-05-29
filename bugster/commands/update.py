@@ -13,7 +13,7 @@ from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
     get_gitignore,
 )
 from bugster.analyzer.core.framework_detector.main import get_project_info
-from bugster.constants import BUGSTER_DIR
+from bugster.constants import BUGSTER_DIR, TESTS_DIR, WORKING_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.diff_parser import parse_git_diff
 from bugster.libs.utils.files import get_all_files
@@ -21,10 +21,6 @@ from bugster.libs.utils.nextjs.finder import find_pages_using_file
 from bugster.libs.utils.nextjs.import_tree_generator import ImportTreeGenerator
 
 console = Console()
-
-
-DIR_PATH = "."
-TESTS_PATH = os.path.join(BUGSTER_DIR, "tests")
 
 
 def find_pages_that_use_file(file_path: str) -> list[str]:
@@ -76,7 +72,7 @@ def update_command(options: dict = {}):
     )
     diff_files = result.stdout
     diff_files_paths = [path for path in diff_files.split("\n") if path.strip()]
-    gitignore = get_gitignore(dir_path=DIR_PATH)
+    gitignore = get_gitignore(dir_path=WORKING_DIR)
     diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
     console.print(f"✓ Found {len(diff_files_paths)} modified files")
     affected_pages = set()
@@ -92,14 +88,14 @@ def update_command(options: dict = {}):
                 for page in pages:
                     affected_pages.add(page)
 
-    specs_files_paths = get_all_files(directory=TESTS_PATH)
+    specs_files_paths = get_all_files(directory=TESTS_DIR)
     specs_pages = {}
 
     for spec_path in specs_files_paths:
         with open(spec_path, "r", encoding="utf-8") as file:
             data = yaml.safe_load(file)
             page_path = data["page_path"]
-            relative_path = os.path.relpath(spec_path, TESTS_PATH)
+            relative_path = os.path.relpath(spec_path, TESTS_DIR)
             specs_pages[page_path] = {
                 "data": data,
                 "path": relative_path,

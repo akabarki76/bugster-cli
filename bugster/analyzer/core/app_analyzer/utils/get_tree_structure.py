@@ -10,7 +10,7 @@ from bugster.constants import IGNORE_PATTERNS
 
 
 def get_gitignore(dir_path: str):
-    """Get the gitignore rules for a directory."""
+    """Get the `.gitignore` rules for a directory."""
     try:
         gitignore_path = os.path.join(dir_path, ".gitignore")
 
@@ -28,7 +28,7 @@ def get_gitignore(dir_path: str):
 
 
 def filter_paths(all_paths: List[str], gitignore=None):
-    """Filter paths based on ignore patterns and .gitignore rules."""
+    """Filter paths based on ignore patterns and `.gitignore` rules."""
     filtered_paths = []
 
     for path in all_paths:

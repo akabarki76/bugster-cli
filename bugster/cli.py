@@ -1,10 +1,9 @@
-"""
-Command-line interface for Bugster.
-"""
+"""Command-line interface for Bugster."""
 
 import asyncio
 from typing import Optional
 
+import click
 import typer
 from rich.console import Console
 
@@ -47,7 +46,10 @@ def test(
         False, "--silent", "-s", help="Run in silent mode (less verbose output)"
     ),
 ):
-    """[bold yellow]Run[/bold yellow] Bugster tests. If no path is provided, runs all tests in .bugster/tests."""
+    """[bold yellow]Run[/bold yellow] Bugster tests.
+
+    If no path is provided, runs all tests in .bugster/tests.
+    """
     from bugster.commands.test import test_command
 
     asyncio.run(test_command(path, headless, silent))
@@ -67,7 +69,7 @@ def analyze(
         help="Force analysis even if the codebase has already been analyzed",
     ),
 ):
-    """[bold magenta]Analyze[/bold magenta] your codebase generates test specs"""
+    """[bold magenta]Analyze[/bold magenta] your codebase generates test specs."""
     from bugster.commands.analyze import analyze_command
 
     analyze_command(options={"show_logs": show_logs, "force": force})
@@ -75,10 +77,35 @@ def analyze(
 
 @app.command()
 def update():
-    """[bold magenta]Update[/bold magenta] your codebase with the latest changes"""
+    """[bold magenta]Update[/bold magenta] your codebase with the latest changes."""
     from bugster.commands.update import update_command
 
     update_command()
+
+
+def sync(
+    branch: Optional[str] = typer.Option(
+        None, help="Branch to sync with (defaults to current git branch or 'main')"
+    ),
+    pull: bool = typer.Option(False, help="Only pull specs from remote"),
+    push: bool = typer.Option(False, help="Only push specs to remote"),
+    clean_remote: bool = typer.Option(
+        False, help="Delete remote specs that don't exist locally"
+    ),
+    dry_run: bool = typer.Option(
+        False, help="Show what would happen without making changes"
+    ),
+    prefer: str = typer.Option(
+        None,
+        "--prefer",
+        help="Prefer 'local' or 'remote' when resolving conflicts",
+        click_type=click.Choice(["local", "remote"]),
+    ),
+):
+    """[bold magenta]Sync[/bold magenta] your codebase with Bugster."""
+    from bugster.commands.sync import sync_command
+
+    sync_command(branch, pull, push, clean_remote, dry_run, prefer)
 
 
 def main():

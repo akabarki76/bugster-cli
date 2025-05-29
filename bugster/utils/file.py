@@ -1,6 +1,4 @@
-"""
-File utility functions for Bugster.
-"""
+"""File utility functions for Bugster."""
 
 import json
 import tempfile
@@ -13,12 +11,13 @@ from rich.console import Console
 
 from bugster.constants import CONFIG_PATH, TESTS_DIR
 from bugster.types import Config
+from bugster.utils.yaml_spec import load_spec
 
 console = Console()
 
 
-async def load_config() -> Config:
-    """Load configuration from config.yaml"""
+def load_config() -> Config:
+    """Load configuration from config.yaml."""
     if not CONFIG_PATH.exists():
         console.print(
             "[red]Error: Configuration file not found. Please run 'bugster init' first.[/red]"
@@ -29,7 +28,7 @@ async def load_config() -> Config:
         return Config(**yaml.safe_load(f))
 
 
-async def load_test_files(test_path: Optional[Path] = None) -> List[dict]:
+def load_test_files(test_path: Optional[Path] = None) -> List[dict]:
     """Load test files from the given path or all tests if no path specified."""
     test_files = []
 
@@ -38,21 +37,48 @@ async def load_test_files(test_path: Optional[Path] = None) -> List[dict]:
     if not test_path.exists():
         console.print(f"[red]Error: Path {test_path} does not exist[/red]")
         raise typer.Exit(1)
+
+    def process_yaml_file(file_path: Path) -> dict:
+        """Process a single YAML file and return its specs."""
+        try:
+            test_cases = load_spec(file_path)
+            # Convert specs to the expected format
+            content = []
+            for test_case in test_cases:
+                test_data = test_case.data
+                # Add metadata as hidden fields
+                test_data["_metadata"] = {
+                    "id": test_case.metadata.id,
+                    "last_modified": test_case.metadata.last_modified,
+                }
+                content.append(test_data)
+            return {"file": file_path, "content": content}
+        except Exception as e:
+            console.print(
+                f"[yellow]Warning: Failed to load test file {file_path}: {e}[/yellow]"
+            )
+            return None
+
     if test_path.is_file():
         if test_path.suffix == ".yaml":
-            with open(test_path) as f:
-                test_files.append({"file": test_path, "content": yaml.safe_load(f)})
+            result = process_yaml_file(test_path)
+            if result:
+                test_files.append(result)
     else:
         # Recursively find all .yaml files
         for file in test_path.rglob("*.yaml"):
-            with open(file) as f:
-                test_files.append({"file": file, "content": yaml.safe_load(f)})
+            result = process_yaml_file(file)
+            if result:
+                test_files.append(result)
 
     return test_files
 
 
 def get_mcp_config_path(mcp_config: dict, version: str) -> str:
-    """Get the MCP config file path. Creates a temporary config file with browser settings."""
+    """Get the MCP config file path.
+
+    Creates a temporary config file with browser settings.
+    """
 
     # Create a temporary file with a specific name
     temp_dir = tempfile.gettempdir()

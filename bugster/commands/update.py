@@ -22,7 +22,11 @@ from bugster.libs.utils.nextjs.pages_finder import find_pages_that_use_file
 console = Console()
 
 
-def update_command(options: dict = {}):
+def update_command(
+    update_only: bool = False,
+    suggest_only: bool = False,
+    delete_only: bool = False,
+):
     """Run Bugster CLI update command."""
     try:
         logger.remove()

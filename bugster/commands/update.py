@@ -15,7 +15,7 @@ from bugster.constants import TESTS_DIR, WORKING_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.diff_parser import parse_git_diff
 from bugster.libs.utils.files import get_specs_paths
-from bugster.libs.utils.nextjs.finder import find_pages_that_use_file
+from bugster.libs.utils.nextjs.pages_finder import find_pages_that_use_file
 
 console = Console()
 

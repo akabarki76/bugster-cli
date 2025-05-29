@@ -95,6 +95,7 @@ def update(
     )
 
 
+@app.command()
 def sync(
     branch: Optional[str] = typer.Option(
         None, help="Branch to sync with (defaults to current git branch or 'main')"

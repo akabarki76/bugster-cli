@@ -13,6 +13,7 @@ class FileChange:
     new_hash: str
     hunks: List[Dict[str, Any]]
     is_deleted: bool = False
+    is_new: bool = False
     file_mode: str = None
 
 
@@ -46,8 +47,14 @@ class ParsedDiff:
             result.append(f"   Old version: {file_change.old_hash}")
             result.append(f"   New version: {file_change.new_hash}")
             result.append("   This file was completely removed from the repository.")
+        elif file_change.is_new:
+            result.append(f"✨ File ADDED: {file_change.new_path}")
+            result.append(f"   File mode: {file_change.file_mode}")
+            result.append(f"   Old version: {file_change.old_hash}")
+            result.append(f"   New version: {file_change.new_hash}")
+            result.append("   This is a completely new file added to the repository.")
         else:
-            result.append(f"📁 File: {file_change.new_path}")
+            result.append(f"📁 File MODIFIED: {file_change.new_path}")
             result.append(f"   Old version: {file_change.old_hash}")
             result.append(f"   New version: {file_change.new_hash}")
 
@@ -103,16 +110,22 @@ def parse_git_diff(diff_text: str) -> ParsedDiff:
             old_path = git_match.group(1)
             new_path = git_match.group(2)
 
-            # Check for deleted file in the next few lines
+            # Check for deleted/new file in the next few lines
             is_deleted = False
+            is_new = False
             file_mode = None
             j = i + 1
 
-            # Look ahead for deleted file mode or index line
+            # Look ahead for file mode changes or index line
             while j < len(lines) and j < i + 5:  # Check next few lines
                 if lines[j].startswith("deleted file mode"):
                     is_deleted = True
                     mode_match = re.match(r"deleted file mode (\d+)", lines[j])
+                    file_mode = mode_match.group(1) if mode_match else None
+                    break
+                elif lines[j].startswith("new file mode"):
+                    is_new = True
+                    mode_match = re.match(r"new file mode (\d+)", lines[j])
                     file_mode = mode_match.group(1) if mode_match else None
                     break
                 elif lines[j].startswith("index"):
@@ -132,6 +145,12 @@ def parse_git_diff(diff_text: str) -> ParsedDiff:
             old_hash = index_match.group(1) if index_match else ""
             new_hash = index_match.group(2) if index_match else ""
 
+            # Additional check for new files based on hash (0000000 indicates new file)
+            if old_hash == "0000000" or old_hash.startswith("000000"):
+                is_new = True
+            elif new_hash == "0000000" or new_hash.startswith("000000"):
+                is_deleted = True
+
             # Skip file mode and path lines
             i += 1
             while i < len(lines) and (
@@ -142,7 +161,7 @@ def parse_git_diff(diff_text: str) -> ParsedDiff:
             ):
                 i += 1
 
-            # Parse hunks (deleted files typically have no hunks)
+            # Parse hunks (deleted files typically have no hunks, new files have only additions)
             hunks = []
             while i < len(lines) and lines[i].startswith("@@"):
                 hunk = parse_hunk(lines, i)
@@ -161,6 +180,7 @@ def parse_git_diff(diff_text: str) -> ParsedDiff:
                     new_hash=new_hash,
                     hunks=hunks,
                     is_deleted=is_deleted,
+                    is_new=is_new,
                     file_mode=file_mode,
                 )
             )
@@ -219,3 +239,115 @@ def parse_hunk(lines: List[str], start_index: int) -> Dict[str, Any]:
     }
 
     return {"hunk": hunk_data, "next_index": i}
+
+
+def parse_git_status(status_output):
+    """Parse git status --porcelain output into categorized file lists.
+
+    Git status codes (first char = staged, second char = unstaged):
+    Staged codes (X_):
+    - M = Modified
+    - A = Added (new file)
+    - D = Deleted
+    - R = Renamed
+    - C = Copied
+    - U = Updated but unmerged
+
+    Unstaged codes (_Y):
+    - M = Modified
+    - D = Deleted
+    - R = Type changed (file/symlink/submodule)
+    - U = Updated but unmerged
+    - ? = Untracked
+    - ! = Ignored
+
+    Special cases:
+    - ?? = Untracked file
+    - !! = Ignored file
+
+    :param status_output: Raw output from 'git status --porcelain'.
+    :return: Dictionary with 'modified', 'deleted', and 'new' file lists.
+    """
+    result = {"modified": [], "deleted": [], "new": []}
+
+    # Split by newlines and filter out empty lines
+    lines = [line for line in status_output.strip().split("\n") if line.strip()]
+
+    for line in lines:
+        if len(line) < 3:  # Skip malformed lines
+            continue
+
+        status_code = line[:2]  # First two characters are the status
+        filename = line[3:]  # Rest is the filename (skip the space)
+
+        # Handle special two-character codes first
+        if status_code == "??":
+            # Untracked file - treat as new
+            result["new"].append(filename)
+            continue
+        elif status_code == "!!":
+            # Ignored file - skip (not typically needed for most use cases)
+            continue
+
+        # Get individual status characters
+        staged = status_code[0]
+        unstaged = status_code[1]
+
+        # Determine file category based on status codes
+        # Priority: deleted > new > modified (since a file can have multiple states)
+
+        is_deleted = False
+        is_new = False
+        is_modified = False
+
+        # Check for deletions (highest priority)
+        if staged == "D" or unstaged == "D":
+            is_deleted = True
+
+        # Check for new files
+        elif staged == "A":  # Added/staged new file
+            is_new = True
+        elif staged == "C":  # Copied file (treat as new)
+            is_new = True
+
+        # Check for modifications
+        elif staged == "M" or unstaged == "M":
+            is_modified = True
+        elif staged == "R":  # Renamed (treat as modified)
+            is_modified = True
+        elif unstaged == "R":  # Type changed (treat as modified)
+            is_modified = True
+        elif staged == "U" or unstaged == "U":  # Unmerged (treat as modified)
+            is_modified = True
+
+        # Handle edge cases where both staged and unstaged have status
+        # For example: "AM" = added then modified, "AD" = added then deleted
+        if staged != " " and unstaged != " ":
+            if staged == "A" and unstaged == "D":
+                # Added then deleted - treat as deleted
+                is_deleted = True
+                is_new = False
+            elif staged == "A" and unstaged == "M":
+                # Added then modified - treat as new (since it's still a new file overall)
+                is_new = True
+                is_modified = False
+            elif staged == "M" and unstaged == "D":
+                # Modified then deleted - treat as deleted
+                is_deleted = True
+                is_modified = False
+            elif staged == "D" and unstaged == "M":
+                # This shouldn't normally happen, but treat as modified
+                is_modified = True
+                is_deleted = False
+
+        # Categorize the file
+        if is_deleted:
+            result["deleted"].append(filename)
+        elif is_new:
+            result["new"].append(filename)
+        elif is_modified:
+            result["modified"].append(filename)
+        # If none of the above, it might be an unhandled status code
+        # For robustness, you could add an 'unknown' category or default to 'modified'
+
+    return result

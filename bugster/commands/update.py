@@ -15,7 +15,7 @@ from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
 )
 from bugster.constants import TESTS_DIR, WORKING_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
-from bugster.libs.utils.diff_parser import parse_git_diff
+from bugster.libs.utils.diff_parser import parse_git_diff, parse_git_status
 from bugster.libs.utils.files import get_specs_paths
 from bugster.libs.utils.nextjs.pages_finder import (
     find_pages_that_use_file,
@@ -32,15 +32,6 @@ def update_command(
     delete_only: bool = False,
 ):
     """Run Bugster CLI update command."""
-    # TODO: Continue here
-
-    # 1. How to know if files were deleted
-    # ---
-    # 2. How to know if files were added
-    # ---
-    # 3. How to know if files were modified
-    # ---
-
     try:
         logger.remove()
         logger.add(sys.stderr, level="CRITICAL")
@@ -64,8 +55,6 @@ def update_command(
         )
         diff_changes = result.stdout
 
-        # TODO: Remove this
-        # We need to get the pages from the git diff
         cmd.insert(2, "--name-only")
         result = subprocess.run(
             cmd,
@@ -74,16 +63,7 @@ def update_command(
             check=True,
         )
         diff_files = result.stdout
-
-        # These two cases are easier, because:
-        # 1. Only if new pages are added, we need to suggest new specs
-        deleted_pages = []
-
-        # 2. Only if pages are deleted, we need to delete the specs
-        added_pages = []
-
         diff_files_paths = [path for path in diff_files.split("\n") if path.strip()]
-
         gitignore = get_gitignore(dir_path=WORKING_DIR)
         diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
         console.print(f"✓ Found {len(diff_files_paths)} modified files")
@@ -115,6 +95,23 @@ def update_command(
 
         diff_changes_per_page = {}
         parsed_diff = parse_git_diff(diff_text=diff_changes)
+        cmd = ["git", "status", "--porcelain"]
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        diff_status = result.stdout
+        parsed_status = parse_git_status(status_output=diff_status)
+        deleted_pages = [
+            deleted
+            for deleted in parsed_status["deleted"]
+            if is_nextjs_page(file_path=deleted)
+        ]
+        added_pages = [
+            new for new in parsed_status["new"] if is_nextjs_page(file_path=new)
+        ]
 
         for diff in parsed_diff.files:
             old_path = diff.old_path

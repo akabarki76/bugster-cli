@@ -76,11 +76,23 @@ def analyze(
 
 
 @app.command()
-def update():
+def update(
+    update_only: bool = typer.Option(
+        False, help="Only update existing specs, no suggestions or deletes"
+    ),
+    suggest_only: bool = typer.Option(
+        False, help="Only suggest new specs, no updates or deletes"
+    ),
+    delete_only: bool = typer.Option(
+        False, help="Only delete specs, no updates or suggestions"
+    ),
+):
     """[bold magenta]Update[/bold magenta] your codebase with the latest changes."""
     from bugster.commands.update import update_command
 
-    update_command()
+    update_command(
+        update_only=update_only, suggest_only=suggest_only, delete_only=delete_only
+    )
 
 
 def sync(

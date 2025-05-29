@@ -17,7 +17,10 @@ from bugster.constants import TESTS_DIR, WORKING_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.diff_parser import parse_git_diff
 from bugster.libs.utils.files import get_specs_paths
-from bugster.libs.utils.nextjs.pages_finder import find_pages_that_use_file
+from bugster.libs.utils.nextjs.pages_finder import (
+    find_pages_that_use_file,
+    generate_and_save_import_tree,
+)
 
 console = Console()
 
@@ -28,6 +31,12 @@ def update_command(
     delete_only: bool = False,
 ):
     """Run Bugster CLI update command."""
+    # TODO: Continue here
+
+    # 1. How to know if files were deleted
+    # 2. How to know if files were added
+    # 3. How to know if files were modified
+
     try:
         logger.remove()
         logger.add(sys.stderr, level="CRITICAL")
@@ -66,12 +75,13 @@ def update_command(
         is_page_file = lambda file: file.endswith(
             (".page.js", ".page.jsx", ".page.ts", ".page.tsx")
         )
+        import_tree = generate_and_save_import_tree()
 
         for file in diff_files_paths:
             if is_page_file(file=file):
                 affected_pages.add(file)
             else:
-                pages = find_pages_that_use_file(file_path=file)
+                pages = find_pages_that_use_file(file_path=file, tree=import_tree)
 
                 if pages:
                     for page in pages:

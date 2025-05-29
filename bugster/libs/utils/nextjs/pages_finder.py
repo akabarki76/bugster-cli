@@ -10,14 +10,19 @@ from bugster.libs.utils.nextjs.import_tree_generator import ImportTreeGenerator
 console = Console()
 
 
-def find_pages_that_use_file(file_path: str) -> list[str]:
-    """Find the Next.js pages that use the given file."""
+def generate_and_save_import_tree() -> Dict:
+    """Generate the import tree for the project."""
     framework_id = get_project_info()["data"]["frameworks"][0]["id"]
     cache_framework_dir = os.path.join(BUGSTER_DIR, framework_id)
     output_file = os.path.join(cache_framework_dir, "import_tree.json")
     generator = ImportTreeGenerator()
     tree = generator.generate_tree()
     generator.save_to_json(tree=tree, filename=output_file)
+    return tree
+
+
+def find_pages_that_use_file(file_path: str, tree: Dict) -> list[str]:
+    """Find the Next.js pages that use the given file."""
     results = find_pages_using_file(tree_data=tree, target_file=file_path)
 
     if results:

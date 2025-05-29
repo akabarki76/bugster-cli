@@ -49,7 +49,8 @@ def filter_paths(all_paths: List[str], gitignore=None):
 
 
 def get_paths(dir_path: str) -> List[str]:
-    """Get all file paths in a directory, excluding test files, specific directories, while respecting `.gitignore` rules."""
+    """Get all file paths in a directory, excluding test files, specific directories, and respecting `.gitignore`
+    rules."""
     gitignore = get_gitignore(dir_path=dir_path)
     original_dir = os.getcwd()
     os.chdir(dir_path)
@@ -90,8 +91,8 @@ def get_tree_structure(source_dir) -> TreeNode:
     dir_map[""] = root_node
 
     def ensure_directory_path(dir_path: str) -> DirectoryNode:
-        """Helper function to ensure a directory path exists in the tree
-        and returns the node for that directory."""
+        """Helper function to ensure a directory path exists in the tree and returns the node for that
+        directory."""
         if dir_path in dir_map:
             return dir_map[dir_path]
 

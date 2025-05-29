@@ -49,7 +49,7 @@ def filter_paths(all_paths: List[str], gitignore=None):
 
 
 def get_paths(dir_path: str) -> List[str]:
-    """Get all file paths in a directory, excluding test files, specific directories, and respecting `.gitignore`
+    """Get all file paths in a directory, excluding test files, specific directories, while respecting `.gitignore`
     rules."""
     gitignore = get_gitignore(dir_path=dir_path)
     original_dir = os.getcwd()

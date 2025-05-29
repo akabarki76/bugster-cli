@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 
+import typer
 import yaml
 from loguru import logger
 from rich.console import Console
@@ -23,144 +24,149 @@ console = Console()
 
 def update_command(options: dict = {}):
     """Run Bugster CLI update command."""
-    logger.remove()
-    logger.add(sys.stderr, level="CRITICAL")
-    console.print("✓ Analyzing code changes...")
-    cmd = ["git", "diff", "--", "."]
+    try:
+        logger.remove()
+        logger.add(sys.stderr, level="CRITICAL")
+        console.print("✓ Analyzing code changes...")
+        cmd = ["git", "diff", "--", "."]
 
-    for pattern in [
-        "package-lock.json",
-        ".env.local",
-        ".gitignore",
-        "tsconfig.json",
-        ".env",
-    ]:
-        cmd.append(f":!{pattern}")
+        for pattern in [
+            "package-lock.json",
+            ".env.local",
+            ".gitignore",
+            "tsconfig.json",
+            ".env",
+        ]:
+            cmd.append(f":!{pattern}")
 
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    diff_changes = result.stdout
-    cmd.insert(2, "--name-only")
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    diff_files = result.stdout
-    diff_files_paths = [path for path in diff_files.split("\n") if path.strip()]
-    gitignore = get_gitignore(dir_path=WORKING_DIR)
-    diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
-    console.print(f"✓ Found {len(diff_files_paths)} modified files")
-    affected_pages = set()
-    is_page_file = lambda file: file.endswith(
-        (".page.js", ".page.jsx", ".page.ts", ".page.tsx")
-    )
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        diff_changes = result.stdout
+        cmd.insert(2, "--name-only")
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        diff_files = result.stdout
+        diff_files_paths = [path for path in diff_files.split("\n") if path.strip()]
+        gitignore = get_gitignore(dir_path=WORKING_DIR)
+        diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
+        console.print(f"✓ Found {len(diff_files_paths)} modified files")
+        affected_pages = set()
+        is_page_file = lambda file: file.endswith(
+            (".page.js", ".page.jsx", ".page.ts", ".page.tsx")
+        )
 
-    for file in diff_files_paths:
-        if is_page_file(file=file):
-            affected_pages.add(file)
-        else:
-            pages = find_pages_that_use_file(file_path=file)
+        for file in diff_files_paths:
+            if is_page_file(file=file):
+                affected_pages.add(file)
+            else:
+                pages = find_pages_that_use_file(file_path=file)
 
-            if pages:
-                for page in pages:
-                    affected_pages.add(page)
+                if pages:
+                    for page in pages:
+                        affected_pages.add(page)
 
-    specs_files_paths = get_specs_paths()
-    specs_pages = {}
+        specs_files_paths = get_specs_paths()
+        specs_pages = {}
 
-    for spec_path in specs_files_paths:
-        with open(spec_path, "r", encoding="utf-8") as file:
-            data = yaml.safe_load(file)
-            page_path = data["page_path"]
-            relative_path = os.path.relpath(spec_path, TESTS_DIR)
-            specs_pages[page_path] = {
-                "data": data,
-                "path": relative_path,
-            }
+        for spec_path in specs_files_paths:
+            with open(spec_path, "r", encoding="utf-8") as file:
+                data = yaml.safe_load(file)
+                page_path = data["page_path"]
+                relative_path = os.path.relpath(spec_path, TESTS_DIR)
+                specs_pages[page_path] = {
+                    "data": data,
+                    "path": relative_path,
+                }
 
-    diff_changes_per_page = {}
-    parsed_diff = parse_git_diff(diff_text=diff_changes)
+        diff_changes_per_page = {}
+        parsed_diff = parse_git_diff(diff_text=diff_changes)
 
-    for diff in parsed_diff.files:
-        old_path = diff.old_path
+        for diff in parsed_diff.files:
+            old_path = diff.old_path
 
-        if is_page_file(file=old_path):
-            diff_changes_per_page[old_path] = parsed_diff.to_llm_format(
-                file_change=diff
-            )
-        else:
-            pages = find_pages_that_use_file(file_path=old_path)
+            if is_page_file(file=old_path):
+                diff_changes_per_page[old_path] = parsed_diff.to_llm_format(
+                    file_change=diff
+                )
+            else:
+                pages = find_pages_that_use_file(file_path=old_path)
 
-            if pages:
-                for page in pages:
-                    diff_changes_per_page[page] = parsed_diff.to_llm_format(
-                        file_change=diff
+                if pages:
+                    for page in pages:
+                        diff_changes_per_page[page] = parsed_diff.to_llm_format(
+                            file_change=diff
+                        )
+
+        service = TestCasesService()
+        updated_specs = 0
+        suggested_specs = []
+
+        for page in affected_pages:
+            if page in specs_pages:
+                spec = specs_pages[page]
+                spec_data = spec["data"]
+                spec_path = spec["path"]
+
+                with yaspin(text=f"Updating: {spec_path}", color="yellow") as spinner:
+                    diff = diff_changes_per_page[page]
+                    service.update_spec_by_diff(
+                        spec_data=spec_data, diff_changes=diff, spec_path=spec_path
                     )
 
-    service = TestCasesService()
-    updated_specs = 0
-    suggested_specs = []
+                    with spinner.hidden():
+                        console.print(f"✓ [green]{spec_path}[/green] updated")
 
-    for page in affected_pages:
-        if page in specs_pages:
-            spec = specs_pages[page]
-            spec_data = spec["data"]
-            spec_path = spec["path"]
+                    updated_specs += 1
+            else:
+                text = Text("✗ Page ")
+                text.append(page, style="red")
+                text.append(" not found in test cases")
+                console.print(text)
 
-            with yaspin(text=f"Updating: {spec_path}", color="yellow") as spinner:
-                diff = diff_changes_per_page[page]
-                service.update_spec_by_diff(
-                    spec_data=spec_data, diff_changes=diff, spec_path=spec_path
-                )
+                # TODO: Implement the real logic for this
+                import re
 
-                with spinner.hidden():
-                    console.print(f"✓ [green]{spec_path}[/green] updated")
+                def camel_to_kebab(text):
+                    """Convert camelCase to kebab-case."""
+                    return re.sub(r"([a-z0-9])([A-Z])", r"\1-\2", text).lower()
 
-                updated_specs += 1
-        else:
-            text = Text("✗ Page ")
-            text.append(page, style="red")
-            text.append(" not found in test cases")
-            console.print(text)
+                def suggest_spec_from_page(page_path):
+                    """Suggest a spec file name from a page path."""
+                    clean_path = re.sub(r"^src/pages/", "", page_path)
+                    clean_path = re.sub(r"\.(tsx?|jsx?)$", "", clean_path)
 
-            # TODO: Implement the real logic for this
-            import re
+                    def replace_dynamic(match):
+                        param = match.group(1)
+                        return camel_to_kebab(param)
 
-            def camel_to_kebab(text):
-                """Convert camelCase to kebab-case."""
-                return re.sub(r"([a-z0-9])([A-Z])", r"\1-\2", text).lower()
+                    clean_path = re.sub(r"\[([^\]]+)\]", replace_dynamic, clean_path)
 
-            def suggest_spec_from_page(page_path):
-                """Suggest a spec file name from a page path."""
-                clean_path = re.sub(r"^src/pages/", "", page_path)
-                clean_path = re.sub(r"\.(tsx?|jsx?)$", "", clean_path)
+                    clean_path = camel_to_kebab(clean_path)
+                    return f"{clean_path}.yaml"
 
-                def replace_dynamic(match):
-                    param = match.group(1)
-                    return camel_to_kebab(param)
+                suggested_specs.append(suggest_spec_from_page(page))
 
-                clean_path = re.sub(r"\[([^\]]+)\]", replace_dynamic, clean_path)
+        if len(suggested_specs) > 0:
+            for spec in suggested_specs:
+                console.print(f"⚠️  Suggested new spec: {spec}")
 
-                clean_path = camel_to_kebab(clean_path)
-                return f"{clean_path}.yaml"
+        if updated_specs > 0 and len(suggested_specs) > 0:
+            console.print(
+                f"✓ Updated {updated_specs} spec{'' if updated_specs == 1 else 's'}, {len(suggested_specs)} suggestion{'' if len(suggested_specs) == 1 else 's'}"
+            )
+        elif updated_specs > 0:
+            console.print(
+                f"✓ Updated {updated_specs} spec{'' if updated_specs == 1 else 's'}"
+            )
 
-            suggested_specs.append(suggest_spec_from_page(page))
-
-    if len(suggested_specs) > 0:
-        for spec in suggested_specs:
-            console.print(f"⚠️  Suggested new spec: {spec}")
-
-    if updated_specs > 0 and len(suggested_specs) > 0:
-        console.print(
-            f"✓ Updated {updated_specs} spec{'' if updated_specs == 1 else 's'}, {len(suggested_specs)} suggestion{'' if len(suggested_specs) == 1 else 's'}"
-        )
-    elif updated_specs > 0:
-        console.print(
-            f"✓ Updated {updated_specs} spec{'' if updated_specs == 1 else 's'}"
-        )
+    except Exception as err:
+        console.print(f"[red]Error: {str(err)}[/red]")
+        raise typer.Exit(1)

@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 @dataclass
 class FileChange:
-    """Represents changes to a single file"""
+    """Single file changes."""
 
     old_path: str
     new_path: str
@@ -16,12 +16,12 @@ class FileChange:
 
 @dataclass
 class ParsedDiff:
-    """Represents the entire parsed diff"""
+    """Entire parsed diff."""
 
     files: List[FileChange]
 
     def to_llm_format(self, file_change: FileChange = None) -> str:
-        """Convert to human-readable format for LLMs"""
+        """Convert to human-readable format for LLMs."""
         if file_change:
             return self._format_single_file(file_change)
         else:
@@ -35,7 +35,7 @@ class ParsedDiff:
             return "\n".join(result)
 
     def _format_single_file(self, file_change: FileChange) -> str:
-        """Format a single file change for LLM consumption"""
+        """Format a single file change for LLM consumption."""
         result = []
 
         result.append(f"📁 File: {file_change.new_path}")
@@ -70,14 +70,10 @@ class ParsedDiff:
 
 
 def parse_git_diff(diff_text: str) -> ParsedDiff:
-    """
-    Parse a git diff string into a structured format
+    """Parse a git diff string into a structured format.
 
-    Args:
-        diff_text: Raw git diff output as string
-
-    Returns:
-        ParsedDiff object containing structured diff information
+    :param diff_text: Raw git diff output as string.
+    :return: ParsedDiff object containing structured diff information.
     """
     files = []
     lines = diff_text.strip().split("\n")
@@ -136,7 +132,7 @@ def parse_git_diff(diff_text: str) -> ParsedDiff:
 
 
 def parse_hunk(lines: List[str], start_index: int) -> Dict[str, Any]:
-    """Parse a single hunk starting at the given index"""
+    """Parse a single hunk starting at the given index."""
     hunk_header = lines[start_index]
 
     # Extract hunk information: @@ -old_start,old_count +new_start,new_count @@

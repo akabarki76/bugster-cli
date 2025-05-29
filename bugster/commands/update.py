@@ -14,7 +14,7 @@ from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
 from bugster.constants import TESTS_DIR, WORKING_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.diff_parser import parse_git_diff
-from bugster.libs.utils.files import get_all_files
+from bugster.libs.utils.files import get_specs_paths
 from bugster.libs.utils.nextjs.finder import find_pages_that_use_file
 
 console = Console()
@@ -62,7 +62,7 @@ def update_command(options: dict = {}):
                 for page in pages:
                     affected_pages.add(page)
 
-    specs_files_paths = get_all_files(directory=TESTS_DIR)
+    specs_files_paths = get_specs_paths()
     specs_pages = {}
 
     for spec_path in specs_files_paths:

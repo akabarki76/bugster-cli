@@ -1,11 +1,13 @@
 import os
 
+from bugster.constants import TESTS_DIR
 
-def get_all_files(directory):
-    """Get all files in a directory."""
+
+def get_specs_paths() -> list[str]:
+    """Get all spec files in the tests directory."""
     file_paths = []
 
-    for root, dirs, files in os.walk(directory):
+    for root, _, files in os.walk(TESTS_DIR):
         if "example" in root:
             continue
 

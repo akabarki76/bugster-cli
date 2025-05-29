@@ -5,6 +5,7 @@ import sys
 import yaml
 from loguru import logger
 from rich.console import Console
+from rich.text import Text
 from yaspin import yaspin
 
 from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
@@ -27,7 +28,13 @@ def update_command(options: dict = {}):
     console.print("✓ Analyzing code changes...")
     cmd = ["git", "diff", "--", "."]
 
-    for pattern in ["package-lock.json", ".env.local", ".gitignore", "tsconfig.json"]:
+    for pattern in [
+        "package-lock.json",
+        ".env.local",
+        ".gitignore",
+        "tsconfig.json",
+        ".env",
+    ]:
         cmd.append(f":!{pattern}")
 
     result = subprocess.run(
@@ -50,7 +57,9 @@ def update_command(options: dict = {}):
     diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
     console.print(f"✓ Found {len(diff_files_paths)} modified files")
     affected_pages = set()
-    is_page_file = lambda file: file.endswith(".page.js")
+    is_page_file = lambda file: file.endswith(
+        (".page.js", ".page.jsx", ".page.ts", ".page.tsx")
+    )
 
     for file in diff_files_paths:
         if is_page_file(file=file):
@@ -114,7 +123,10 @@ def update_command(options: dict = {}):
 
                 updated_specs += 1
         else:
-            console.print(f"✗ Page [red]{page}[/red] not found in test cases")
+            text = Text("✗ Page ")
+            text.append(page, style="red")
+            text.append(" not found in test cases")
+            console.print(text)
 
     if updated_specs > 0:
         console.print(

@@ -20,6 +20,7 @@ from bugster.libs.utils.files import get_specs_paths
 from bugster.libs.utils.nextjs.pages_finder import (
     find_pages_that_use_file,
     generate_and_save_import_tree,
+    is_nextjs_page,
 )
 
 console = Console()
@@ -34,8 +35,11 @@ def update_command(
     # TODO: Continue here
 
     # 1. How to know if files were deleted
+    # ---
     # 2. How to know if files were added
+    # ---
     # 3. How to know if files were modified
+    # ---
 
     try:
         logger.remove()
@@ -59,6 +63,9 @@ def update_command(
             check=True,
         )
         diff_changes = result.stdout
+
+        # TODO: Remove this
+        # We need to get the pages from the git diff
         cmd.insert(2, "--name-only")
         result = subprocess.run(
             cmd,
@@ -67,18 +74,24 @@ def update_command(
             check=True,
         )
         diff_files = result.stdout
+
+        # These two cases are easier, because:
+        # 1. Only if new pages are added, we need to suggest new specs
+        deleted_pages = []
+
+        # 2. Only if pages are deleted, we need to delete the specs
+        added_pages = []
+
         diff_files_paths = [path for path in diff_files.split("\n") if path.strip()]
+
         gitignore = get_gitignore(dir_path=WORKING_DIR)
         diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
         console.print(f"✓ Found {len(diff_files_paths)} modified files")
         affected_pages = set()
-        is_page_file = lambda file: file.endswith(
-            (".page.js", ".page.jsx", ".page.ts", ".page.tsx")
-        )
         import_tree = generate_and_save_import_tree()
 
         for file in diff_files_paths:
-            if is_page_file(file=file):
+            if is_nextjs_page(file_path=file):
                 affected_pages.add(file)
             else:
                 pages = find_pages_that_use_file(file_path=file, tree=import_tree)
@@ -106,7 +119,7 @@ def update_command(
         for diff in parsed_diff.files:
             old_path = diff.old_path
 
-            if is_page_file(file=old_path):
+            if is_nextjs_page(file_path=old_path):
                 diff_changes_per_page[old_path] = parsed_diff.to_llm_format(
                     file_change=diff
                 )

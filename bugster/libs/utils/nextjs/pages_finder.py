@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Dict, List, Set
 
 from rich.console import Console
@@ -133,3 +134,109 @@ def get_files_from_imports(imports: Dict, visited: Set[str] = None) -> Set[str]:
                     )
 
     return files
+
+
+def is_nextjs_page(file_path: str) -> bool:
+    """Determine if a file path represents a Next.js page.
+
+    Next.js pages are typically located in:
+    - pages/ directory (Pages Router)
+    - app/ directory (App Router - page.tsx/jsx files)
+    - src/pages/ directory
+    - src/app/ directory
+
+    This excludes:
+    - Components (usually in components/, ui/, shared/ etc.)
+    - Hooks (files starting with 'use' or in hooks/ directory)
+    - Utilities (utils/, lib/, helpers/ directories)
+    - API routes (api/ subdirectory)
+    - Layout files, loading files, error files, etc.
+    - Non-JS/TS files
+    """
+    if not file_path:
+        return False
+
+    # Convert to Path object for easier manipulation
+    path = Path(file_path)
+
+    # Must be a JavaScript/TypeScript file
+    if path.suffix not in [".js", ".jsx", ".ts", ".tsx"]:
+        return False
+
+    # Get path parts for analysis
+    parts = path.parts
+
+    # Skip if it's in common non-page directories
+    non_page_dirs = {
+        "components",
+        "hooks",
+        "utils",
+        "lib",
+        "helpers",
+        "shared",
+        "common",
+        "constants",
+        "types",
+        "interfaces",
+        "services",
+        "store",
+        "context",
+        "providers",
+        "styles",
+        "public",
+    }
+
+    if any(part.lower() in non_page_dirs for part in parts):
+        return False
+
+    # Skip hook files (files starting with 'use')
+    if path.stem.startswith("use") and path.stem != "use":
+        return False
+
+    # Check for App Router pages (app directory structure)
+    if "app" in parts:
+        app_index = parts.index("app")
+        # Must be named 'page' (page.tsx, page.jsx, etc.)
+        if path.stem == "page":
+            # Skip API routes in app directory
+            remaining_parts = parts[app_index + 1 :]
+            if "api" not in remaining_parts:
+                return True
+        return False
+
+    # Check for Pages Router (pages directory structure)
+    if "pages" in parts:
+        pages_index = parts.index("pages")
+        remaining_parts = parts[pages_index + 1 :]
+
+        # Skip API routes
+        if remaining_parts and remaining_parts[0] == "api":
+            return False
+
+        # Skip special Next.js files
+        special_files = {
+            "_app",
+            "_document",
+            "_error",
+            "404",
+            "500",
+            "_middleware",
+            "middleware",
+        }
+
+        if path.stem in special_files:
+            return False
+
+        return True
+
+    # For files in src/ directory, check if they follow the same patterns
+    if "src" in parts:
+        src_index = parts.index("src")
+        remaining_parts = parts[src_index + 1 :]
+
+        if len(remaining_parts) > 0:
+            # Recursively check the path after src/
+            sub_path = "/".join(remaining_parts)
+            return is_nextjs_page(sub_path)
+
+    return False

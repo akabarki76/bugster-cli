@@ -3,12 +3,12 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+from loguru import logger
+
 
 class ImportTreeGenerator:
-    """
-    This class analyzes a Next.js application and generates a tree structure
-    showing all file imports and their dependencies recursively.
-    """
+    """Class for analyzing a Next.js application and generating a tree structure showing all file imports and their
+    dependencies recursively."""
 
     def __init__(self, root_path: str = "."):
         self.root_path = Path(root_path).resolve()
@@ -66,7 +66,7 @@ class ImportTreeGenerator:
                 imports.extend(matches)
 
         except Exception as e:
-            print(f"Error reading {filepath}: {e}")
+            logger.error("Error reading {}: {}", filepath, e)
 
         return imports
 
@@ -192,8 +192,6 @@ class ImportTreeGenerator:
             return
 
         try:
-            import json
-
             with open(tsconfig_path, "r") as f:
                 tsconfig = json.load(f)
 
@@ -204,7 +202,7 @@ class ImportTreeGenerator:
             self.base_url = compiler_options.get("baseUrl", "./")
 
         except (json.JSONDecodeError, IOError) as e:
-            print(f"Warning: Could not load tsconfig.json: {e}")
+            logger.warning("Could not load tsconfig.json: {}", e)
             self.path_mappings = {}
 
     def _check_file_exists(self, path: Path) -> bool:
@@ -368,7 +366,9 @@ class ImportTreeGenerator:
             files_to_analyze = self.find_entry_points()
 
         if not files_to_analyze:
-            print("No entry points found. Scanning all JavaScript/TypeScript files...")
+            logger.warning(
+                "No entry points found. Scanning all JavaScript/TypeScript files..."
+            )
             files_to_analyze = []
             for scan_dir in self.scan_dirs:
                 scan_path = self.root_path / scan_dir
@@ -391,4 +391,5 @@ class ImportTreeGenerator:
         """Save the import tree to a JSON file."""
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(tree, f, indent=2, ensure_ascii=False)
-        print(f"Import tree saved to {filename}")
+
+        logger.info("Import tree saved to {}", filename)

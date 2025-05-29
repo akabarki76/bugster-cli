@@ -166,7 +166,6 @@ def update_command(options: dict = {}):
             console.print(
                 f"✓ Updated {updated_specs} spec{'' if updated_specs == 1 else 's'}"
             )
-
     except Exception as err:
         console.print(f"[red]Error: {str(err)}[/red]")
         raise typer.Exit(1)

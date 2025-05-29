@@ -4,7 +4,7 @@ from bugster.constants import TESTS_DIR
 
 
 def get_specs_paths() -> list[str]:
-    """Get all spec files in the tests directory."""
+    """Get all spec files paths in the tests directory."""
     file_paths = []
 
     for root, _, files in os.walk(TESTS_DIR):

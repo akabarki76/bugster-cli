@@ -1,4 +1,3 @@
-import json
 import os
 from typing import Dict, List, Set
 
@@ -16,15 +15,9 @@ def find_pages_that_use_file(file_path: str) -> list[str]:
     framework_id = get_project_info()["data"]["frameworks"][0]["id"]
     cache_framework_dir = os.path.join(BUGSTER_DIR, framework_id)
     output_file = os.path.join(cache_framework_dir, "import_tree.json")
-
-    if not os.path.exists(output_file):
-        generator = ImportTreeGenerator()
-        tree = generator.generate_tree()
-        generator.save_to_json(tree=tree, filename=output_file)
-    else:
-        with open(output_file, "r", encoding="utf-8") as file:
-            tree = json.load(file)
-
+    generator = ImportTreeGenerator()
+    tree = generator.generate_tree()
+    generator.save_to_json(tree=tree, filename=output_file)
     results = find_pages_using_file(tree_data=tree, target_file=file_path)
 
     if results:

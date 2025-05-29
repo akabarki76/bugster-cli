@@ -69,7 +69,7 @@ def analyze(
         help="Force analysis even if the codebase has already been analyzed",
     ),
 ):
-    """[bold magenta]Analyze[/bold magenta] your codebase generates test specs."""
+    """[bold magenta]Analyze[/bold magenta] your codebase to generate test specs."""
     from bugster.commands.analyze import analyze_command
 
     analyze_command(options={"show_logs": show_logs, "force": force})

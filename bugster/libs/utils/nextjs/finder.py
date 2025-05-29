@@ -1,16 +1,45 @@
+import json
+import os
 from typing import Dict, List, Set
+
+from rich.console import Console
+
+from bugster.analyzer.core.framework_detector.main import get_project_info
+from bugster.constants import BUGSTER_DIR
+from bugster.libs.utils.nextjs.import_tree_generator import ImportTreeGenerator
+
+console = Console()
+
+
+def find_pages_that_use_file(file_path: str) -> list[str]:
+    """Find the Next.js pages that use the given file."""
+    framework_id = get_project_info()["data"]["frameworks"][0]["id"]
+    cache_framework_dir = os.path.join(BUGSTER_DIR, framework_id)
+    output_file = os.path.join(cache_framework_dir, "import_tree.json")
+
+    if not os.path.exists(output_file):
+        generator = ImportTreeGenerator()
+        tree = generator.generate_tree()
+        generator.save_to_json(tree=tree, filename=output_file)
+    else:
+        with open(output_file, "r", encoding="utf-8") as file:
+            tree = json.load(file)
+
+    results = find_pages_using_file(tree_data=tree, target_file=file_path)
+
+    if results:
+        return [result["page"] for result in results]
+    else:
+        console.print(f"✗ File '{file_path}' is not imported by any page")
+        return []
 
 
 def find_pages_using_file(tree_data: Dict, target_file: str) -> List[Dict]:
-    """
-    Find all pages that directly or indirectly import the target file.
+    """Find all pages that directly or indirectly import the target file.
 
-    Args:
-        tree_data: The import tree JSON data
-        target_file: The file path to search for (e.g., "src/components/not-authenticated/about/index.js")
-
-    Returns:
-        List of dictionaries with page info and import path
+    :param tree_data: The import tree JSON data.
+    :param target_file: The file path to search for (e.g., "src/components/not-authenticated/about/index.js").
+    :return: List of dictionaries with page info and import path.
     """
     results = []
 
@@ -35,10 +64,7 @@ def find_pages_using_file(tree_data: Dict, target_file: str) -> List[Dict]:
 def find_file_in_imports(
     imports: Dict, target_file: str, current_chain: List[str]
 ) -> List[str]:
-    """
-    Recursively search through imports to find the target file.
-    Returns the import chain if found, empty list if not found.
-    """
+    """Recursively search through imports to find the target file."""
     for import_path, import_data in imports.items():
         if isinstance(import_data, dict):
             # Check if this is the target file
@@ -74,10 +100,7 @@ def get_all_imported_files(tree_data: Dict) -> Set[str]:
 
 
 def create_reverse_index(tree_data: Dict) -> Dict[str, List[str]]:
-    """
-    Create a reverse index: file -> list of pages that use it.
-    This is more efficient for multiple lookups.
-    """
+    """Create a reverse index: file -> list of pages that use it. This is more efficient for multiple lookups."""
     reverse_index = {}
 
     for page_path, page_data in tree_data.items():

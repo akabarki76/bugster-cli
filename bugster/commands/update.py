@@ -1,4 +1,3 @@
-import json
 import os
 import subprocess
 import sys
@@ -12,38 +11,13 @@ from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
     filter_paths,
     get_gitignore,
 )
-from bugster.analyzer.core.framework_detector.main import get_project_info
-from bugster.constants import BUGSTER_DIR, TESTS_DIR, WORKING_DIR
+from bugster.constants import TESTS_DIR, WORKING_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.diff_parser import parse_git_diff
 from bugster.libs.utils.files import get_all_files
-from bugster.libs.utils.nextjs.finder import find_pages_using_file
-from bugster.libs.utils.nextjs.import_tree_generator import ImportTreeGenerator
+from bugster.libs.utils.nextjs.finder import find_pages_that_use_file
 
 console = Console()
-
-
-def find_pages_that_use_file(file_path: str) -> list[str]:
-    """Find pages that use a file."""
-    framework_id = get_project_info()["data"]["frameworks"][0]["id"]
-    cache_framework_dir = os.path.join(BUGSTER_DIR, framework_id)
-    output_file = os.path.join(cache_framework_dir, "import_tree.json")
-
-    if not os.path.exists(output_file):
-        generator = ImportTreeGenerator()
-        tree = generator.generate_tree()
-        generator.save_to_json(tree=tree, filename=output_file)
-    else:
-        with open(output_file, "r", encoding="utf-8") as file:
-            tree = json.load(file)
-
-    results = find_pages_using_file(tree_data=tree, target_file=file_path)
-
-    if results:
-        return [result["page"] for result in results]
-    else:
-        console.print(f"✗ File '{file_path}' is not imported by any page")
-        return []
 
 
 def update_command(options: dict = {}):

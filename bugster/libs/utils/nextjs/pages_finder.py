@@ -240,3 +240,24 @@ def is_nextjs_page(file_path: str) -> bool:
             return is_nextjs_page(sub_path)
 
     return False
+
+
+def get_deleted_nextjs_pages(parsed_diff) -> list:
+    """Extract all deleted Next.js pages from the parsed diff.
+
+    This function identifies deleted files that are actual Next.js pages, excluding components, hooks, utilities, and
+    other non-page code.
+
+    :param parsed_diff: ParsedDiff object containing all file changes
+    :return: List of FileChange objects representing deleted Next.js pages
+    """
+    deleted_pages = []
+
+    for file_change in parsed_diff.files:
+        if not file_change.is_deleted:
+            continue
+
+        if is_nextjs_page(file_change.old_path):
+            deleted_pages.append(file_change)
+
+    return deleted_pages

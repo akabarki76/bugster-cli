@@ -7,8 +7,8 @@ from loguru import logger
 
 
 class ImportTreeGenerator:
-    """Class for analyzing a Next.js application and generating a tree structure showing all file imports and their
-    dependencies recursively."""
+    """Generator for analyzing a Next.js application and generating a tree structure showing all file imports and
+    their dependencies recursively."""
 
     def __init__(self, root_path: str = "."):
         self.root_path = Path(root_path).resolve()

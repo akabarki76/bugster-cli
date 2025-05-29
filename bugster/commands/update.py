@@ -137,6 +137,7 @@ def update_command(options: dict = {}):
                 return re.sub(r"([a-z0-9])([A-Z])", r"\1-\2", text).lower()
 
             def suggest_spec_from_page(page_path):
+                """Suggest a spec file name from a page path."""
                 clean_path = re.sub(r"^src/pages/", "", page_path)
                 clean_path = re.sub(r"\.(tsx?|jsx?)$", "", clean_path)
 

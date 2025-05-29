@@ -70,7 +70,7 @@ class TestCasesService:
         return self._save_test_cases_as_yaml(test_cases=test_cases)
 
     def _update_spec_yaml_file(self, spec_path: str, spec_data: dict[Any, str]):
-        """Update the spec .yaml file."""
+        """Update the spec YAML file."""
         path = os.path.join(TESTS_DIR, spec_path)
 
         with open(path, "w") as f:

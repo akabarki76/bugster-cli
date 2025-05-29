@@ -105,6 +105,7 @@ def update_command(options: dict = {}):
 
     service = TestCasesService()
     updated_specs = 0
+    suggested_specs = []
 
     for page in affected_pages:
         if page in specs_pages:
@@ -128,7 +129,37 @@ def update_command(options: dict = {}):
             text.append(" not found in test cases")
             console.print(text)
 
-    if updated_specs > 0:
+            # TODO: Implement the real logic for this
+            import re
+
+            def camel_to_kebab(text):
+                """Convert camelCase to kebab-case."""
+                return re.sub(r"([a-z0-9])([A-Z])", r"\1-\2", text).lower()
+
+            def suggest_spec_from_page(page_path):
+                clean_path = re.sub(r"^src/pages/", "", page_path)
+                clean_path = re.sub(r"\.(tsx?|jsx?)$", "", clean_path)
+
+                def replace_dynamic(match):
+                    param = match.group(1)
+                    return camel_to_kebab(param)
+
+                clean_path = re.sub(r"\[([^\]]+)\]", replace_dynamic, clean_path)
+
+                clean_path = camel_to_kebab(clean_path)
+                return f"{clean_path}.yaml"
+
+            suggested_specs.append(suggest_spec_from_page(page))
+
+    if len(suggested_specs) > 0:
+        for spec in suggested_specs:
+            console.print(f"⚠️  Suggested new spec: {spec}")
+
+    if updated_specs > 0 and len(suggested_specs) > 0:
+        console.print(
+            f"✓ Updated {updated_specs} spec{'' if updated_specs == 1 else 's'}, {len(suggested_specs)} suggestion{'' if len(suggested_specs) == 1 else 's'}"
+        )
+    elif updated_specs > 0:
         console.print(
             f"✓ Updated {updated_specs} spec{'' if updated_specs == 1 else 's'}"
         )

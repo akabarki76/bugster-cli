@@ -12,7 +12,7 @@ from bugster.libs.utils.files import filter_path
 COMMANDS = {
     GitCommand.DIFF_STATUS: ["git", "status", "--porcelain"],
     GitCommand.DIFF_FILES: ["git", "diff", "--name-only"],
-    GitCommand.DIFF_CHANGES: ["git", "diff", "--diff-filter=d", "--", "."],
+    GitCommand.DIFF_CHANGES: ["git", "diff", "--", "."],
 }
 
 
@@ -161,6 +161,15 @@ def parse_diff_status(diff_status: str):
     return result
 
 
+def get_and_parse_diff_changes():
+    """Get the diff changes and parse them.
+
+    :return: ParsedDiff object containing structured diff information.
+    """
+    diff_changes = run_git_command(cmd_key=GitCommand.DIFF_CHANGES)
+    return parse_git_diff(diff_text=diff_changes)
+
+
 def get_diff_changes_per_page(import_tree: dict) -> dict[str, list[str]]:
     """Get the diff changes per page.
 
@@ -173,8 +182,7 @@ def get_diff_changes_per_page(import_tree: dict) -> dict[str, list[str]]:
     )
 
     diff_changes_per_page = defaultdict(list)
-    diff_changes = run_git_command(cmd_key=GitCommand.DIFF_CHANGES)
-    parsed_diff = parse_git_diff(diff_text=diff_changes)
+    parsed_diff = get_and_parse_diff_changes()
 
     for file_change in parsed_diff.files:
         old_path = file_change.old_path

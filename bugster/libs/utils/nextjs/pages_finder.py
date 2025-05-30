@@ -226,11 +226,11 @@ def is_nextjs_page(file_path: str) -> bool:
     return False
 
 
-def get_affected_pages(diff_files: list[str], import_tree: dict):
+def get_affected_pages(file_paths: list[str], import_tree: dict):
     """Get the affected pages."""
     affected_pages = set()
 
-    for file_path in diff_files:
+    for file_path in file_paths:
         if is_nextjs_page(file_path=file_path):
             affected_pages.add(file_path)
         else:

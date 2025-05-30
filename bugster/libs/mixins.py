@@ -16,8 +16,8 @@ class UpdateMixin:
 
     def update(self, *args, **kwargs):
         """Update existing specs."""
-        modified_files = self.mapped_changes["modified"]
-        console.print(f"✓ Found {len(modified_files)} modified files")
+        file_paths = self.mapped_changes["modified"]
+        console.print(f"✓ Found {len(file_paths)} modified files")
         diff_changes_per_page = get_diff_changes_per_page(import_tree=self.import_tree)
         affected_pages = [page for page in diff_changes_per_page.keys()]
         updated_specs = 0
@@ -56,12 +56,12 @@ class SuggestMixin:
 
     def suggest(self, *args, **kwargs):
         """Suggest new specs."""
-        added_files = self.mapped_changes["new"]
-        console.print(f"✓ Found {len(added_files)} added files")
+        file_paths = self.mapped_changes["new"]
+        console.print(f"✓ Found {len(file_paths)} added files")
         suggested_specs = []
 
-        for file in added_files:
-            if is_nextjs_page(file_path=file):
+        for file_path in file_paths:
+            if is_nextjs_page(file_path=file_path):
                 pass
 
         if len(suggested_specs) > 0:
@@ -74,13 +74,13 @@ class DeleteMixin:
 
     def delete(self, *args, **kwargs):
         """Delete existing specs."""
-        deleted_files = self.mapped_changes["deleted"]
-        console.print(f"✓ Found {len(deleted_files)} deleted files")
+        file_paths = self.mapped_changes["deleted"]
+        console.print(f"✓ Found {len(file_paths)} deleted files")
         deleted_pages = set()
 
-        for file in deleted_files:
-            if is_nextjs_page(file_path=file):
-                deleted_pages.add(file)
+        for file_path in file_paths:
+            if is_nextjs_page(file_path=file_path):
+                deleted_pages.add(file_path)
 
         specs_pages = get_specs_pages()
         deleted_specs = 0

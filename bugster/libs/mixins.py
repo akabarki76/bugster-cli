@@ -1,5 +1,3 @@
-import time
-
 from rich.console import Console
 from rich.status import Status
 from rich.text import Text
@@ -26,7 +24,6 @@ class UpdateMixin:
         )
         diff_changes_per_page = get_diff_changes_per_page(import_tree=self.import_tree)
         updated_specs = 0
-        suggested_specs = []
         specs_pages = get_specs_pages()
 
         for page in affected_pages:
@@ -42,8 +39,8 @@ class UpdateMixin:
                     self.test_cases_service.update_spec_by_diff(
                         spec_data=spec_data, diff_changes=diff, spec_path=spec_path
                     )
-                    status.update(f"✓ [green]{spec_path}[/green] updated")
-                    time.sleep(3)
+                    status.stop()
+                    console.print(f"✓ [green]{spec_path}[/green] updated")
                     updated_specs += 1
             else:
                 text = Text("✗ Page ")
@@ -51,11 +48,7 @@ class UpdateMixin:
                 text.append(" not found in test cases")
                 console.print(text)
 
-        if updated_specs > 0 and len(suggested_specs) > 0:
-            console.print(
-                f"✓ Updated {updated_specs} spec{'' if updated_specs == 1 else 's'}, {len(suggested_specs)} suggestion{'' if len(suggested_specs) == 1 else 's'}"
-            )
-        elif updated_specs > 0:
+        if updated_specs > 0:
             console.print(
                 f"✓ Updated {updated_specs} spec{'' if updated_specs == 1 else 's'}"
             )
@@ -70,30 +63,9 @@ class SuggestMixin:
         console.print(f"✓ Found {len(added_files)} added files")
         suggested_specs = []
 
-        # TODO: Implement the real logic for this
-        import re
-
-        def camel_to_kebab(text):
-            """Convert camelCase to kebab-case."""
-            return re.sub(r"([a-z0-9])([A-Z])", r"\1-\2", text).lower()
-
-        def suggest_spec_from_page(page_path):
-            """Suggest a spec file name from a page path."""
-            clean_path = re.sub(r"^src/pages/", "", page_path)
-            clean_path = re.sub(r"\.(tsx?|jsx?)$", "", clean_path)
-
-            def replace_dynamic(match):
-                param = match.group(1)
-                return camel_to_kebab(param)
-
-            clean_path = re.sub(r"\[([^\]]+)\]", replace_dynamic, clean_path)
-
-            clean_path = camel_to_kebab(clean_path)
-            return f"{clean_path}.yaml"
-
         for file in added_files:
             if is_nextjs_page(file_path=file):
-                suggested_specs.append(suggest_spec_from_page(file))
+                pass
 
         if len(suggested_specs) > 0:
             for spec in suggested_specs:
@@ -127,8 +99,8 @@ class DeleteMixin:
                     self.test_cases_service.delete_spec_by_spec_path(
                         spec_path=spec_path
                     )
-                    status.update(f"✓ [green]{spec_path}[/green] deleted")
-                    time.sleep(3)
+                    status.stop()
+                    console.print(f"✓ [green]{spec_path}[/green] deleted")
                     deleted_specs += 1
 
         if deleted_specs > 0:

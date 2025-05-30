@@ -95,5 +95,7 @@ class TestCasesService:
         """Suggest a spec file by page."""
         with BugsterHTTPClient() as client:
             payload = {"page": page, "git_diff": diff}
-            data = client.post(endpoint=BugsterApiPath.TEST_CASES.value, json=payload)
+            data = client.post(
+                endpoint=BugsterApiPath.TEST_CASES_NEW.value, json=payload
+            )
             return data

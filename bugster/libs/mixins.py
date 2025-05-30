@@ -69,7 +69,9 @@ class SuggestMixin:
                 f"[yellow]Suggesting new spec for {page}[/yellow]", spinner="dots"
             ) as status:
                 diff = "\n==========\n".join(diff_changes_per_page[page])
-                self.test_cases_service.suggest_spec_by_page(page=page, diff=diff)
+                self.test_cases_service.suggest_spec_by_diff(
+                    page_path=page, diff_changes=diff
+                )
                 status.stop()
                 console.print(f"✓ [green]{page}[/green] suggested")
                 suggested_specs.append(page)

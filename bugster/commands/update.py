@@ -1,13 +1,14 @@
 import os
 import subprocess
 import sys
+import time
 
 import typer
 import yaml
 from loguru import logger
 from rich.console import Console
+from rich.status import Status
 from rich.text import Text
-from yaspin import yaspin
 
 from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
     filter_paths,
@@ -121,7 +122,7 @@ def update_command(
                     file_change=diff
                 )
             else:
-                pages = find_pages_that_use_file(file_path=old_path)
+                pages = find_pages_that_use_file(file_path=old_path, tree=import_tree)
 
                 if pages:
                     for page in pages:
@@ -146,15 +147,15 @@ def update_command(
                 spec_data = spec["data"]
                 spec_path = spec["path"]
 
-                with yaspin(text=f"Updating: {spec_path}", color="yellow") as spinner:
+                with Status(
+                    f"[yellow]Updating: {spec_path}[/yellow]", spinner="dots"
+                ) as status:
                     diff = diff_changes_per_page[page]
                     service.update_spec_by_diff(
                         spec_data=spec_data, diff_changes=diff, spec_path=spec_path
                     )
-
-                    with spinner.hidden():
-                        console.print(f"✓ [green]{spec_path}[/green] updated")
-
+                    status.update(f"✓ [green]{spec_path}[/green] updated")
+                    time.sleep(3)
                     updated_specs += 1
             else:
                 text = Text("✗ Page ")

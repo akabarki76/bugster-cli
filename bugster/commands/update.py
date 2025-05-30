@@ -131,7 +131,7 @@ def update_command(
                         existing_diff = diff_changes_per_page.get(page, "")
 
                         if existing_diff:
-                            existing_diff += "\n"
+                            existing_diff += "\n==========\n"
 
                         new_diff = parsed_diff.to_llm_format(file_change=diff)
                         diff_changes_per_page[page] = existing_diff + new_diff

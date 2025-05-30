@@ -1,5 +1,4 @@
 import os
-import subprocess
 import time
 from collections import defaultdict
 
@@ -73,14 +72,7 @@ def update_command(
 
         diff_changes_per_page = defaultdict(list)
         parsed_diff = parse_git_diff(diff_text=diff_changes)
-        cmd = ["git", "status", "--porcelain"]
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        diff_status = result.stdout
+        diff_status = run_git_command(cmd=["git", "status", "--porcelain"])
         parsed_status = parse_git_status(status_output=diff_status)
         deleted_pages = [
             deleted

@@ -41,17 +41,20 @@ def update_command(
         diff_files = run_git_command(
             cmd=["git", "diff", "--diff-filter=d", "--", ".", "--name-only"]
         )
+        diff_status = run_git_command(cmd=["git", "status", "--porcelain"])
         diff_files_paths = [path for path in diff_files.split("\n") if path.strip()]
         diff_files_paths = filter_paths(all_paths=diff_files_paths)
         console.print(f"✓ Found {len(diff_files_paths)} modified files")
         affected_pages = set()
         import_tree = generate_and_save_import_tree()
 
-        for file in diff_files_paths:
-            if is_nextjs_page(file_path=file):
-                affected_pages.add(file)
+        for file_path in diff_files_paths:
+            if is_nextjs_page(file_path=file_path):
+                affected_pages.add(file_path)
             else:
-                pages = find_pages_that_use_file(file_path=file, tree=import_tree)
+                pages = find_pages_that_use_file(
+                    file_path=file_path, import_tree=import_tree
+                )
 
                 if pages:
                     for page in pages:
@@ -72,7 +75,6 @@ def update_command(
 
         diff_changes_per_page = defaultdict(list)
         parsed_diff = parse_git_diff(diff_text=diff_changes)
-        diff_status = run_git_command(cmd=["git", "status", "--porcelain"])
         parsed_status = parse_git_status(status_output=diff_status)
         deleted_pages = [
             deleted
@@ -92,7 +94,9 @@ def update_command(
                     file_change=diff
                 )
             else:
-                pages = find_pages_that_use_file(file_path=old_path, tree=import_tree)
+                pages = find_pages_that_use_file(
+                    file_path=old_path, import_tree=import_tree
+                )
 
                 if pages:
                     for page in pages:

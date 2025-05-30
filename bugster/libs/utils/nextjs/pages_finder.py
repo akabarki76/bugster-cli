@@ -22,15 +22,15 @@ def generate_and_save_import_tree() -> Dict:
     return tree
 
 
-def find_pages_that_use_file(file_path: str, tree: Dict) -> list[str]:
+def find_pages_that_use_file(file_path: str, import_tree: Dict) -> list[str]:
     """Find the Next.js pages that use the given file."""
-    results = find_pages_using_file(tree_data=tree, target_file=file_path)
+    results = find_pages_using_file(tree_data=import_tree, target_file=file_path)
 
     if results:
         return [result["page"] for result in results]
-    else:
-        console.print(f"✗ File '{file_path}' is not imported by any page")
-        return []
+
+    console.print(f"✗ File '{file_path}' is not imported by any page")
+    return []
 
 
 def find_pages_using_file(tree_data: Dict, target_file: str) -> List[Dict]:

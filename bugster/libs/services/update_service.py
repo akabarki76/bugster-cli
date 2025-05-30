@@ -14,6 +14,7 @@ class UpdateService(ABC):
 
     def __init__(self):
         self.mapped_changes = {}
+        self.test_cases_service = TestCasesService()
 
     def _get_mapped_changes(self) -> dict:
         """Get the mapped changes of the user's repository."""
@@ -47,9 +48,6 @@ class SuggestOnlyService(UpdateService, SuggestMixin):
 class DeleteOnlyService(UpdateService, DeleteMixin):
     """Delete only service."""
 
-    def __init__(self):
-        self.test_cases_service = TestCasesService()
-
     def run(self):
         """Run the delete only service."""
         self._setup()
@@ -59,9 +57,6 @@ class DeleteOnlyService(UpdateService, DeleteMixin):
 class UpdateOnlyService(UpdateService, UpdateMixin):
     """Update only service."""
 
-    def __init__(self):
-        self.test_cases_service = TestCasesService()
-
     def run(self):
         """Run the update only service."""
         self._setup()
@@ -70,9 +65,6 @@ class UpdateOnlyService(UpdateService, UpdateMixin):
 
 class DefaultUpdateService(UpdateService, UpdateMixin, SuggestMixin, DeleteMixin):
     """Default update service."""
-
-    def __init__(self):
-        self.test_cases_service = TestCasesService()
 
     def run(self):
         """Run the default update service."""

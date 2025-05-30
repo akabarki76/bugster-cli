@@ -36,6 +36,8 @@ class UpdateService(ABC):
 
 
 class SuggestOnlyService(UpdateService, SuggestMixin):
+    """Suggest only service."""
+
     def run(self):
         """Run the suggest only service."""
         self._setup()
@@ -43,6 +45,11 @@ class SuggestOnlyService(UpdateService, SuggestMixin):
 
 
 class DeleteOnlyService(UpdateService, DeleteMixin):
+    """Delete only service."""
+
+    def __init__(self):
+        self.test_cases_service = TestCasesService()
+
     def run(self):
         """Run the delete only service."""
         self._setup()
@@ -50,6 +57,8 @@ class DeleteOnlyService(UpdateService, DeleteMixin):
 
 
 class UpdateOnlyService(UpdateService, UpdateMixin):
+    """Update only service."""
+
     def __init__(self):
         self.test_cases_service = TestCasesService()
 
@@ -60,6 +69,8 @@ class UpdateOnlyService(UpdateService, UpdateMixin):
 
 
 class DefaultUpdateService(UpdateService, UpdateMixin, SuggestMixin, DeleteMixin):
+    """Default update service."""
+
     def __init__(self):
         self.test_cases_service = TestCasesService()
 

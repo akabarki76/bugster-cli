@@ -85,3 +85,8 @@ class TestCasesService:
             data = client.put(endpoint=BugsterApiPath.TEST_CASES.value, json=payload)
             self._update_spec_yaml_file(spec_path=spec_path, spec_data=data)
             return data
+
+    def delete_spec_by_spec_path(self, spec_path: str):
+        """Delete a spec file by spec path."""
+        path = os.path.join(TESTS_DIR, spec_path)
+        os.remove(path)

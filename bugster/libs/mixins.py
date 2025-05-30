@@ -176,3 +176,31 @@ class DeleteMixin:
         """Delete existing specs."""
         deleted_files = self.mapped_changes["deleted"]
         console.print(f"✓ Found {len(deleted_files)} deleted files")
+        deleted_pages = set()
+
+        for file in deleted_files:
+            if is_nextjs_page(file_path=file):
+                deleted_pages.add(file)
+
+        specs_pages = get_specs_pages()
+        deleted_specs = 0
+
+        for page in deleted_pages:
+            if page in specs_pages:
+                spec = specs_pages[page]
+                spec_path = spec["path"]
+
+                with Status(
+                    f"[yellow]Deleting: {spec_path}[/yellow]", spinner="dots"
+                ) as status:
+                    self.test_cases_service.delete_spec_by_spec_path(
+                        spec_path=spec_path
+                    )
+                    status.update(f"✓ [green]{spec_path}[/green] deleted")
+                    time.sleep(3)
+                    deleted_specs += 1
+
+        if deleted_specs > 0:
+            console.print(
+                f"✓ Deleted {deleted_specs} spec{'' if deleted_specs == 1 else 's'}"
+            )

@@ -15,8 +15,7 @@ def update_command(
     delete_only: bool = False,
 ):
     """Run Bugster CLI update command."""
-    conditions_sum = sum([update_only, suggest_only, delete_only])
-    assert conditions_sum <= 1, (
+    assert sum([update_only, suggest_only, delete_only]) <= 1, (
         "At most one of update_only, suggest_only, delete_only can be True"
     )
 

@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import time
+from collections import defaultdict
 
 import typer
 import yaml
@@ -94,7 +95,7 @@ def update_command(
                     "path": relative_path,
                 }
 
-        diff_changes_per_page = {}
+        diff_changes_per_page = defaultdict(list)
         parsed_diff = parse_git_diff(diff_text=diff_changes)
         cmd = ["git", "status", "--porcelain"]
         result = subprocess.run(
@@ -113,6 +114,7 @@ def update_command(
         added_pages = [
             new for new in parsed_status["new"] if is_nextjs_page(file_path=new)
         ]
+        DIFF_SEPARATOR = "\n==========\n"
 
         for diff in parsed_diff.files:
             old_path = diff.old_path
@@ -126,16 +128,8 @@ def update_command(
 
                 if pages:
                     for page in pages:
-                        # diff_changes_per_page[page] = parsed_diff.to_llm_format(
-                        #     file_change=diff
-                        # )
-                        existing_diff = diff_changes_per_page.get(page, "")
-
-                        if existing_diff:
-                            existing_diff += "\n==========\n"
-
                         new_diff = parsed_diff.to_llm_format(file_change=diff)
-                        diff_changes_per_page[page] = existing_diff + new_diff
+                        diff_changes_per_page[page].append(new_diff)
 
         service = TestCasesService()
         updated_specs = 0
@@ -150,7 +144,7 @@ def update_command(
                 with Status(
                     f"[yellow]Updating: {spec_path}[/yellow]", spinner="dots"
                 ) as status:
-                    diff = diff_changes_per_page[page]
+                    diff = DIFF_SEPARATOR.join(diff_changes_per_page[page])
                     service.update_spec_by_diff(
                         spec_data=spec_data, diff_changes=diff, spec_path=spec_path
                     )

@@ -1,65 +1,17 @@
 import time
-from collections import defaultdict
 
 from rich.console import Console
 from rich.status import Status
 from rich.text import Text
 
-from bugster.libs.utils.diff_parser import parse_git_diff
-from bugster.libs.utils.enums import GitCommand
 from bugster.libs.utils.files import get_specs_pages
-from bugster.libs.utils.git import run_git_command
+from bugster.libs.utils.git import get_diff_changes_per_page
 from bugster.libs.utils.nextjs.pages_finder import (
-    find_pages_that_use_file,
+    get_affected_pages,
     is_nextjs_page,
 )
 
 console = Console()
-
-
-def get_affected_pages(diff_files: list[str], import_tree: dict):
-    """Get the affected pages."""
-    affected_pages = set()
-
-    for file_path in diff_files:
-        if is_nextjs_page(file_path=file_path):
-            affected_pages.add(file_path)
-        else:
-            pages = find_pages_that_use_file(
-                file_path=file_path, import_tree=import_tree
-            )
-
-            if pages:
-                for page in pages:
-                    affected_pages.add(page)
-
-    return affected_pages
-
-
-def get_diff_changes_per_page(import_tree: dict):
-    """Get the diff changes per page."""
-    diff_changes_per_page = defaultdict(list)
-    diff_changes = run_git_command(cmd_key=GitCommand.DIFF_CHANGES)
-    parsed_diff = parse_git_diff(diff_text=diff_changes)
-
-    for diff in parsed_diff.files:
-        old_path = diff.old_path
-
-        if is_nextjs_page(file_path=old_path):
-            diff_changes_per_page[old_path] = parsed_diff.to_llm_format(
-                file_change=diff
-            )
-        else:
-            pages = find_pages_that_use_file(
-                file_path=old_path, import_tree=import_tree
-            )
-
-            if pages:
-                for page in pages:
-                    new_diff = parsed_diff.to_llm_format(file_change=diff)
-                    diff_changes_per_page[page].append(new_diff)
-
-    return diff_changes_per_page
 
 
 class UpdateMixin:

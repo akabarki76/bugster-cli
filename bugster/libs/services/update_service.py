@@ -4,7 +4,7 @@ from bugster.libs.mixins import DeleteMixin, SuggestMixin, UpdateMixin
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.enums import GitCommand
 from bugster.libs.utils.git import parse_diff_status, run_git_command
-from bugster.libs.utils.nextjs.pages_finder import (
+from bugster.libs.utils.nextjs.import_tree_generator import (
     generate_and_save_import_tree,
 )
 

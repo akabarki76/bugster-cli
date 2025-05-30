@@ -1,9 +1,11 @@
 import os
 import subprocess
+from collections import defaultdict
 
 import pathspec
 
 from bugster.constants import WORKING_DIR
+from bugster.libs.utils.diff_parser import parse_git_diff
 from bugster.libs.utils.enums import GitCommand
 from bugster.libs.utils.files import filter_path
 
@@ -157,3 +159,37 @@ def parse_diff_status(diff_status: str):
         # For robustness, you could add an 'unknown' category or default to 'modified'
 
     return result
+
+
+def get_diff_changes_per_page(import_tree: dict) -> dict[str, list[str]]:
+    """Get the diff changes per page.
+
+    :param import_tree: The import tree of the user's repository.
+    :return: A dictionary with the page path as the key and the diff changes as the values.
+    """
+    from bugster.libs.utils.nextjs.pages_finder import (
+        find_pages_that_use_file,
+        is_nextjs_page,
+    )
+
+    diff_changes_per_page = defaultdict(list)
+    diff_changes = run_git_command(cmd_key=GitCommand.DIFF_CHANGES)
+    parsed_diff = parse_git_diff(diff_text=diff_changes)
+
+    for file_change in parsed_diff.files:
+        old_path = file_change.old_path
+
+        if is_nextjs_page(file_path=old_path):
+            new_diff = parsed_diff.to_llm_format(file_change=file_change)
+            diff_changes_per_page[old_path].append(new_diff)
+        else:
+            pages = find_pages_that_use_file(
+                file_path=old_path, import_tree=import_tree
+            )
+
+            if pages:
+                for page in pages:
+                    new_diff = parsed_diff.to_llm_format(file_change=file_change)
+                    diff_changes_per_page[page].append(new_diff)
+
+    return diff_changes_per_page

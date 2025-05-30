@@ -1,25 +1,9 @@
-import os
 from pathlib import Path
 from typing import Dict, List, Set
 
 from rich.console import Console
 
-from bugster.analyzer.core.framework_detector.main import get_project_info
-from bugster.constants import BUGSTER_DIR
-from bugster.libs.utils.nextjs.import_tree_generator import ImportTreeGenerator
-
 console = Console()
-
-
-def generate_and_save_import_tree() -> Dict:
-    """Generate the import tree for the project."""
-    framework_id = get_project_info()["data"]["frameworks"][0]["id"]
-    cache_framework_dir = os.path.join(BUGSTER_DIR, framework_id)
-    output_file = os.path.join(cache_framework_dir, "import_tree.json")
-    generator = ImportTreeGenerator()
-    tree = generator.generate_tree()
-    generator.save_to_json(tree=tree, filename=output_file)
-    return tree
 
 
 def find_pages_that_use_file(file_path: str, import_tree: Dict) -> list[str]:
@@ -240,3 +224,22 @@ def is_nextjs_page(file_path: str) -> bool:
             return is_nextjs_page(sub_path)
 
     return False
+
+
+def get_affected_pages(diff_files: list[str], import_tree: dict):
+    """Get the affected pages."""
+    affected_pages = set()
+
+    for file_path in diff_files:
+        if is_nextjs_page(file_path=file_path):
+            affected_pages.add(file_path)
+        else:
+            pages = find_pages_that_use_file(
+                file_path=file_path, import_tree=import_tree
+            )
+
+            if pages:
+                for page in pages:
+                    affected_pages.add(page)
+
+    return affected_pages

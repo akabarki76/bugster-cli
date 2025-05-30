@@ -1,20 +1,159 @@
+import os
 import subprocess
 
+import pathspec
 
-def run_git_command(cmd: list[str]) -> str:
-    """Run a git command and return the output."""
-    # for pattern in [
-    #     "package-lock.json",
-    #     ".env.local",
-    #     ".gitignore",
-    #     "tsconfig.json",
-    #     ".env",
-    # ]:
-    #     cmd.append(f":!{pattern}")
+from bugster.constants import WORKING_DIR
+from bugster.libs.utils.enums import GitCommand
+from bugster.libs.utils.files import filter_path
+
+COMMANDS = {
+    GitCommand.DIFF_STATUS: ["git", "status", "--porcelain"],
+    GitCommand.DIFF_FILES: ["git", "diff", "--name-only"],
+    GitCommand.DIFF_CHANGES: ["git", "diff", "--diff-filter=d", "--", "."],
+}
+
+
+def run_git_command(
+    cmd_key: str, capture_output: bool = True, text: bool = True, check: bool = True
+):
+    """Run a git command."""
     result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        check=True,
+        COMMANDS[cmd_key],
+        capture_output=capture_output,
+        text=text,
+        check=check,
     )
     return result.stdout
+
+
+def get_gitignore(dir_path: str = WORKING_DIR):
+    """Get the `.gitignore` rules for a directory."""
+    try:
+        gitignore_path = os.path.join(dir_path, ".gitignore")
+
+        if os.path.exists(gitignore_path):
+            with open(gitignore_path) as f:
+                gitignore = pathspec.PathSpec.from_lines(
+                    pathspec.patterns.GitWildMatchPattern, f.readlines()
+                )
+        else:
+            gitignore = None
+    except ImportError:
+        gitignore = None
+
+    return gitignore
+
+
+def parse_diff_status(diff_status: str):
+    """Parse git status --porcelain output into categorized file lists.
+
+    Git status codes (first char = staged, second char = unstaged):
+    Staged codes (X_):
+    - M = Modified
+    - A = Added (new file)
+    - D = Deleted
+    - R = Renamed
+    - C = Copied
+    - U = Updated but unmerged
+
+    Unstaged codes (_Y):
+    - M = Modified
+    - D = Deleted
+    - R = Type changed (file/symlink/submodule)
+    - U = Updated but unmerged
+    - ? = Untracked
+    - ! = Ignored
+
+    Special cases:
+    - ?? = Untracked file
+    - !! = Ignored file
+
+    :param status_output: Raw output from 'git status --porcelain'.
+    :return: Dictionary with 'modified', 'deleted', and 'new' file lists.
+    """
+    result = {"modified": [], "deleted": [], "new": []}
+
+    # Split by newlines and filter out empty lines
+    lines = [line for line in diff_status.strip().split("\n") if line.strip()]
+
+    for line in lines:
+        if len(line) < 3:  # Skip malformed lines
+            continue
+
+        status_code = line[:2]  # First two characters are the status
+        filename = line[3:]  # Rest is the filename (skip the space)
+
+        if not filter_path(path=filename):
+            continue
+
+        # Handle special two-character codes first
+        if status_code == "??":
+            # Untracked file - treat as new
+            result["new"].append(filename)
+            continue
+        elif status_code == "!!":
+            # Ignored file - skip (not typically needed for most use cases)
+            continue
+
+        # Get individual status characters
+        staged = status_code[0]
+        unstaged = status_code[1]
+
+        # Determine file category based on status codes
+        # Priority: deleted > new > modified (since a file can have multiple states)
+
+        is_deleted = False
+        is_new = False
+        is_modified = False
+
+        # Check for deletions (highest priority)
+        if staged == "D" or unstaged == "D":
+            is_deleted = True
+
+        # Check for new files
+        elif staged == "A" or staged == "C":  # Added/staged new file
+            is_new = True
+
+        # Check for modifications
+        elif (
+            staged == "M"
+            or unstaged == "M"
+            or staged == "R"
+            or unstaged == "R"
+            or staged == "U"
+            or unstaged == "U"
+        ):
+            is_modified = True
+
+        # Handle edge cases where both staged and unstaged have status
+        # For example: "AM" = added then modified, "AD" = added then deleted
+        if staged != " " and unstaged != " ":
+            if staged == "A" and unstaged == "D":
+                # Added then deleted - treat as deleted
+                is_deleted = True
+                is_new = False
+            elif staged == "A" and unstaged == "M":
+                # Added then modified - treat as new (since it's still a new file overall)
+                is_new = True
+                is_modified = False
+            elif staged == "M" and unstaged == "D":
+                # Modified then deleted - treat as deleted
+                is_deleted = True
+                is_modified = False
+            elif staged == "D" and unstaged == "M":
+                # This shouldn't normally happen, but treat as modified
+                is_modified = True
+                is_deleted = False
+
+        # Categorize the file
+        if is_deleted:
+            result["deleted"].append(filename)
+        elif is_new:
+            result["new"].append(filename)
+        elif is_modified:
+            result["modified"].append(filename)
+        # If none of the above, it might be an unhandled status code
+        # For robustness, you could add an 'unknown' category or default to 'modified'
+
+    return result

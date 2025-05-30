@@ -1,6 +1,7 @@
+import fnmatch
 import os
 
-from bugster.constants import TESTS_DIR
+from bugster.constants import IGNORE_PATTERNS, TESTS_DIR
 
 
 def get_specs_paths() -> list[str]:
@@ -15,3 +16,29 @@ def get_specs_paths() -> list[str]:
             file_paths.append(os.path.join(root, file))
 
     return file_paths
+
+
+def filter_path(path: str):
+    """Filter a single path based on ignore patterns and `.gitignore` rules."""
+    from bugster.libs.utils.git import get_gitignore
+
+    gitignore = get_gitignore()
+    GITIGNORE_PATH = ".gitignore"
+    ALLOWED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"]
+
+    if not any(path.endswith(ext) for ext in ALLOWED_EXTENSIONS):
+        return None
+
+    if os.path.isdir(path):
+        return None
+
+    if any(fnmatch.fnmatch(path, pattern) for pattern in IGNORE_PATTERNS):
+        return None
+
+    if gitignore and gitignore.match_file(path):
+        return None
+
+    if path == GITIGNORE_PATH:
+        return None
+
+    return path.replace(os.sep, "/")

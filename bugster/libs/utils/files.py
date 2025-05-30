@@ -1,12 +1,13 @@
 import fnmatch
 import os
+from typing import Optional
 
 import yaml
 
 from bugster.constants import IGNORE_PATTERNS, TESTS_DIR
 
 
-def get_specs_paths() -> list[str]:
+def get_specs_paths(relatives_to: Optional[str] = None) -> list[str]:
     """Get all spec files paths in the tests directory."""
     file_paths = []
 
@@ -15,7 +16,12 @@ def get_specs_paths() -> list[str]:
             continue
 
         for file in files:
-            file_paths.append(os.path.join(root, file))
+            full_path = os.path.join(root, file)
+
+            if relatives_to:
+                full_path = os.path.relpath(full_path, start=relatives_to)
+
+            file_paths.append(full_path)
 
     return file_paths
 

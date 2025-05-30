@@ -53,7 +53,7 @@ class TestCasesService:
         """Save test case as a YAML file."""
         try:
             if not index:
-                specs_paths = get_specs_paths()
+                specs_paths = get_specs_paths(relatives_to=TESTS_DIR)
                 sorted_paths = sorted(specs_paths, key=lambda x: int(x.split("_")[0]))
                 index = int(sorted_paths[-1].split("_")[0]) + 1
         except Exception:

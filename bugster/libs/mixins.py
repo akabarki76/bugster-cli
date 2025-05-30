@@ -58,11 +58,21 @@ class SuggestMixin:
         """Suggest new specs."""
         file_paths = self.mapped_changes["new"]
         console.print(f"✓ Found {len(file_paths)} added files")
+        diff_changes_per_page = get_diff_changes_per_page(import_tree=self.import_tree)
+        new_pages = [
+            page for page in diff_changes_per_page.keys() if page in file_paths
+        ]
         suggested_specs = []
 
-        for file_path in file_paths:
-            if is_nextjs_page(file_path=file_path):
-                pass
+        for page in new_pages:
+            with Status(
+                f"[yellow]Suggesting new spec for {page}[/yellow]", spinner="dots"
+            ) as status:
+                diff = "\n==========\n".join(diff_changes_per_page[page])
+                self.test_cases_service.suggest_spec_by_page(page=page, diff=diff)
+                status.stop()
+                console.print(f"✓ [green]{page}[/green] suggested")
+                suggested_specs.append(page)
 
         if len(suggested_specs) > 0:
             for spec in suggested_specs:

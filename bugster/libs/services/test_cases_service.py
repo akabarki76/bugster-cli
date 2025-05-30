@@ -90,3 +90,10 @@ class TestCasesService:
         """Delete a spec file by spec path."""
         path = os.path.join(TESTS_DIR, spec_path)
         os.remove(path)
+
+    def suggest_spec_by_page(self, page: str, diff: str):
+        """Suggest a spec file by page."""
+        with BugsterHTTPClient() as client:
+            payload = {"page": page, "git_diff": diff}
+            data = client.post(endpoint=BugsterApiPath.TEST_CASES.value, json=payload)
+            return data

@@ -5,7 +5,6 @@ from rich.text import Text
 from bugster.libs.utils.files import get_specs_pages
 from bugster.libs.utils.git import get_diff_changes_per_page
 from bugster.libs.utils.nextjs.pages_finder import (
-    get_affected_pages,
     is_nextjs_page,
 )
 
@@ -19,10 +18,8 @@ class UpdateMixin:
         """Update existing specs."""
         modified_files = self.mapped_changes["modified"]
         console.print(f"✓ Found {len(modified_files)} modified files")
-        affected_pages = get_affected_pages(
-            diff_files=modified_files, import_tree=self.import_tree
-        )
         diff_changes_per_page = get_diff_changes_per_page(import_tree=self.import_tree)
+        affected_pages = [page for page in diff_changes_per_page.keys()]
         updated_specs = 0
         specs_pages = get_specs_pages()
 

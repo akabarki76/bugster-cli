@@ -1,6 +1,8 @@
 import fnmatch
 import os
 
+import yaml
+
 from bugster.constants import IGNORE_PATTERNS, TESTS_DIR
 
 
@@ -16,6 +18,24 @@ def get_specs_paths() -> list[str]:
             file_paths.append(os.path.join(root, file))
 
     return file_paths
+
+
+def get_specs_pages():
+    """Get the specs pages."""
+    specs_files_paths = get_specs_paths()
+    specs_pages = {}
+
+    for spec_path in specs_files_paths:
+        with open(spec_path, encoding="utf-8") as file:
+            data = yaml.safe_load(file)
+            page_path = data["page_path"]
+            relative_path = os.path.relpath(spec_path, TESTS_DIR)
+            specs_pages[page_path] = {
+                "data": data,
+                "path": relative_path,
+            }
+
+    return specs_pages
 
 
 def filter_path(path: str):

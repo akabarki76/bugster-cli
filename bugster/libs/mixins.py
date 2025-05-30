@@ -1,16 +1,13 @@
-import os
 import time
 from collections import defaultdict
 
-import yaml
 from rich.console import Console
 from rich.status import Status
 from rich.text import Text
 
-from bugster.constants import TESTS_DIR
 from bugster.libs.utils.diff_parser import parse_git_diff
 from bugster.libs.utils.enums import GitCommand
-from bugster.libs.utils.files import get_specs_paths
+from bugster.libs.utils.files import get_specs_pages
 from bugster.libs.utils.git import run_git_command
 from bugster.libs.utils.nextjs.pages_finder import (
     find_pages_that_use_file,
@@ -37,24 +34,6 @@ def get_affected_pages(diff_files: list[str], import_tree: dict):
                     affected_pages.add(page)
 
     return affected_pages
-
-
-def get_specs_pages():
-    """Get the specs pages."""
-    specs_files_paths = get_specs_paths()
-    specs_pages = {}
-
-    for spec_path in specs_files_paths:
-        with open(spec_path, encoding="utf-8") as file:
-            data = yaml.safe_load(file)
-            page_path = data["page_path"]
-            relative_path = os.path.relpath(spec_path, TESTS_DIR)
-            specs_pages[page_path] = {
-                "data": data,
-                "path": relative_path,
-            }
-
-    return specs_pages
 
 
 def get_diff_changes_per_page(import_tree: dict):

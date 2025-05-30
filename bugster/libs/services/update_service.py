@@ -72,3 +72,15 @@ class DefaultUpdateService(UpdateService, UpdateMixin, SuggestMixin, DeleteMixin
         self.update()
         self.suggest()
         self.delete()
+
+
+def get_update_service(update_only: bool, suggest_only: bool, delete_only: bool):
+    """Get the update service based on the flags."""
+    if update_only:
+        return UpdateOnlyService()
+    elif suggest_only:
+        return SuggestOnlyService()
+    elif delete_only:
+        return DeleteOnlyService()
+    else:
+        return DefaultUpdateService()

@@ -2,10 +2,7 @@ import typer
 from rich.console import Console
 
 from bugster.libs.services.update_service import (
-    DefaultUpdateService,
-    DeleteOnlyService,
-    SuggestOnlyService,
-    UpdateOnlyService,
+    get_update_service,
 )
 from bugster.libs.utils.log import setup_logger
 
@@ -26,17 +23,9 @@ def update_command(
     try:
         setup_logger()
         console.print("✓ Analyzing code changes...")
-
-        if conditions_sum == 1:
-            if update_only:
-                update_service = UpdateOnlyService()
-            elif suggest_only:
-                update_service = SuggestOnlyService()
-            elif delete_only:
-                update_service = DeleteOnlyService()
-        else:
-            update_service = DefaultUpdateService()
-
+        update_service = get_update_service(
+            update_only=update_only, suggest_only=suggest_only, delete_only=delete_only
+        )
         update_service.run()
     except Exception as err:
         console.print(f"[red]Error: {str(err)}[/red]")

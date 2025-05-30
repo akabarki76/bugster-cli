@@ -2,6 +2,7 @@ from rich.console import Console
 from rich.status import Status
 from rich.text import Text
 
+from bugster.libs.utils.enums import GitCommand
 from bugster.libs.utils.files import get_specs_pages
 from bugster.libs.utils.git import get_diff_changes_per_page
 from bugster.libs.utils.nextjs.pages_finder import (
@@ -18,7 +19,9 @@ class UpdateMixin:
         """Update existing specs."""
         file_paths = self.mapped_changes["modified"]
         console.print(f"✓ Found {len(file_paths)} modified files")
-        diff_changes_per_page = get_diff_changes_per_page(import_tree=self.import_tree)
+        diff_changes_per_page = get_diff_changes_per_page(
+            import_tree=self.import_tree, git_command=GitCommand.DIFF_CHANGES
+        )
         affected_pages = [page for page in diff_changes_per_page.keys()]
         updated_specs = 0
         specs_pages = get_specs_pages()
@@ -58,7 +61,9 @@ class SuggestMixin:
         """Suggest new specs."""
         file_paths = self.mapped_changes["new"]
         console.print(f"✓ Found {len(file_paths)} added files")
-        diff_changes_per_page = get_diff_changes_per_page(import_tree=self.import_tree)
+        diff_changes_per_page = get_diff_changes_per_page(
+            import_tree=self.import_tree, git_command=GitCommand.DIFF_CACHED
+        )
         new_pages = [
             page for page in diff_changes_per_page.keys() if page in file_paths
         ]

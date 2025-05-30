@@ -13,6 +13,7 @@ COMMANDS = {
     GitCommand.DIFF_STATUS: ["git", "status", "--porcelain"],
     GitCommand.DIFF_FILES: ["git", "diff", "--name-only"],
     GitCommand.DIFF_CHANGES: ["git", "diff", "--", "."],
+    GitCommand.DIFF_CACHED: ["git", "diff", "--cached"],
 }
 
 
@@ -161,16 +162,9 @@ def parse_diff_status(diff_status: str):
     return result
 
 
-def get_and_parse_diff_changes():
-    """Get the diff changes and parse them.
-
-    :return: ParsedDiff object containing structured diff information.
-    """
-    diff_changes = run_git_command(cmd_key=GitCommand.DIFF_CHANGES)
-    return parse_git_diff(diff_text=diff_changes)
-
-
-def get_diff_changes_per_page(import_tree: dict) -> dict[str, list[str]]:
+def get_diff_changes_per_page(
+    import_tree: dict, git_command: GitCommand
+) -> dict[str, list[str]]:
     """Get the diff changes per page.
 
     :param import_tree: The import tree of the user's repository.
@@ -182,7 +176,8 @@ def get_diff_changes_per_page(import_tree: dict) -> dict[str, list[str]]:
     )
 
     diff_changes_per_page = defaultdict(list)
-    parsed_diff = get_and_parse_diff_changes()
+    diff_changes = run_git_command(cmd_key=git_command)
+    parsed_diff = parse_git_diff(diff_text=diff_changes)
 
     for file_change in parsed_diff.files:
         old_path = file_change.old_path

@@ -1,24 +1,23 @@
 import os
 import subprocess
-import sys
 import time
 from collections import defaultdict
 
 import typer
 import yaml
-from loguru import logger
 from rich.console import Console
 from rich.status import Status
 from rich.text import Text
 
 from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
     filter_paths,
-    get_gitignore,
 )
-from bugster.constants import TESTS_DIR, WORKING_DIR
+from bugster.constants import TESTS_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.diff_parser import parse_git_diff, parse_git_status
 from bugster.libs.utils.files import get_specs_paths
+from bugster.libs.utils.git import run_git_command
+from bugster.libs.utils.log import setup_logger
 from bugster.libs.utils.nextjs.pages_finder import (
     find_pages_that_use_file,
     generate_and_save_import_tree,
@@ -35,39 +34,16 @@ def update_command(
 ):
     """Run Bugster CLI update command."""
     try:
-        logger.remove()
-        logger.add(sys.stderr, level="CRITICAL")
+        setup_logger()
         console.print("✓ Analyzing code changes...")
-        cmd = ["git", "diff", "--", "."]
-
-        for pattern in [
-            "package-lock.json",
-            ".env.local",
-            ".gitignore",
-            "tsconfig.json",
-            ".env",
-        ]:
-            cmd.append(f":!{pattern}")
-
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=True,
+        diff_changes = run_git_command(
+            cmd=["git", "diff", "--diff-filter=d", "--", "."]
         )
-        diff_changes = result.stdout
-
-        cmd.insert(2, "--name-only")
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=True,
+        diff_files = run_git_command(
+            cmd=["git", "diff", "--diff-filter=d", "--", ".", "--name-only"]
         )
-        diff_files = result.stdout
         diff_files_paths = [path for path in diff_files.split("\n") if path.strip()]
-        gitignore = get_gitignore(dir_path=WORKING_DIR)
-        diff_files_paths = filter_paths(all_paths=diff_files_paths, gitignore=gitignore)
+        diff_files_paths = filter_paths(all_paths=diff_files_paths)
         console.print(f"✓ Found {len(diff_files_paths)} modified files")
         affected_pages = set()
         import_tree = generate_and_save_import_tree()

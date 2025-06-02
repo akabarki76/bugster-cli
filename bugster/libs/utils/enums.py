@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum
 
 
 class BugsterApiPath(str, Enum):
@@ -8,10 +8,10 @@ class BugsterApiPath(str, Enum):
     TEST_CASES_NEW = "/api/v1/test-cases/new"
 
 
-class GitCommand(str, Enum):
+class GitCommand(list, Enum):
     """Git commands."""
 
-    DIFF_STATUS = auto()
-    DIFF_FILES = auto()
-    DIFF_CHANGES = auto()
-    DIFF_CACHED = auto()
+    DIFF_STATUS = ["git", "status", "--porcelain"]
+    DIFF_FILES = ["git", "diff", "--name-only"]
+    DIFF_CHANGES = ["git", "diff", "--", "."]
+    DIFF_CACHED = ["git", "diff", "--cached"]

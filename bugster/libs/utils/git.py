@@ -9,20 +9,16 @@ from bugster.libs.utils.diff_parser import parse_git_diff
 from bugster.libs.utils.enums import GitCommand
 from bugster.libs.utils.files import filter_path
 
-COMMANDS = {
-    GitCommand.DIFF_STATUS: ["git", "status", "--porcelain"],
-    GitCommand.DIFF_FILES: ["git", "diff", "--name-only"],
-    GitCommand.DIFF_CHANGES: ["git", "diff", "--", "."],
-    GitCommand.DIFF_CACHED: ["git", "diff", "--cached"],
-}
-
 
 def run_git_command(
-    cmd_key: str, capture_output: bool = True, text: bool = True, check: bool = True
+    cmd_key: GitCommand,
+    capture_output: bool = True,
+    text: bool = True,
+    check: bool = True,
 ):
     """Run a git command."""
     result = subprocess.run(
-        COMMANDS[cmd_key],
+        cmd_key.value,
         capture_output=capture_output,
         text=text,
         check=check,

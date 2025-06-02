@@ -226,7 +226,7 @@ def is_nextjs_page(file_path: str) -> bool:
     return False
 
 
-def get_affected_pages(file_paths: list[str], import_tree: dict):
+def get_affected_pages(file_paths: list[str], import_tree: dict) -> set[str]:
     """Get the affected pages."""
     affected_pages = set()
 

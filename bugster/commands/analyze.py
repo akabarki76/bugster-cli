@@ -1,5 +1,6 @@
+import typer
 from rich.console import Console
-from yaspin import yaspin
+from rich.status import Status
 
 from bugster.analyzer import analyze_codebase
 
@@ -12,13 +13,20 @@ console = Console()
 # @require_api_key
 def analyze_command(options: dict = {}):
     """Run Bugster CLI analysis command."""
-    console.print("🔍 Running codebase analysis...")
-    analyze_codebase(options=options)
-    console.print("✅ Analysis completed!")
+    try:
+        console.print("🔍 Running codebase analysis...")
 
-    with yaspin(text=" Generating test cases...", color="yellow") as spinner:
-        test_cases_dir_path = TestCasesService().generate_test_cases()
-        spinner.text = "Test cases generation completed!"
-        spinner.ok("🎉")
+        with Status(" Analyzing codebase...", spinner="dots") as status:
+            analyze_codebase(options=options)
+            status.stop()
+            console.print("✅ Analysis completed!")
 
-    console.print(f"💾 Test cases saved to directory '{test_cases_dir_path}'")
+        with Status(" Generating test cases...", spinner="dots") as status:
+            test_cases_dir_path = TestCasesService().generate_test_cases()
+            status.stop()
+            console.print("🎉 Test cases generation completed!")
+
+        console.print(f"💾 Test cases saved to directory '{test_cases_dir_path}'")
+    except Exception as err:
+        console.print(f"[red]Error: {str(err)}[/red]")
+        raise typer.Exit(1)

@@ -3,7 +3,7 @@ import re
 from setuptools import find_packages, setup
 
 # Read version from bugster/__init__.py
-with open("bugster/__init__.py", "r") as f:
+with open("bugster/__init__.py") as f:
     version_match = re.search(r'__version__ = ["\']([^"\']*)["\']', f.read())
     if version_match:
         version = version_match.group(1)
@@ -67,7 +67,6 @@ setup(
         "uvicorn==0.34.2",
         "websockets==15.0.1",
         "yarl==1.20.0",
-        "yaspin==3.1.0",
         "zipp==3.21.0",
     ],
     entry_points={

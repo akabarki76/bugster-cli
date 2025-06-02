@@ -117,8 +117,6 @@ class TestCasesService:
 
     def suggest_spec_by_diff(self, page_path: str, diff_changes: str):
         """Suggest a spec file by page."""
-        payload = {"page_path": page_path, "git_diff": diff_changes}
-
         with BugsterHTTPClient() as client:
             payload = {"page_path": page_path, "git_diff": diff_changes}
             data = client.post(

@@ -68,7 +68,7 @@ def parse_diff_status(diff_status: str):
     - ?? = Untracked file
     - !! = Ignored file
 
-    :param status_output: Raw output from 'git status --porcelain'.
+    :param diff_status: Raw output from 'git status --porcelain'.
     :return: Dictionary with 'modified', 'deleted', and 'new' file lists.
     """
     result = {"modified": [], "deleted": [], "new": []}

@@ -45,6 +45,15 @@ def test(
     silent: Optional[bool] = typer.Option(
         False, "--silent", "-s", help="Run in silent mode (less verbose output)"
     ),
+    stream_results: Optional[bool] = typer.Option(
+        False, "--stream-results", help="Stream test results as they complete"
+    ),
+    output: Optional[str] = typer.Option(
+        None, "--output", help="Save test results to JSON file"
+    ),
+    run_id: Optional[str] = typer.Option(
+        None, "--run-id", help="Run ID to associate with the test run"
+    ),
 ):
     """[bold yellow]Run[/bold yellow] Bugster tests.
 
@@ -52,7 +61,7 @@ def test(
     """
     from bugster.commands.test import test_command
 
-    asyncio.run(test_command(path, headless, silent))
+    asyncio.run(test_command(path, headless, silent, stream_results, output, run_id))
 
 
 @app.command()

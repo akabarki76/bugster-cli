@@ -1,6 +1,7 @@
 import typer
 from rich.console import Console
 
+from bugster.commands.middleware import require_api_key
 from bugster.libs.services.update_service import (
     get_update_service,
 )
@@ -9,6 +10,7 @@ from bugster.libs.utils.log import setup_logger
 console = Console()
 
 
+@require_api_key
 def update_command(
     update_only: bool = False,
     suggest_only: bool = False,

@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -24,116 +24,123 @@ jobs:
             asset_name: bugster-macos
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
-        pip install -e .
-    
-    - name: Build executable
-      run: |
-        pyinstaller bugster.spec --clean
-    
-    - name: Rename executable for upload
-      shell: bash
-      run: |
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          # Try multiple possible locations for Windows executable
-          if [ -f "dist/bugster.exe" ]; then
-            cp dist/bugster.exe ${{ matrix.asset_name }}
-          elif [ -f "dist/bugster/bugster.exe" ]; then
-            cp dist/bugster/bugster.exe ${{ matrix.asset_name }}
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e .
+
+      - name: Build executable
+        run: |
+          pyinstaller bugster.spec --clean
+
+      - name: Rename executable for upload
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            # Try multiple possible locations for Windows executable
+            if [ -f "dist/bugster.exe" ]; then
+              cp dist/bugster.exe ${{ matrix.asset_name }}
+            elif [ -f "dist/bugster/bugster.exe" ]; then
+              cp dist/bugster/bugster.exe ${{ matrix.asset_name }}
+            else
+              echo "Windows executable not found in expected locations"
+              find dist -name "*.exe" -type f
+              exit 1
+            fi
           else
-            echo "Windows executable not found in expected locations"
-            find dist -name "*.exe" -type f
-            exit 1
+            # Try multiple possible locations for Linux/macOS executable
+            if [ -f "dist/bugster" ]; then
+              cp dist/bugster ${{ matrix.asset_name }}
+            elif [ -f "dist/bugster/bugster" ]; then
+              cp dist/bugster/bugster ${{ matrix.asset_name }}
+            else
+              echo "Executable not found in expected locations"
+              find dist -type f -executable
+              exit 1
+            fi
+            chmod +x ${{ matrix.asset_name }}
           fi
-        else
-          # Try multiple possible locations for Linux/macOS executable
-          if [ -f "dist/bugster" ]; then
-            cp dist/bugster ${{ matrix.asset_name }}
-          elif [ -f "dist/bugster/bugster" ]; then
-            cp dist/bugster/bugster ${{ matrix.asset_name }}
-          else
-            echo "Executable not found in expected locations"
-            find dist -type f -executable
-            exit 1
-          fi
-          chmod +x ${{ matrix.asset_name }}
-        fi
-    
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.asset_name }}
-        path: ${{ matrix.asset_name }}
-        if-no-files-found: error
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ matrix.asset_name }}
+          if-no-files-found: error
 
   release:
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
-    
-    - name: List downloaded artifacts
-      run: ls -la artifacts/
-    
-    - name: Prepare artifacts for release
-      run: |
-        mkdir -p release
-        cp artifacts/bugster-linux/bugster-linux release/
-        cp artifacts/bugster-windows.exe/bugster-windows.exe release/
-        cp artifacts/bugster-macos/bugster-macos release/
-        chmod +x release/bugster-linux
-        chmod +x release/bugster-macos
-        
-        # Copy installation wrapper scripts
-        cp scripts/install.sh release/
-        cp scripts/install.bat release/
-        chmod +x release/install.sh
-        
-        # Create zip files for each platform
-        # Rename binaries to 'bugster' or 'bugster.exe' inside the zip files as expected by the installer
-        cd release
-        mkdir -p linux windows macos
-        cp bugster-linux linux/bugster
-        cp bugster-windows.exe windows/bugster.exe
-        cp bugster-macos macos/bugster
-        
-        cd linux && zip ../bugster-linux.zip bugster && cd ..
-        cd windows && zip ../bugster-windows.zip bugster.exe && cd ..
-        cd macos && zip ../bugster-macos.zip bugster && cd ..
-        
-        # Keep the original binaries available as well
-        cd ..
-        
-        ls -la release/
-    
-    - name: Get version
-      id: get_version
-      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-      
-    - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
-      with:
-        name: Bugster CLI v${{ steps.get_version.outputs.VERSION }}
-        draft: false
-        prerelease: false
-        files: release/*
-        token: ${{ secrets.GITHUB_TOKEN }} 
+      - uses: actions/checkout@v3
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List downloaded artifacts
+        run: ls -la artifacts/
+
+      - name: Prepare artifacts for release
+        run: |
+          mkdir -p release
+          cp artifacts/bugster-linux/bugster-linux release/
+          cp artifacts/bugster-windows.exe/bugster-windows.exe release/
+          cp artifacts/bugster-macos/bugster-macos release/
+          chmod +x release/bugster-linux
+          chmod +x release/bugster-macos
+
+          # Copy installation wrapper scripts
+          cp scripts/install.sh release/
+          cp scripts/install.bat release/
+          chmod +x release/install.sh
+
+          # Create zip files for each platform
+          # Rename binaries to 'bugster' or 'bugster.exe' inside the zip files as expected by the installer
+          cd release
+          mkdir -p linux windows macos
+          cp bugster-linux linux/bugster
+          cp bugster-windows.exe windows/bugster.exe
+          cp bugster-macos macos/bugster
+
+          cd linux && zip ../bugster-linux.zip bugster && cd ..
+          cd windows && zip ../bugster-windows.zip bugster.exe && cd ..
+          cd macos && zip ../bugster-macos.zip bugster && cd ..
+
+          # Keep the original binaries available as well
+          cd ..
+
+          ls -la release/
+
+      - name: Get version
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          if [[ "$VERSION" == *"beta"* ]]; then
+            echo "IS_PRERELEASE=true" >> $GITHUB_OUTPUT
+          else
+            echo "IS_PRERELEASE=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Bugster CLI v${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: ${{ steps.get_version.outputs.IS_PRERELEASE }}
+          files: release/*
+          token: ${{ secrets.GITHUB_TOKEN }}

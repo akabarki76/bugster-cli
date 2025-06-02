@@ -401,7 +401,17 @@ class ImportTreeGenerator:
 
 def generate_and_save_import_tree() -> Dict:
     """Generate the import tree for the project."""
-    framework_id = get_project_info()["data"]["frameworks"][0]["id"]
+    project_info = get_project_info()
+    frameworks = project_info.get("data", {}).get("frameworks", [])
+
+    if not frameworks:
+        raise ValueError("No frameworks detected in project")
+
+    framework_id = frameworks[0].get("id")
+
+    if not framework_id:
+        raise ValueError("Framework ID not found")
+
     cache_framework_dir = os.path.join(BUGSTER_DIR, framework_id)
     output_file = os.path.join(cache_framework_dir, "import_tree.json")
     generator = ImportTreeGenerator()

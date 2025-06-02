@@ -21,11 +21,11 @@ console = Console()
 
 
 @app.command()
-def login():
-    """[bold blue]Login[/bold blue] to Bugster by setting up your API key."""
-    from bugster.commands.login import login_command
+def auth():
+    """[bold blue]Authenticate[/bold blue] to Bugster by setting up your API key."""
+    from bugster.commands.auth import auth_command
 
-    login_command()
+    auth_command()
 
 
 @app.command()

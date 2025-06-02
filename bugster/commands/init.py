@@ -16,6 +16,7 @@ from bugster.constants import (
     EXAMPLE_TEST_FILE,
     EXAMPLE_TEST,
 )
+from bugster.commands.middleware import require_api_key
 
 console = Console()
 
@@ -77,7 +78,7 @@ def update_gitignore():
             for pattern in ignore_patterns:
                 f.write(f"{pattern}\n")
 
-
+@require_api_key
 def init_command():
     """Initialize Bugster CLI configuration."""
     # Ask for project name and generate ID

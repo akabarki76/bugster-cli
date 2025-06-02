@@ -89,7 +89,14 @@ class TestCasesService:
     def delete_spec_by_spec_path(self, spec_path: str):
         """Delete a spec file by spec path."""
         path = os.path.join(TESTS_DIR, spec_path)
-        os.remove(path)
+
+        try:
+            os.remove(path)
+            logger.info("Deleted spec file {}", path)
+        except Exception as err:
+            msg = f"Failed to delete spec file {path}: {err}"
+            logger.error(msg)
+            raise BugsterError(msg)
 
     def _update_spec_yaml_file(self, spec_path: str, spec_data: dict[Any, str]):
         """Update the spec YAML file."""

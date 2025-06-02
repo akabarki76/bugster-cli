@@ -44,7 +44,7 @@ def get_specs_pages():
     return specs_pages
 
 
-def filter_path(path: str):
+def filter_path(path: str) -> Optional[str]:
     """Filter a single path based on ignore patterns and `.gitignore` rules."""
     from bugster.libs.utils.git import get_gitignore
 

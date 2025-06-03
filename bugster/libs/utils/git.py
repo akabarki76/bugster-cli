@@ -10,23 +10,42 @@ from bugster.libs.utils.enums import GitCommand
 from bugster.libs.utils.files import filter_path
 
 
-def run_git_command(
-    cmd_key: GitCommand,
-    capture_output: bool = True,
-    text: bool = True,
-    check: bool = True,
-):
-    """Run a git command."""
-    if cmd_key == GitCommand.DIFF_HEAD:
-        subprocess.run(GitCommand.ADD_INTENT, check=True)
+class GitCommandRunner:
+    """Executes git commands with automatic cleanup."""
 
-    result = subprocess.run(
-        cmd_key.value,
-        capture_output=capture_output,
-        text=text,
-        check=check,
-    )
-    return result.stdout
+    def __init__(self, cmd_key: GitCommand):
+        self.cmd_key = cmd_key
+
+    def run(
+        self,
+        capture_output: bool = True,
+        text: bool = True,
+        check: bool = True,
+    ):
+        """Run a git command."""
+        if self.cmd_key == GitCommand.DIFF_HEAD:
+            subprocess.run(GitCommand.ADD_INTENT, check=True)
+
+        result = subprocess.run(
+            self.cmd_key,
+            capture_output=capture_output,
+            text=text,
+            check=check,
+        )
+        return result.stdout
+
+    def cleanup(self):
+        """Cleanup the git repository."""
+        if self.cmd_key == GitCommand.DIFF_HEAD:
+            subprocess.run(GitCommand.RESET, check=True)
+
+    def __enter__(self):
+        """Enter the context."""
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Exit the context."""
+        self.cleanup()
 
 
 def get_gitignore(dir_path: str = WORKING_DIR):
@@ -175,7 +194,10 @@ def get_diff_changes_per_page(
     )
 
     diff_changes_per_page = defaultdict(list)
-    diff_changes = run_git_command(cmd_key=git_command)
+
+    with GitCommandRunner(cmd_key=git_command) as git_command_runner:
+        diff_changes = git_command_runner.run()
+
     parsed_diff = parse_git_diff(diff_text=diff_changes)
 
     for file_change in parsed_diff.files:

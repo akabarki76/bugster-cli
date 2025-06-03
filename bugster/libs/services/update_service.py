@@ -4,7 +4,7 @@ from typing import Optional
 from bugster.libs.mixins import DeleteMixin, SuggestMixin, UpdateMixin
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.enums import GitCommand
-from bugster.libs.utils.git import parse_diff_status, run_git_command
+from bugster.libs.utils.git import GitCommandRunner, parse_diff_status
 from bugster.libs.utils.nextjs.import_tree_generator import (
     generate_and_save_import_tree,
 )
@@ -41,7 +41,11 @@ class UpdateService(ABC):
 
     def _get_mapped_changes(self) -> dict:
         """Get the mapped changes of the user's repository."""
-        diff_status = run_git_command(cmd_key=GitCommand.DIFF_STATUS_PORCELAIN)
+        with GitCommandRunner(
+            cmd_key=GitCommand.DIFF_STATUS_PORCELAIN
+        ) as git_command_runner:
+            diff_status = git_command_runner.run()
+
         return parse_diff_status(diff_status=diff_status)
 
     def _get_import_tree(self) -> dict:

@@ -41,7 +41,7 @@ class UpdateService(ABC):
 
     def _get_mapped_changes(self) -> dict:
         """Get the mapped changes of the user's repository."""
-        diff_status = run_git_command(cmd_key=GitCommand.DIFF_STATUS)
+        diff_status = run_git_command(cmd_key=GitCommand.DIFF_STATUS_PORCELAIN)
         return parse_diff_status(diff_status=diff_status)
 
     def _get_import_tree(self) -> dict:

@@ -20,7 +20,7 @@ class UpdateMixin:
         file_paths = self.mapped_changes["modified"]
         console.print(f"✓ Found {len(file_paths)} modified files")
         diff_changes_per_page = get_diff_changes_per_page(
-            import_tree=self.import_tree, git_command=GitCommand.DIFF_CHANGES
+            import_tree=self.import_tree, git_command=GitCommand.DIFF_HEAD
         )
         affected_pages = [page for page in diff_changes_per_page.keys()]
         updated_specs = 0
@@ -62,7 +62,7 @@ class SuggestMixin:
         file_paths = self.mapped_changes["new"]
         console.print(f"✓ Found {len(file_paths)} added files")
         diff_changes_per_page = get_diff_changes_per_page(
-            import_tree=self.import_tree, git_command=GitCommand.DIFF_CACHED
+            import_tree=self.import_tree, git_command=GitCommand.DIFF_HEAD
         )
         new_pages = [
             page for page in diff_changes_per_page.keys() if page in file_paths

@@ -27,4 +27,18 @@ class GitCommand(list, Enum):
         "*.jsx",
     ]
     DIFF_CHANGES = ["git", "diff", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
+    DIFF_HEAD = [
+        "git",
+        "add",
+        "-N",
+        ".;",
+        "git",
+        "diff",
+        "HEAD",
+        "--",
+        "*.tsx",
+        "*.ts",
+        "*.js",
+        "*.jsx",
+    ]
     DIFF_CACHED = ["git", "diff", "--cached", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]

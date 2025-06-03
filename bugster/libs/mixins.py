@@ -118,6 +118,11 @@ class DeleteMixin:
                     status.stop()
                     console.print(f"✓ [green]{spec_path}[/green] deleted")
                     deleted_specs += 1
+            else:
+                text = Text("✗ Page ")
+                text.append(page, style="red")
+                text.append(" not found in test cases")
+                console.print(text)
 
         if deleted_specs > 0:
             console.print(

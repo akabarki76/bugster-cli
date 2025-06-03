@@ -43,6 +43,9 @@ def get_specs_pages():
             elif not isinstance(data, dict):
                 raise ValueError(f"Invalid spec file: {spec_path}")
 
+            if "page_path" not in data:
+                raise ValueError(f"Missing 'page_path' in spec file: {spec_path}")
+
             page_path = data["page_path"]
             relative_path = os.path.relpath(spec_path, TESTS_DIR)
             specs_pages[page_path] = {

@@ -6,8 +6,8 @@ from typing import Optional
 import click
 import typer
 from rich.console import Console
-from rich.text import Text
 
+from bugster import __version__
 
 app = typer.Typer(
     name="bugster",
@@ -18,10 +18,31 @@ app = typer.Typer(
 console = Console()
 
 
+def version_callback(value: bool):
+    if value:
+        print(__version__)
+        raise typer.Exit()
+
+
+@app.callback()
+def version(
+    version: bool = typer.Option(
+        None,
+        "--version",
+        "-v",
+        callback=version_callback,
+        is_eager=True,
+        help="Print the version and exit",
+    ),
+):
+    pass
+
+
 @app.command()
 def auth():
     """[bold blue]Authenticate[/bold blue] to Bugster by setting up your API key."""
     from bugster.commands.auth import auth_command
+
     auth_command()
 
 

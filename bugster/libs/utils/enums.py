@@ -11,13 +11,15 @@ class BugsterApiPath(str, Enum):
 class GitCommand(list, Enum):
     """Git commands.
 
-    - DIFF_STATUS: Get the status of the files in the repository.
-    - DIFF_CHANGES: Get the changes in the files that have changed in the repository.
-    - DIFF_CACHED: Get the changes in the files that have been staged in the repository.
-    - DIFF_FILES: Get the files that have changed in the repository.
+    - DIFF_STATUS_PORCELAIN: Get the file paths of all files that have been added, deleted, or modified in the repository.
+    - DIFF_HEAD: Get the changed content of all files that have been added, deleted, or modified in the repository.
+    - ADD_INTENT: Add the unstaged files.
+    - DIFF_CHANGES: Get the changed content of the modified and deleted *UNSTAGED* files.
+    - DIFF_CACHED: Get the changed content of the modified or deleted *STAGED* files.
+    - RESET: Remove all intent-to-add files.
     """
 
-    DIFF_STATUS = [
+    DIFF_STATUS_PORCELAIN = [
         "git",
         "status",
         "--porcelain",
@@ -27,6 +29,17 @@ class GitCommand(list, Enum):
         "*.js",
         "*.jsx",
     ]
+    ADD_INTENT = ["git", "add", "-N", ".", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
+    DIFF_HEAD = [
+        "git",
+        "diff",
+        "HEAD",
+        "--",
+        "*.tsx",
+        "*.ts",
+        "*.js",
+        "*.jsx",
+    ]
     DIFF_CHANGES = ["git", "diff", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
     DIFF_CACHED = ["git", "diff", "--cached", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
-    DIFF_FILES = ["git", "diff", "--name-only"]  # Unused
+    RESET = ["git", "reset", "--quiet"]

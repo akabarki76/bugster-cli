@@ -11,9 +11,9 @@ class BugsterApiPath(str, Enum):
 class GitCommand(list, Enum):
     """Git commands.
 
-    - DIFF_STATUS_PORCELAIN: Get all the file paths of the files that have been added, deleted or modified in the repository.
-    - DIFF_CHANGES: Get all the changed content of only deleted or modified files.
-    - DIFF_CACHED: Get the changed content of only new files that are staged.
+    - DIFF_STATUS_PORCELAIN: Get the file paths of all files that have been added, deleted, or modified in the repository.
+    - DIFF_CHANGES: Get the changed content of only the deleted or modified files.
+    - DIFF_CACHED: Get the changed content of only the newly staged files.
     """
 
     DIFF_STATUS_PORCELAIN = [

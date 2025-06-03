@@ -5,9 +5,11 @@ Initialize command implementation.
 import yaml
 import time
 import os
-from rich.prompt import Prompt
+from pathlib import Path
+from rich.prompt import Prompt, Confirm
 from rich.console import Console
 from rich.table import Table
+import typer
 
 from bugster.constants import (
     BUGSTER_DIR,
@@ -16,6 +18,7 @@ from bugster.constants import (
     EXAMPLE_TEST_FILE,
     EXAMPLE_TEST,
 )
+from bugster.commands.middleware import require_api_key
 
 console = Console()
 
@@ -78,8 +81,44 @@ def update_gitignore():
                 f.write(f"{pattern}\n")
 
 
+def find_existing_config():
+    """Check for existing Bugster configuration in current or parent directories.
+    
+    Returns:
+        tuple: (exists: bool, config_path: Path) - Whether config exists and its path
+    """
+    current = Path.cwd()
+    
+    # Check all parent directories up to root
+    while current != current.parent:
+        config_path = current / '.bugster' / 'config.yaml'
+        if config_path.exists():
+            return True, config_path
+        current = current.parent
+    
+    return False, None
+
+
+@require_api_key
 def init_command():
     """Initialize Bugster CLI configuration."""
+    # Check for existing configuration in current or parent directories
+    config_exists, existing_config_path = find_existing_config()
+    
+    if config_exists:
+        if existing_config_path == CONFIG_PATH:
+            if not Confirm.ask("There is a project in the repository, are you sure to initialize again? This action will remove the current configuration of the project", default=False):
+                console.print("[yellow]Initialization cancelled.[/yellow]")
+                raise typer.Exit(0)
+        else:
+            current_dir = Path.cwd()
+            project_dir = existing_config_path.parent.parent  # Go up two levels: .bugster/config.yaml -> .bugster -> project_dir
+            console.print(f"\n[red]Error: Cannot initialize a new project inside an existing Bugster project.[/red]")
+            console.print(f"[yellow]Current directory:[/yellow] {current_dir}")
+            console.print(f"[yellow]Existing project directory:[/yellow] {project_dir}")
+            console.print("\n[red]Please initialize the project in a directory that is not inside an existing Bugster project.[/red]")
+            raise typer.Exit(1)
+
     # Ask for project name and generate ID
     project_name = Prompt.ask("Project name", default="My Project")
     project_id = generate_project_id(project_name)
@@ -135,13 +174,14 @@ def init_command():
     console.print(f"[green]Configuration created at {CONFIG_PATH}")
     console.print(f"[green]Example test created at {EXAMPLE_TEST_FILE}")
 
-    # Show credentials table
-    table = Table(title="Configured Credentials")
-    table.add_column("ID", style="cyan")
-    table.add_column("Username", style="green")
-    table.add_column("Password", style="yellow")
+    # Show credentials table only if custom credentials were added
+    if len(credentials) > 1 or (len(credentials) == 1 and credentials[0] != create_credential_entry()):
+        table = Table(title="Configured Credentials")
+        table.add_column("ID", style="cyan")
+        table.add_column("Username", style="green")
+        table.add_column("Password", style="yellow")
 
-    for cred in credentials:
-        table.add_row(cred["id"], cred["username"], cred["password"])
+        for cred in credentials:
+            table.add_row(cred["id"], cred["username"], cred["password"])
 
-    console.print(table)
+        console.print(table)

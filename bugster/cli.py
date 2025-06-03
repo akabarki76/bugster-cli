@@ -6,13 +6,11 @@ from typing import Optional
 import click
 import typer
 from rich.console import Console
+from rich.text import Text
 
-HELP_TEXT = """
-🐛 [bold cyan]Bugster CLI[/bold cyan]
-"""
+
 app = typer.Typer(
     name="bugster",
-    help=HELP_TEXT,
     add_completion=False,
     rich_markup_mode="rich",
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -21,11 +19,10 @@ console = Console()
 
 
 @app.command()
-def login():
-    """[bold blue]Login[/bold blue] to Bugster by setting up your API key."""
-    from bugster.commands.login import login_command
-
-    login_command()
+def auth():
+    """[bold blue]Authenticate[/bold blue] to Bugster by setting up your API key."""
+    from bugster.commands.auth import auth_command
+    auth_command()
 
 
 @app.command()

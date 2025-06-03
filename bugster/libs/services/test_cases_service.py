@@ -1,6 +1,7 @@
 import os
 from random import randint
 from typing import Any, Optional
+from collections import OrderedDict
 
 import yaml
 from loguru import logger
@@ -11,6 +12,14 @@ from bugster.constants import BUGSTER_DIR, TESTS_DIR
 from bugster.libs.utils.enums import BugsterApiPath
 from bugster.libs.utils.errors import BugsterError
 from bugster.libs.utils.files import get_specs_paths
+
+
+def _ordered_dict_representer(dumper: yaml.Dumper, data: OrderedDict):
+    """Custom representer for OrderedDict to maintain field order in YAML."""
+    return dumper.represent_mapping('tag:yaml.org,2002:map', data.items())
+
+
+yaml.add_representer(OrderedDict, _ordered_dict_representer)
 
 
 class TestCasesService:
@@ -62,8 +71,21 @@ class TestCasesService:
         file_name = f"{index}_{test_case['name'].lower().replace(' ', '_')}.yaml"
         file_path = os.path.join(TESTS_DIR, file_name)
 
+        # Convert dict to OrderedDict with desired field order
+        ordered_test_case = OrderedDict()
+        field_order = ['name', 'page', 'page_path', 'task', 'steps', 'expected_result']
+        
+        for field in field_order:
+            if field in test_case:
+                ordered_test_case[field] = test_case[field]
+        
+        # Add any remaining fields not in the predefined order
+        for key, value in test_case.items():
+            if key not in field_order:
+                ordered_test_case[key] = value
+
         with open(file_path, "w") as f:
-            yaml.dump(test_case, f, default_flow_style=False)
+            yaml.dump(ordered_test_case, f, default_flow_style=False, sort_keys=False)
 
         logger.info("Saved test case to {}", file_path)
         return file_path
@@ -102,8 +124,21 @@ class TestCasesService:
         """Update the spec YAML file."""
         path = os.path.join(TESTS_DIR, spec_path)
 
+        # Convert dict to OrderedDict with desired field order
+        ordered_spec_data = OrderedDict()
+        field_order = ['name', 'page', 'page_path', 'task', 'steps', 'expected_result']
+        
+        for field in field_order:
+            if field in spec_data:
+                ordered_spec_data[field] = spec_data[field]
+        
+        # Add any remaining fields not in the predefined order
+        for key, value in spec_data.items():
+            if key not in field_order:
+                ordered_spec_data[key] = value
+
         with open(path, "w") as f:
-            yaml.dump(spec_data, f, default_flow_style=False)
+            yaml.dump(ordered_spec_data, f, default_flow_style=False, sort_keys=False)
 
     def update_spec_by_diff(
         self, spec_data: dict[Any, str], diff_changes: str, spec_path: str

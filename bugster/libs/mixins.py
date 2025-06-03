@@ -22,7 +22,9 @@ class UpdateMixin:
         diff_changes_per_page = get_diff_changes_per_page(
             import_tree=self.import_tree, git_command=GitCommand.DIFF_CHANGES
         )
-        affected_pages = [page for page in diff_changes_per_page.keys()]
+        affected_pages = [
+            page for page in diff_changes_per_page.keys() if page in file_paths
+        ]
         updated_specs = 0
         specs_pages = get_specs_pages()
 

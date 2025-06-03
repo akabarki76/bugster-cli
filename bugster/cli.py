@@ -6,25 +6,35 @@ from typing import Optional
 import click
 import typer
 from rich.console import Console
+from rich.text import Text
 
-HELP_TEXT = """
-🐛 [bold cyan]Bugster CLI[/bold cyan]
-"""
+from bugster.utils.onboarding import print_welcome
+
 app = typer.Typer(
     name="bugster",
-    help=HELP_TEXT,
     add_completion=False,
     rich_markup_mode="rich",
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 console = Console()
 
+# Main command that shows onboarding flow
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context):
+    """🦑 Bugster CLI"""
+    # Show quickstart guide if no command or help requested
+    if not ctx.invoked_subcommand:
+        print_welcome(show_full_help=False)
+    elif ctx.get_help():
+        # Let typer show its help first
+        ctx.get_help()
+        # Then show our quickstart guide
+        print_welcome(show_full_help=True)
 
 @app.command()
 def auth():
     """[bold blue]Authenticate[/bold blue] to Bugster by setting up your API key."""
     from bugster.commands.auth import auth_command
-
     auth_command()
 
 

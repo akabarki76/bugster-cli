@@ -29,7 +29,7 @@ class GitCommand(list, Enum):
         "*.js",
         "*.jsx",
     ]
-    ADD_INTENT = ["git", "add", "-N", ".", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
+    ADD_INTENT = ["git", "add", "-N", "."]
     DIFF_HEAD = [
         "git",
         "diff",

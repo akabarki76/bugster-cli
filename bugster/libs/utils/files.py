@@ -35,7 +35,10 @@ def get_specs_pages():
         with open(spec_path, encoding="utf-8") as file:
             data = yaml.safe_load(file)
 
-            if isinstance(data, list) and len(data) > 0:
+            if isinstance(data, list):
+                if not data:
+                    raise ValueError(f"Empty list in spec file: {spec_path}")
+
                 data = data[0]
             elif not isinstance(data, dict):
                 raise ValueError(f"Invalid spec file: {spec_path}")

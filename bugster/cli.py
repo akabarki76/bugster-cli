@@ -8,7 +8,6 @@ import typer
 from rich.console import Console
 from rich.text import Text
 
-from bugster.utils.onboarding import print_welcome
 
 app = typer.Typer(
     name="bugster",
@@ -18,18 +17,6 @@ app = typer.Typer(
 )
 console = Console()
 
-# Main command that shows onboarding flow
-@app.callback(invoke_without_command=True)
-def main(ctx: typer.Context):
-    """🦑 Bugster CLI"""
-    # Show quickstart guide if no command or help requested
-    if not ctx.invoked_subcommand:
-        print_welcome(show_full_help=False)
-    elif ctx.get_help():
-        # Let typer show its help first
-        ctx.get_help()
-        # Then show our quickstart guide
-        print_welcome(show_full_help=True)
 
 @app.command()
 def auth():

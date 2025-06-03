@@ -12,8 +12,9 @@ class GitCommand(list, Enum):
     """Git commands.
 
     - DIFF_STATUS_PORCELAIN: Get the file paths of all files that have been added, deleted, or modified in the repository.
-    - DIFF_CHANGES: Get the changed content of only the deleted or modified files.
-    - DIFF_CACHED: Get the changed content of only the newly staged files.
+    - DIFF_HEAD: Get the changed content of all files that have been added, deleted, or modified in the repository.
+    - DIFF_CHANGES: Get the changed content of the modified and deleted *UNSTAGED* files.
+    - DIFF_CACHED: Get the changed content of the added, modified or deleted *STAGED* files.
     """
 
     DIFF_STATUS_PORCELAIN = [
@@ -26,7 +27,6 @@ class GitCommand(list, Enum):
         "*.js",
         "*.jsx",
     ]
-    DIFF_CHANGES = ["git", "diff", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
     DIFF_HEAD = [
         "git",
         "add",
@@ -41,4 +41,5 @@ class GitCommand(list, Enum):
         "*.js",
         "*.jsx",
     ]
+    DIFF_CHANGES = ["git", "diff", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
     DIFF_CACHED = ["git", "diff", "--cached", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]

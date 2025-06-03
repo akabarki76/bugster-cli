@@ -16,6 +16,7 @@ class GitCommand(list, Enum):
     - ADD_INTENT: Add the unstaged files.
     - DIFF_CHANGES: Get the changed content of the modified and deleted *UNSTAGED* files.
     - DIFF_CACHED: Get the changed content of the modified or deleted *STAGED* files.
+    - RESET: Remove all intent-to-add files.
     """
 
     DIFF_STATUS_PORCELAIN = [
@@ -41,3 +42,4 @@ class GitCommand(list, Enum):
     ]
     DIFF_CHANGES = ["git", "diff", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
     DIFF_CACHED = ["git", "diff", "--cached", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
+    RESET = ["git", "reset", "."]

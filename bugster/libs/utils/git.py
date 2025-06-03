@@ -103,7 +103,8 @@ def parse_diff_status(diff_status: str):
             continue
 
         status_code = line[:2]  # First two characters are the status
-        filename = line[2:]  # Rest is the filename (skip the space)
+        filename = line[2:]  # Rest is the filename
+        filename = filename.strip()  # Remove any leading/trailing whitespace
 
         if not filter_path(path=filename):
             continue

@@ -1,7 +1,7 @@
 import os
+from collections import OrderedDict
 from random import randint
 from typing import Any, Optional
-from collections import OrderedDict
 
 import yaml
 from loguru import logger
@@ -16,10 +16,22 @@ from bugster.libs.utils.files import get_specs_paths
 
 def _ordered_dict_representer(dumper: yaml.Dumper, data: OrderedDict):
     """Custom representer for OrderedDict to maintain field order in YAML."""
-    return dumper.represent_mapping('tag:yaml.org,2002:map', data.items())
+    return dumper.represent_mapping("tag:yaml.org,2002:map", data.items())
 
 
 yaml.add_representer(OrderedDict, _ordered_dict_representer)
+
+
+def get_or_create_folder(folder_name: str) -> str:
+    """Get or create a folder with a given name."""
+    folder_path = os.path.join(TESTS_DIR, folder_name)
+    os.makedirs(folder_path, exist_ok=True)
+    return folder_path
+
+
+def normalize_name(name: str) -> str:
+    """Normalize a name to a valid name."""
+    return name.lower().replace(" ", "_")
 
 
 class TestCasesService:
@@ -59,26 +71,35 @@ class TestCasesService:
     def _save_test_case_as_yaml(
         self, test_case: dict[Any, str], index: Optional[int] = None
     ):
-        """Save test case as a YAML file."""
+        """Save test case as a YAML file.
+
+        V.g., `tests/<page>/<spec>.yaml`
+        """
+        folder_name = normalize_name(name=test_case["page"])
+        folder_path = get_or_create_folder(folder_name=folder_name)
+        file_name = normalize_name(name=test_case["name"])
+
         try:
             if not index:
-                specs_paths = get_specs_paths(relatives_to=TESTS_DIR)
+                specs_paths = get_specs_paths(
+                    relatives_to=folder_path, folder_name=folder_name
+                )
                 sorted_paths = sorted(specs_paths, key=lambda x: int(x.split("_")[0]))
                 index = int(sorted_paths[-1].split("_")[0]) + 1
         except Exception:
             index = randint(1, 1000000)
 
-        file_name = f"{index}_{test_case['name'].lower().replace(' ', '_')}.yaml"
-        file_path = os.path.join(TESTS_DIR, file_name)
+        file_name = f"{index}_{file_name}.yaml"
+        file_path = os.path.join(folder_path, file_name)
 
         # Convert dict to OrderedDict with desired field order
         ordered_test_case = OrderedDict()
-        field_order = ['name', 'page', 'page_path', 'task', 'steps', 'expected_result']
-        
+        field_order = ["name", "page", "page_path", "task", "steps", "expected_result"]
+
         for field in field_order:
             if field in test_case:
                 ordered_test_case[field] = test_case[field]
-        
+
         # Add any remaining fields not in the predefined order
         for key, value in test_case.items():
             if key not in field_order:
@@ -93,14 +114,13 @@ class TestCasesService:
     def _save_test_cases_as_yaml(self, test_cases: list[dict[Any, str]]):
         """Save test cases as individual YAML files."""
         logger.info("Saving test cases as YAML files...")
-        output_dir = TESTS_DIR
-        output_dir.mkdir(parents=True, exist_ok=True)
+        TESTS_DIR.mkdir(parents=True, exist_ok=True)
 
         for i, test_case in enumerate(test_cases):
             self._save_test_case_as_yaml(test_case=test_case, index=i + 1)
 
         logger.info("Test cases saved successfully")
-        return output_dir
+        return TESTS_DIR
 
     def generate_test_cases(self):
         """Generate test cases for the given codebase analysis."""
@@ -126,12 +146,12 @@ class TestCasesService:
 
         # Convert dict to OrderedDict with desired field order
         ordered_spec_data = OrderedDict()
-        field_order = ['name', 'page', 'page_path', 'task', 'steps', 'expected_result']
-        
+        field_order = ["name", "page", "page_path", "task", "steps", "expected_result"]
+
         for field in field_order:
             if field in spec_data:
                 ordered_spec_data[field] = spec_data[field]
-        
+
         # Add any remaining fields not in the predefined order
         for key, value in spec_data.items():
             if key not in field_order:

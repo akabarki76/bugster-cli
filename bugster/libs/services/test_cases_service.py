@@ -12,6 +12,7 @@ from bugster.constants import BUGSTER_DIR, TESTS_DIR
 from bugster.libs.utils.enums import BugsterApiPath
 from bugster.libs.utils.errors import BugsterError
 from bugster.libs.utils.files import get_specs_paths
+from bugster.libs.utils.nextjs.extract_page_folder import extract_page_folder
 
 
 def _ordered_dict_representer(dumper: yaml.Dumper, data: OrderedDict):
@@ -75,7 +76,7 @@ class TestCasesService:
             "task": "Test Case 1", "steps": ["Step 1", "Step 2"], "expected_result": "Expected Result"}`
         :return: The path to the saved test case file. V.g., `tests/<page>/<spec>.yaml`
         """
-        folder_name = normalize_name(name=test_case["page"])
+        folder_name = extract_page_folder(file_path=test_case["page_path"])
         folder_path = get_or_create_folder(folder_name=folder_name)
         file_name = normalize_name(name=test_case["name"])
 
@@ -89,7 +90,8 @@ class TestCasesService:
                 index = int(sorted_paths[-1].split("_")[0]) + 1
             else:
                 index = 1
-        except Exception:
+        except Exception as err:
+            logger.error("Error getting specs paths: {}", err)
             index = randint(1, 1000000)
 
         file_name = f"{index}_{file_name}.yaml"

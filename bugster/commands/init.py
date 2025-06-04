@@ -19,6 +19,8 @@ from bugster.constants import (
     EXAMPLE_TEST,
 )
 from bugster.commands.middleware import require_api_key
+from bugster.utils.user_config import get_api_key
+from bugster.clients.http_client import BugsterHTTPClient, BugsterHTTPError
 
 console = Console()
 
@@ -119,9 +121,37 @@ def init_command():
             console.print("\n[red]Please initialize the project in a directory that is not inside an existing Bugster project.[/red]")
             raise typer.Exit(1)
 
-    # Ask for project name and generate ID
+    # Ask for project name
     project_name = Prompt.ask("Project name", default="My Project")
-    project_id = generate_project_id(project_name)
+    
+    # Get project ID from API
+    try:
+        api_key = get_api_key()
+        
+        with BugsterHTTPClient() as client:
+            # Set the API key header
+            client.set_headers({"x-api-key": api_key})
+            
+            # Make the POST request
+            project_data = client.post(
+                "/api/v1/gui/project",
+                json={"name": project_name}
+            )
+            
+            project_id = project_data.get("project_id") or project_data.get("id")
+            
+            if not project_id:
+                console.print("[red]Error: Project ID not found in API response[/red]")
+                raise typer.Exit(1)
+                
+    except BugsterHTTPError as e:
+        console.print(f"[red]Error creating project via API: {str(e)}[/red]")
+        console.print("[yellow]Falling back to local project ID generation[/yellow]")
+        project_id = generate_project_id(project_name)
+    except Exception as e:
+        console.print(f"[red]Unexpected error: {str(e)}[/red]")
+        console.print("[yellow]Falling back to local project ID generation[/yellow]")
+        project_id = generate_project_id(project_name)
 
     base_url = Prompt.ask("Base URL", default="http://localhost:3000")
 

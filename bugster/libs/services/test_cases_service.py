@@ -1,7 +1,7 @@
 import os
 from collections import OrderedDict
 from random import randint
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 from loguru import logger
@@ -68,24 +68,27 @@ class TestCasesService:
                     endpoint=BugsterApiPath.TEST_CASES.value, files=files
                 )
 
-    def _save_test_case_as_yaml(
-        self, test_case: dict[Any, str], index: Optional[int] = None
-    ):
+    def _save_test_case_as_yaml(self, test_case: dict[Any, str]):
         """Save test case as a YAML file.
 
-        V.g., `tests/<page>/<spec>.yaml`
+        :param test_case: The test case to save. V.g., `{"name": "Test Case 1", "page": "Home", "page_path": "/",
+            "task": "Test Case 1", "steps": ["Step 1", "Step 2"], "expected_result": "Expected Result"}`
+        :return: The path to the saved test case file. V.g., `tests/<page>/<spec>.yaml`
         """
         folder_name = normalize_name(name=test_case["page"])
         folder_path = get_or_create_folder(folder_name=folder_name)
         file_name = normalize_name(name=test_case["name"])
 
         try:
-            if not index:
-                specs_paths = get_specs_paths(
-                    relatives_to=folder_path, folder_name=folder_name
-                )
+            specs_paths = get_specs_paths(
+                relatives_to=folder_path, folder_name=folder_name
+            )
+
+            if specs_paths:
                 sorted_paths = sorted(specs_paths, key=lambda x: int(x.split("_")[0]))
                 index = int(sorted_paths[-1].split("_")[0]) + 1
+            else:
+                index = 1
         except Exception:
             index = randint(1, 1000000)
 
@@ -111,22 +114,16 @@ class TestCasesService:
         logger.info("Saved test case to {}", file_path)
         return file_path
 
-    def _save_test_cases_as_yaml(self, test_cases: list[dict[Any, str]]):
-        """Save test cases as individual YAML files."""
-        logger.info("Saving test cases as YAML files...")
-        TESTS_DIR.mkdir(parents=True, exist_ok=True)
-
-        for i, test_case in enumerate(test_cases):
-            self._save_test_case_as_yaml(test_case=test_case, index=i + 1)
-
-        logger.info("Test cases saved successfully")
-        return TESTS_DIR
-
     def generate_test_cases(self):
         """Generate test cases for the given codebase analysis."""
         self._set_analysis_json_path()
         test_cases = self._post_analysis_json()
-        return self._save_test_cases_as_yaml(test_cases=test_cases)
+        logger.info("Saving test cases as YAML files...")
+
+        for test_case in test_cases:
+            self._save_test_case_as_yaml(test_case=test_case)
+
+        logger.info("Test cases saved successfully")
 
     def delete_spec_by_spec_path(self, spec_path: str):
         """Delete a spec file by spec path."""

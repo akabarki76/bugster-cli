@@ -84,13 +84,20 @@ class TestCasesService:
             specs_paths = get_specs_paths(
                 relatives_to=folder_path, folder_name=folder_name
             )
+            has_numeric_prefix = any(
+                s.startswith(("1", "2", "3", "4", "5", "6", "7", "8", "9"))
+                for s in specs_paths
+            )
 
-            if specs_paths:
+            if specs_paths and has_numeric_prefix:
                 sorted_paths = sorted(specs_paths, key=lambda x: int(x.split("_")[0]))
                 index = int(sorted_paths[-1].split("_")[0]) + 1
             else:
                 index = 1
         except Exception as err:
+            import pdb
+
+            pdb.set_trace()
             logger.error("Error getting specs paths: {}", err)
             index = randint(1, 1000000)
 

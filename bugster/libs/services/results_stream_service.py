@@ -69,7 +69,7 @@ class ResultsStreamService:
         return response.json()
 
     def upload_video(self, video_path: Path) -> str:
-        """Upload a video file and return the URL."""
+        """Upload a video file using presigned URL and return the final video URL."""
         if not video_path.exists():
             # Consider logging this for debugging purposes
             return ""
@@ -79,19 +79,51 @@ class ResultsStreamService:
 
         # Check file size to avoid uploading extremely large files
         max_size = 100 * 1024 * 1024  # 100MB limit
-        if video_path.stat().st_size > max_size:
-            raise ValueError(f"Video file too large: {video_path.stat().st_size} bytes")
+        file_size = video_path.stat().st_size
+        if file_size > max_size:
+            raise ValueError(f"Video file too large: {file_size} bytes")
+
+        # Detect content type based on file extension
+        content_type_map = {
+            ".mp4": "video/mp4",
+            ".webm": "video/webm",
+            ".avi": "video/x-msvideo",
+            ".mov": "video/quicktime",
+        }
+
+        file_extension = video_path.suffix.lower()
+        content_type = content_type_map.get(file_extension, "video/mp4")
 
         try:
-            with open(video_path, "rb") as video_file:
-                files = {"video": (video_path.name, video_file, "video/mp4")}
-                response = requests.post(
-                    f"{self.base_url}/api/v1/videos/upload",
-                    headers={"X-API-Key": self.api_key},
-                    files=files,
+            # Step 1: Get presigned URL
+            presigned_response = requests.post(
+                f"{self.base_url}/api/v1/videos/presigned-url",
+                headers={"X-API-Key": self.api_key, "Content-Type": "application/json"},
+                json={"filename": video_path.name, "content_type": content_type},
+            )
+            presigned_response.raise_for_status()
+            presigned_data = presigned_response.json()
+
+            # Validate required keys in presigned URL response
+            required_keys = ["upload_url", "headers", "final_url"]
+            missing_keys = [key for key in required_keys if key not in presigned_data]
+            if missing_keys:
+                raise RuntimeError(
+                    f"Invalid presigned URL response: missing keys {missing_keys}"
                 )
-                response.raise_for_status()
-                return response.json().get("url", "")
+
+            # Step 2: Upload video directly to S3 using presigned URL
+            with open(video_path, "rb") as video_file:
+                upload_response = requests.put(
+                    presigned_data["upload_url"],
+                    headers=presigned_data["headers"],
+                    data=video_file,
+                )
+                upload_response.raise_for_status()
+
+            # Step 3: Return the final URL where video will be accessible
+            return presigned_data["final_url"]
+
         except (OSError, IOError) as e:
             raise RuntimeError(f"Failed to read video file {video_path}: {e}") from e
 

@@ -113,12 +113,20 @@ def update(
     delete_only: bool = typer.Option(
         False, help="Only delete specs, no updates or suggestions"
     ),
+    show_logs: bool = typer.Option(
+        False,
+        "--show-logs",
+        help="Show detailed logs during analysis",
+    ),
 ):
     """[bold magenta]Update[/bold magenta] your codebase with the latest changes."""
     from bugster.commands.update import update_command
 
     update_command(
-        update_only=update_only, suggest_only=suggest_only, delete_only=delete_only
+        update_only=update_only,
+        suggest_only=suggest_only,
+        delete_only=delete_only,
+        show_logs=show_logs,
     )
 
 

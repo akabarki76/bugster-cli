@@ -15,6 +15,7 @@ def update_command(
     update_only: bool = False,
     suggest_only: bool = False,
     delete_only: bool = False,
+    show_logs: bool = False,
 ):
     """Run Bugster CLI update command."""
     assert sum([update_only, suggest_only, delete_only]) <= 1, (
@@ -22,7 +23,7 @@ def update_command(
     )
 
     try:
-        setup_logger()
+        setup_logger(show_logs=show_logs)
         console.print("✓ Analyzing code changes...")
         update_service = get_update_service(
             update_only=update_only, suggest_only=suggest_only, delete_only=delete_only

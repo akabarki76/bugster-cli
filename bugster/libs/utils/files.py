@@ -7,11 +7,14 @@ import yaml
 from bugster.constants import IGNORE_PATTERNS, TESTS_DIR
 
 
-def get_specs_paths(relatives_to: Optional[str] = None) -> list[str]:
+def get_specs_paths(
+    relatives_to: Optional[str] = None, folder_name: Optional[str] = None
+) -> list[str]:
     """Get all spec files paths in the tests directory."""
     file_paths = []
+    dir = os.path.join(TESTS_DIR, folder_name) if folder_name else TESTS_DIR
 
-    for root, _, files in os.walk(TESTS_DIR):
+    for root, _, files in os.walk(dir):
         if "example" in root:
             continue
 
@@ -28,10 +31,10 @@ def get_specs_paths(relatives_to: Optional[str] = None) -> list[str]:
 
 def get_specs_pages():
     """Get the specs pages."""
-    specs_files_paths = get_specs_paths()
+    specs_paths = get_specs_paths()
     specs_pages = {}
 
-    for spec_path in specs_files_paths:
+    for spec_path in specs_paths:
         with open(spec_path, encoding="utf-8") as file:
             data = yaml.safe_load(file)
 
@@ -56,15 +59,19 @@ def get_specs_pages():
     return specs_pages
 
 
-def filter_path(path: str) -> Optional[str]:
+def filter_path(
+    path: str, allowed_extensions: Optional[list[str]] = None
+) -> Optional[str]:
     """Filter a single path based on ignore patterns and `.gitignore` rules."""
     from bugster.libs.utils.git import get_gitignore
 
     gitignore = get_gitignore()
     GITIGNORE_PATH = ".gitignore"
-    ALLOWED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"]
 
-    if not any(path.endswith(ext) for ext in ALLOWED_EXTENSIONS):
+    if not allowed_extensions:
+        allowed_extensions = [".ts", ".tsx", ".js", ".jsx"]
+
+    if not any(path.endswith(ext) for ext in allowed_extensions):
         return None
 
     if os.path.isdir(path):

@@ -3,6 +3,7 @@ import subprocess
 from collections import defaultdict
 
 import pathspec
+from loguru import logger
 
 from bugster.constants import WORKING_DIR
 from bugster.libs.utils.diff_parser import parse_git_diff
@@ -178,6 +179,7 @@ def parse_diff_status(diff_status: str):
         # If none of the above, it might be an unhandled status code
         # For robustness, you could add an 'unknown' category or default to 'modified'
 
+    logger.info("Parsed diff status!")
     return result
 
 

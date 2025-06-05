@@ -8,6 +8,7 @@ from bugster.analyzer.utils.analysis_tracker import (
     has_analysis_completed,
 )
 from bugster.commands.middleware import require_api_key
+from bugster.constants import TESTS_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
 
 console = Console()
@@ -32,11 +33,11 @@ def analyze_command(options: dict = {}):
                 console.print("✅ Analysis completed!")
 
             with Status(" Generating test cases...", spinner="dots") as status:
-                test_cases_dir_path = TestCasesService().generate_test_cases()
+                TestCasesService().generate_test_cases()
                 status.stop()
                 console.print("🎉 Test cases generation completed!")
 
-            console.print(f"💾 Test cases saved to directory '{test_cases_dir_path}'")
+            console.print(f"💾 Test cases saved to directory '{TESTS_DIR}'")
     except Exception as err:
         console.print(f"[red]Error: {str(err)}[/red]")
         raise typer.Exit(1)

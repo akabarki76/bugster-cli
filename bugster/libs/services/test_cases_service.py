@@ -1,7 +1,7 @@
 import os
-from random import randint
-from typing import Any, Optional
 from collections import OrderedDict
+from random import randint
+from typing import Any
 
 import yaml
 from loguru import logger
@@ -12,14 +12,28 @@ from bugster.constants import BUGSTER_DIR, TESTS_DIR
 from bugster.libs.utils.enums import BugsterApiPath
 from bugster.libs.utils.errors import BugsterError
 from bugster.libs.utils.files import get_specs_paths
+from bugster.libs.utils.nextjs.extract_page_folder import extract_page_folder
 
 
 def _ordered_dict_representer(dumper: yaml.Dumper, data: OrderedDict):
     """Custom representer for OrderedDict to maintain field order in YAML."""
-    return dumper.represent_mapping('tag:yaml.org,2002:map', data.items())
+    return dumper.represent_mapping("tag:yaml.org,2002:map", data.items())
 
 
 yaml.add_representer(OrderedDict, _ordered_dict_representer)
+
+
+def get_or_create_folder(folder_name: str) -> str:
+    """Get or create a folder with a given name."""
+    folder_path = os.path.join(TESTS_DIR, folder_name)
+    logger.info("Creating folder {}", folder_path)
+    os.makedirs(folder_path, exist_ok=True)
+    return folder_path
+
+
+def normalize_name(name: str) -> str:
+    """Normalize a name to a valid name."""
+    return name.lower().replace(" ", "_")
 
 
 class TestCasesService:
@@ -56,29 +70,46 @@ class TestCasesService:
                     endpoint=BugsterApiPath.TEST_CASES.value, files=files
                 )
 
-    def _save_test_case_as_yaml(
-        self, test_case: dict[Any, str], index: Optional[int] = None
-    ):
-        """Save test case as a YAML file."""
+    def _save_test_case_as_yaml(self, test_case: dict[Any, str]):
+        """Save test case as a YAML file.
+
+        :param test_case: The test case to save. V.g., `{"name": "Test Case 1", "page": "Home", "page_path": "/",
+            "task": "Test Case 1", "steps": ["Step 1", "Step 2"], "expected_result": "Expected Result"}`
+        :return: The path to the saved test case file. V.g., `tests/<page>/<spec>.yaml`
+        """
+        folder_name = extract_page_folder(file_path=test_case["page_path"])
+        folder_path = get_or_create_folder(folder_name=folder_name)
+        file_name = normalize_name(name=test_case["name"])
+
         try:
-            if not index:
-                specs_paths = get_specs_paths(relatives_to=TESTS_DIR)
+            specs_paths = get_specs_paths(
+                relatives_to=folder_path, folder_name=folder_name
+            )
+            has_numeric_prefix = any(
+                s.startswith(("1", "2", "3", "4", "5", "6", "7", "8", "9"))
+                for s in specs_paths
+            )
+
+            if specs_paths and has_numeric_prefix:
                 sorted_paths = sorted(specs_paths, key=lambda x: int(x.split("_")[0]))
                 index = int(sorted_paths[-1].split("_")[0]) + 1
-        except Exception:
+            else:
+                index = 1
+        except Exception as err:
+            logger.error("Error getting specs paths: {}", err)
             index = randint(1, 1000000)
 
-        file_name = f"{index}_{test_case['name'].lower().replace(' ', '_')}.yaml"
-        file_path = os.path.join(TESTS_DIR, file_name)
+        file_name = f"{index}_{file_name}.yaml"
+        file_path = os.path.join(folder_path, file_name)
 
         # Convert dict to OrderedDict with desired field order
         ordered_test_case = OrderedDict()
-        field_order = ['name', 'page', 'page_path', 'task', 'steps', 'expected_result']
-        
+        field_order = ["name", "page", "page_path", "task", "steps", "expected_result"]
+
         for field in field_order:
             if field in test_case:
                 ordered_test_case[field] = test_case[field]
-        
+
         # Add any remaining fields not in the predefined order
         for key, value in test_case.items():
             if key not in field_order:
@@ -90,23 +121,16 @@ class TestCasesService:
         logger.info("Saved test case to {}", file_path)
         return file_path
 
-    def _save_test_cases_as_yaml(self, test_cases: list[dict[Any, str]]):
-        """Save test cases as individual YAML files."""
-        logger.info("Saving test cases as YAML files...")
-        output_dir = TESTS_DIR
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        for i, test_case in enumerate(test_cases):
-            self._save_test_case_as_yaml(test_case=test_case, index=i + 1)
-
-        logger.info("Test cases saved successfully")
-        return output_dir
-
     def generate_test_cases(self):
         """Generate test cases for the given codebase analysis."""
         self._set_analysis_json_path()
         test_cases = self._post_analysis_json()
-        return self._save_test_cases_as_yaml(test_cases=test_cases)
+        logger.info("Saving test cases as YAML files...")
+
+        for test_case in test_cases:
+            self._save_test_case_as_yaml(test_case=test_case)
+
+        logger.info("Test cases saved successfully")
 
     def delete_spec_by_spec_path(self, spec_path: str):
         """Delete a spec file by spec path."""
@@ -126,12 +150,12 @@ class TestCasesService:
 
         # Convert dict to OrderedDict with desired field order
         ordered_spec_data = OrderedDict()
-        field_order = ['name', 'page', 'page_path', 'task', 'steps', 'expected_result']
-        
+        field_order = ["name", "page", "page_path", "task", "steps", "expected_result"]
+
         for field in field_order:
             if field in spec_data:
                 ordered_spec_data[field] = spec_data[field]
-        
+
         # Add any remaining fields not in the predefined order
         for key, value in spec_data.items():
             if key not in field_order:

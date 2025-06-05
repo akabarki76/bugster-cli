@@ -68,6 +68,9 @@ def filter_path(
     gitignore = get_gitignore()
     GITIGNORE_PATH = ".gitignore"
 
+    if not allowed_extensions:
+        allowed_extensions = [".ts", ".tsx", ".js", ".jsx"]
+
     if not any(path.endswith(ext) for ext in allowed_extensions):
         return None
 

@@ -18,7 +18,7 @@ def analyze_command(options: dict = {}):
     """Run Bugster CLI analysis command."""
     if has_analysis_completed():
         console.print(
-            "🔒 This analysis has already been completed and cannot be run again"
+            "🔒 The codebase has already been analyzed and cannot be run again"
         )
         return
 

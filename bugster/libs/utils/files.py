@@ -59,15 +59,16 @@ def get_specs_pages():
     return specs_pages
 
 
-def filter_path(path: str) -> Optional[str]:
+def filter_path(
+    path: str, allowed_extensions: list[str] = [".ts", ".tsx", ".js", ".jsx"]
+) -> Optional[str]:
     """Filter a single path based on ignore patterns and `.gitignore` rules."""
     from bugster.libs.utils.git import get_gitignore
 
     gitignore = get_gitignore()
     GITIGNORE_PATH = ".gitignore"
-    ALLOWED_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"]
 
-    if not any(path.endswith(ext) for ext in ALLOWED_EXTENSIONS):
+    if not any(path.endswith(ext) for ext in allowed_extensions):
         return None
 
     if os.path.isdir(path):

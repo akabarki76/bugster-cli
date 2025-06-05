@@ -5,10 +5,10 @@ import time
 
 from loguru import logger
 
-from bugster.constants import BUGSTER_DIR
 from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import get_paths
 from bugster.analyzer.utils.errors import BugsterError
 from bugster.analyzer.utils.get_git_info import get_git_info
+from bugster.constants import BUGSTER_DIR
 
 PROJECT_JSON_PATH = os.path.join(BUGSTER_DIR, "project.json")
 
@@ -18,7 +18,7 @@ def get_project_info():
     logger.info("Getting project info...")
 
     try:
-        with open(PROJECT_JSON_PATH, "r", encoding="utf-8") as f:
+        with open(PROJECT_JSON_PATH, encoding="utf-8") as f:
             return json.load(f)
     except Exception as error:
         logger.error("Failed to read cached project data: {}", error)
@@ -29,7 +29,9 @@ def get_project_info():
 
 def detect_next_js_dir_path_from_config():
     """Detect the Next.js directory path from the config file."""
-    paths = get_paths(os.getcwd())
+    paths = get_paths(
+        os.getcwd(), allowed_extensions=[".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]
+    )
     next_dir_config_paths = [
         os.path.dirname(file_path)
         for file_path in paths
@@ -60,7 +62,7 @@ def detect_framework(options={}):
 
     if not options.get("force") and os.path.exists(PROJECT_JSON_PATH):
         try:
-            with open(PROJECT_JSON_PATH, "r", encoding="utf-8") as f:
+            with open(PROJECT_JSON_PATH, encoding="utf-8") as f:
                 project_info = json.load(f)
 
             return project_info

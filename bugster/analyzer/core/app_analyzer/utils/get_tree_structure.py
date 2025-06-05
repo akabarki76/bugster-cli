@@ -7,12 +7,14 @@ from loguru import logger
 from bugster.libs.utils.files import filter_path
 
 
-def filter_paths(all_paths: List[str]):
+def filter_paths(
+    all_paths: List[str], allowed_extensions: list[str] = [".ts", ".tsx", ".js", ".jsx"]
+):
     """Filter paths based on ignore patterns and `.gitignore` rules."""
     filtered_paths = []
 
     for path in all_paths:
-        filtered_path = filter_path(path=path)
+        filtered_path = filter_path(path=path, allowed_extensions=allowed_extensions)
 
         if filtered_path:
             filtered_paths.append(filtered_path)
@@ -21,13 +23,15 @@ def filter_paths(all_paths: List[str]):
     return filtered_paths
 
 
-def get_paths(dir_path: str) -> List[str]:
+def get_paths(
+    dir_path: str, allowed_extensions: list[str] = [".ts", ".tsx", ".js", ".jsx"]
+) -> List[str]:
     """Get all file paths in a directory, excluding test files and specific directories, while respecting
     `.gitignore` rules."""
     original_dir = os.getcwd()
     os.chdir(dir_path)
     all_paths = glob.glob("**/*", recursive=True)
-    paths = filter_paths(all_paths=all_paths)
+    paths = filter_paths(all_paths=all_paths, allowed_extensions=allowed_extensions)
     os.chdir(original_dir)
     return paths
 

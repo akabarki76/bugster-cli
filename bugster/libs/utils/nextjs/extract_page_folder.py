@@ -17,6 +17,11 @@ def extract_page_folder(file_path: str) -> str:
     if parts:
         parts = parts[1:]
 
+    # Handle `src/pages/auth/sign-in.tsx` by keeping `auth` instead of `pages`
+    # This only applies to Next.js projects with pages routing
+    if len(parts) > 2 and parts[0] == "pages":
+        parts = parts[1:]
+
     # Keep only the first remaining folder
     if parts:
         folder_path = parts[0]

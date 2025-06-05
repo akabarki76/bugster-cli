@@ -60,7 +60,7 @@ def get_specs_pages():
 
 
 def filter_path(
-    path: str, allowed_extensions: list[str] = [".ts", ".tsx", ".js", ".jsx"]
+    path: str, allowed_extensions: Optional[list[str]] = None
 ) -> Optional[str]:
     """Filter a single path based on ignore patterns and `.gitignore` rules."""
     from bugster.libs.utils.git import get_gitignore

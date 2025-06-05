@@ -1,17 +1,18 @@
 import glob
 import os
-from typing import Dict, List, Literal, TypedDict, Union
+from typing import Dict, List, Literal, Optional, TypedDict, Union
 
 from loguru import logger
 
 from bugster.libs.utils.files import filter_path
 
 
-def filter_paths(
-    all_paths: List[str], allowed_extensions: list[str] = [".ts", ".tsx", ".js", ".jsx"]
-):
+def filter_paths(all_paths: List[str], allowed_extensions: Optional[list[str]] = None):
     """Filter paths based on ignore patterns and `.gitignore` rules."""
     filtered_paths = []
+
+    if allowed_extensions is None:
+        allowed_extensions = [".ts", ".tsx", ".js", ".jsx"]
 
     for path in all_paths:
         filtered_path = filter_path(path=path, allowed_extensions=allowed_extensions)
@@ -24,7 +25,7 @@ def filter_paths(
 
 
 def get_paths(
-    dir_path: str, allowed_extensions: list[str] = [".ts", ".tsx", ".js", ".jsx"]
+    dir_path: str, allowed_extensions: Optional[list[str]] = None
 ) -> List[str]:
     """Get all file paths in a directory, excluding test files and specific directories, while respecting
     `.gitignore` rules."""

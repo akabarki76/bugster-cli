@@ -23,6 +23,7 @@ def has_analysis_completed():
 @contextmanager
 def analysis_tracker(version: str = "1.0"):
     """Context manager that tracks analysis completion state."""
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     start_time = datetime.now()
     state = {
         "status": "running",

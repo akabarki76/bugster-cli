@@ -54,8 +54,7 @@ def init():
     init_command()
 
 
-@app.command()
-def test(
+def _run_tests(
     path: Optional[str] = typer.Argument(None, help="Path to test file or directory"),
     headless: Optional[bool] = typer.Option(
         False, "--headless", help="Run tests in headless mode"
@@ -87,8 +86,12 @@ def test(
     )
 
 
-@app.command()
-def analyze(
+# Register the same function with two different command names
+app.command(name="test")(_run_tests)
+app.command(name="run")(_run_tests)
+
+
+def _analyze_codebase(
     show_logs: bool = typer.Option(
         False,
         "--show-logs",
@@ -105,6 +108,11 @@ def analyze(
     from bugster.commands.analyze import analyze_command
 
     analyze_command(options={"show_logs": show_logs, "force": force})
+
+
+# Register the same function with two different command names
+app.command(name="analyze")(_analyze_codebase)
+app.command(name="generate")(_analyze_codebase)
 
 
 @app.command()

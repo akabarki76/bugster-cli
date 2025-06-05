@@ -95,9 +95,6 @@ class TestCasesService:
             else:
                 index = 1
         except Exception as err:
-            import pdb
-
-            pdb.set_trace()
             logger.error("Error getting specs paths: {}", err)
             index = randint(1, 1000000)
 

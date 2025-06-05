@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from loguru import logger
+
 
 def extract_page_folder(file_path: str) -> str:
     """Extract the first parent folder path for a given file path."""
@@ -31,4 +33,5 @@ def extract_page_folder(file_path: str) -> str:
     else:
         folder_path = ""
 
+    logger.info("Extracted folder path: {}", folder_path)
     return folder_path

@@ -26,6 +26,7 @@ yaml.add_representer(OrderedDict, _ordered_dict_representer)
 def get_or_create_folder(folder_name: str) -> str:
     """Get or create a folder with a given name."""
     folder_path = os.path.join(TESTS_DIR, folder_name)
+    logger.info("Creating folder {}", folder_path)
     os.makedirs(folder_path, exist_ok=True)
     return folder_path
 

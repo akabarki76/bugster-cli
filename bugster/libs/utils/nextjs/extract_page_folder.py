@@ -13,7 +13,7 @@ def extract_page_folder(file_path: str) -> str:
     if parts:
         parts = parts[:-1]
 
-    # Remove the root folder (first part like 'src' or 'app')
+    # Remove the root folder (first part like 'src', 'app', 'backend', 'frontend', etc.)
     if parts:
         parts = parts[1:]
 

@@ -45,7 +45,7 @@ class GitCommand(list, Enum):
     DIFF_BRANCH_HEAD = [
         "git",
         "diff",
-        "HEAD..{target_branch}",
+        "{target_branch}..HEAD",
         "--",
         "*.tsx",
         "*.ts",

@@ -14,6 +14,14 @@ from bugster.libs.utils.nextjs.pages_finder import (
 console = Console()
 
 
+def parse_spec_page_with_file_path(data, spec_path):
+    """Parser for spec page with file path."""
+    return {
+        "file_path": PosixPath(spec_path),
+        "content": data,
+    }
+
+
 class DetectAffectedSpecsMixin:
     """Detect affected specs mixin."""
 
@@ -27,14 +35,7 @@ class DetectAffectedSpecsMixin:
             page for page in diff_changes_per_page.keys() if page in file_paths
         ]
         affected_specs = []
-
-        def add_file_path_to_spec_data(data, spec_path):
-            return {
-                "file_path": PosixPath(spec_path),
-                "content": data,
-            }
-
-        specs_pages = get_specs_pages(parser=add_file_path_to_spec_data)
+        specs_pages = get_specs_pages(parser=parse_spec_page_with_file_path)
 
         for page in affected_pages:
             if page in specs_pages:

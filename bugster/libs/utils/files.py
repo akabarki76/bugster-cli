@@ -29,14 +29,15 @@ def get_specs_paths(
     return file_paths
 
 
-def create_spec_summary(data, spec_path):
+def parse_spec_page(data, spec_path):
+    """Default parser for spec page."""
     return {
         "data": data,
         "path": os.path.relpath(spec_path, TESTS_DIR),
     }
 
 
-def get_specs_pages(parser: Callable = create_spec_summary):
+def get_specs_pages(parser: Callable = parse_spec_page):
     """Get the specs pages."""
     specs_paths = get_specs_paths()
     specs_pages = {}

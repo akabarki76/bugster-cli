@@ -24,6 +24,8 @@ def parse_spec_page_with_file_path(data, spec_path):
 
 def format_diff_branch_head_command():
     """Format the diff branch head command."""
+    # At the moment, we only support diffing against the main branch.
+    # In the future, we will support diffing against any branch the user wants
     target_branch = "origin/main"
     return (
         " ".join(GitCommand.DIFF_BRANCH_HEAD)

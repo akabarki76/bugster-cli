@@ -26,7 +26,7 @@ from bugster.types import (
     WebSocketStepRequestMessage,
     WebSocketStepResultMessage,
 )
-from bugster.utils.file import get_mcp_config_path, load_config, load_test_files
+from src.utils.file import get_mcp_config_path, load_config, load_test_files
 
 console = Console()
 
@@ -393,7 +393,7 @@ async def test_command(
         path = Path(test_path) if test_path else None
 
         if affected:
-            test_files = [spec["data"] for spec in DetectAffectedSpecsService().run()]
+            test_files = DetectAffectedSpecsService().run()
         else:
             test_files = load_test_files(path)
 

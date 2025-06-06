@@ -74,6 +74,9 @@ def _run_tests(
     base_url: Optional[str] = typer.Option(
         None, "--base-url", help="Base URL to use for the test run"
     ),
+    affected: Optional[str] = typer.Option(
+        None, "--affected", help="Affected files or directories"
+    ),
 ):
     """[bold yellow]Run[/bold yellow] Bugster tests.
 

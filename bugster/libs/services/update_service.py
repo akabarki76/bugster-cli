@@ -1,7 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from bugster.libs.mixins import DeleteMixin, SuggestMixin, UpdateMixin
+from bugster.libs.mixins import (
+    DeleteMixin,
+    DetectAffectedSpecsMixin,
+    SuggestMixin,
+    UpdateMixin,
+)
 from bugster.libs.services.test_cases_service import TestCasesService
 from bugster.libs.utils.enums import GitCommand
 from bugster.libs.utils.git import GitCommandRunner, parse_diff_status
@@ -95,6 +100,14 @@ class DefaultUpdateService(UpdateService, UpdateMixin, SuggestMixin, DeleteMixin
         self.update()
         self.suggest()
         self.delete()
+
+
+class DetectAffectedSpecsService(UpdateService, DetectAffectedSpecsMixin):
+    """Detect affected specs service."""
+
+    def run(self):
+        """Run the detect affected specs service."""
+        self.detect()
 
 
 def get_update_service(update_only: bool, suggest_only: bool, delete_only: bool):

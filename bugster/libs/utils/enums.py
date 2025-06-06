@@ -11,6 +11,7 @@ class BugsterApiPath(str, Enum):
 class GitCommand(list, Enum):
     """Git commands.
 
+    - CURRENT_BRANCH: -
     - DIFF_STATUS_PORCELAIN: Get the file paths of all files that have been added, deleted, or modified in the repository.
     - DIFF_HEAD: Get the changed content of all files that have been added, deleted, or modified in the repository.
     - ADD_INTENT: Add the unstaged files.
@@ -20,6 +21,7 @@ class GitCommand(list, Enum):
     - RESET: Remove all intent-to-add files.
     """
 
+    CURRENT_BRANCH = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
     DIFF_STATUS_PORCELAIN = [
         "git",
         "status",

@@ -6,7 +6,7 @@ from rich.text import Text
 
 from bugster.libs.utils.enums import GitCommand
 from bugster.libs.utils.files import get_specs_pages
-from bugster.libs.utils.git import get_diff_changes_per_page
+from bugster.libs.utils.git import get_diff_changes_per_page, run_git_command
 from bugster.libs.utils.nextjs.pages_finder import (
     is_nextjs_page,
 )
@@ -28,8 +28,14 @@ class DetectAffectedSpecsMixin:
     def detect(self, *args, **kwargs):
         """Detect affected specs."""
         file_paths = self.mapped_changes["modified"]
+        current_branch = run_git_command(cmd_key=GitCommand.CURRENT_BRANCH)
+        formatted_cmd = (
+            " ".join(GitCommand.DIFF_BRANCH_UNSTAGED)
+            .format(current_branch=current_branch)
+            .split(" ")
+        )
         diff_changes_per_page = get_diff_changes_per_page(
-            import_tree=self.import_tree, git_command=GitCommand.DIFF_BRANCH_UNSTAGED
+            import_tree=self.import_tree, git_command=formatted_cmd
         )
         affected_pages = [
             page for page in diff_changes_per_page.keys() if page in file_paths

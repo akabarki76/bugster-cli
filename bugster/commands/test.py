@@ -26,7 +26,7 @@ from bugster.types import (
     WebSocketStepRequestMessage,
     WebSocketStepResultMessage,
 )
-from src.utils.file import get_mcp_config_path, load_config, load_test_files
+from bugster.utils.file import get_mcp_config_path, load_config, load_test_files
 
 console = Console()
 

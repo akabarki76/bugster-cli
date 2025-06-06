@@ -29,7 +29,7 @@ class DetectAffectedSpecsMixin:
         """Detect affected specs."""
         file_paths = self.mapped_changes["modified"]
         diff_changes_per_page = get_diff_changes_per_page(
-            import_tree=self.import_tree, git_command=GitCommand.DIFF_UNSTAGED
+            import_tree=self.import_tree, git_command=GitCommand.DIFF_BRANCH_UNSTAGED
         )
         affected_pages = [
             page for page in diff_changes_per_page.keys() if page in file_paths

@@ -1,3 +1,5 @@
+from pathlib import PosixPath
+
 from rich.console import Console
 from rich.status import Status
 from rich.text import Text
@@ -25,7 +27,14 @@ class DetectAffectedSpecsMixin:
             page for page in diff_changes_per_page.keys() if page in file_paths
         ]
         affected_specs = []
-        specs_pages = get_specs_pages()
+
+        def add_file_path_to_spec_data(data, spec_path):
+            return {
+                "file_path": PosixPath(spec_path),
+                "content": data,
+            }
+
+        specs_pages = get_specs_pages(parser=add_file_path_to_spec_data)
 
         for page in affected_pages:
             if page in specs_pages:

@@ -1,6 +1,6 @@
 import fnmatch
 import os
-from typing import Optional
+from typing import Callable, Optional
 
 import yaml
 
@@ -29,7 +29,14 @@ def get_specs_paths(
     return file_paths
 
 
-def get_specs_pages():
+def create_spec_summary(data, spec_path):
+    return {
+        "data": data,
+        "path": os.path.relpath(spec_path, TESTS_DIR),
+    }
+
+
+def get_specs_pages(parser: Callable = create_spec_summary):
     """Get the specs pages."""
     specs_paths = get_specs_paths()
     specs_pages = {}
@@ -50,11 +57,7 @@ def get_specs_pages():
                 raise ValueError(f"Missing 'page_path' in spec file: {spec_path}")
 
             page_path = data["page_path"]
-            relative_path = os.path.relpath(spec_path, TESTS_DIR)
-            specs_pages[page_path] = {
-                "data": data,
-                "path": relative_path,
-            }
+            specs_pages[page_path] = parser(data=data, spec_path=spec_path)
 
     return specs_pages
 
@@ -63,7 +66,7 @@ def filter_path(
     path: str, allowed_extensions: Optional[list[str]] = None
 ) -> Optional[str]:
     """Filter a single path based on ignore patterns and `.gitignore` rules."""
-    from bugster.libs.utils.git import get_gitignore
+    from src.libs.utils.git import get_gitignore
 
     gitignore = get_gitignore()
     GITIGNORE_PATH = ".gitignore"

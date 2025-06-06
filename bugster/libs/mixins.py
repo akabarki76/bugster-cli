@@ -6,7 +6,7 @@ from rich.text import Text
 
 from bugster.libs.utils.enums import GitCommand
 from bugster.libs.utils.files import get_specs_pages
-from bugster.libs.utils.git import get_diff_changes_per_page, run_git_command
+from bugster.libs.utils.git import get_diff_changes_per_page
 from bugster.libs.utils.nextjs.pages_finder import (
     is_nextjs_page,
 )
@@ -22,28 +22,32 @@ def parse_spec_page_with_file_path(data, spec_path):
     }
 
 
+def format_diff_branch_head_command():
+    """Format the diff branch head command."""
+    target_branch = "origin/main"
+    return (
+        " ".join(GitCommand.DIFF_BRANCH_HEAD)
+        .format(target_branch=target_branch)
+        .split(" ")
+    )
+
+
 class DetectAffectedSpecsMixin:
     """Detect affected specs mixin."""
 
     def detect(self, *args, **kwargs):
         """Detect affected specs."""
-        file_paths = self.mapped_changes["modified"]
-        current_branch = run_git_command(cmd_key=GitCommand.CURRENT_BRANCH)
-        formatted_cmd = (
-            " ".join(GitCommand.DIFF_BRANCH_UNSTAGED)
-            .format(current_branch=current_branch)
-            .split(" ")
-        )
+        # file_paths = self.mapped_changes["modified"]
         diff_changes_per_page = get_diff_changes_per_page(
-            import_tree=self.import_tree, git_command=formatted_cmd
+            import_tree=self.import_tree, git_command=format_diff_branch_head_command()
         )
-        affected_pages = [
-            page for page in diff_changes_per_page.keys() if page in file_paths
-        ]
+        # affected_pages = [
+        #     page for page in diff_changes_per_page.keys() if page in file_paths
+        # ]
         affected_specs = []
         specs_pages = get_specs_pages(parser=parse_spec_page_with_file_path)
 
-        for page in affected_pages:
+        for page in diff_changes_per_page.keys():
             if page in specs_pages:
                 affected_specs.append(specs_pages[page])
 
@@ -58,7 +62,7 @@ class UpdateMixin:
         file_paths = self.mapped_changes["modified"]
         console.print(f"✓ Found {len(file_paths)} modified files")
         diff_changes_per_page = get_diff_changes_per_page(
-            import_tree=self.import_tree, git_command=GitCommand.DIFF_UNSTAGED
+            import_tree=self.import_tree, git_command=GitCommand.DIFF_CHANGES
         )
         affected_pages = [
             page for page in diff_changes_per_page.keys() if page in file_paths

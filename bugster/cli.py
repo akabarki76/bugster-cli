@@ -85,7 +85,9 @@ def _run_tests(
     from bugster.commands.test import test_command
 
     asyncio.run(
-        test_command(path, headless, silent, stream_results, output, run_id, base_url)
+        test_command(
+            path, headless, silent, stream_results, output, run_id, base_url, affected
+        )
     )
 
 

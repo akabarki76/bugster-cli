@@ -107,7 +107,7 @@ class DetectAffectedSpecsService(UpdateService, DetectAffectedSpecsMixin):
 
     def run(self):
         """Run the detect affected specs service."""
-        self.detect()
+        return self.detect()
 
 
 def get_update_service(update_only: bool, suggest_only: bool, delete_only: bool):

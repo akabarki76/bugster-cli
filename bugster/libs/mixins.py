@@ -39,13 +39,9 @@ class DetectAffectedSpecsMixin:
 
     def detect(self, *args, **kwargs):
         """Detect affected specs."""
-        # file_paths = self.mapped_changes["modified"]
         diff_changes_per_page = get_diff_changes_per_page(
             import_tree=self.import_tree, git_command=format_diff_branch_head_command()
         )
-        # affected_pages = [
-        #     page for page in diff_changes_per_page.keys() if page in file_paths
-        # ]
         affected_specs = []
         specs_pages = get_specs_pages(parser=parse_spec_page_with_file_path)
 

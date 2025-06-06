@@ -74,7 +74,7 @@ def _run_tests(
     base_url: Optional[str] = typer.Option(
         None, "--base-url", help="Base URL to use for the test run"
     ),
-    only_affected: Optional[str] = typer.Option(
+    only_affected: Optional[bool] = typer.Option(
         None, "--only-affected", help="Only run tests for affected files or directories"
     ),
 ):

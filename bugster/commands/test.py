@@ -376,7 +376,7 @@ async def test_command(
     output: Optional[str] = None,
     run_id: Optional[str] = None,
     base_url: Optional[str] = None,
-    only_affected: Optional[str] = None,
+    only_affected: Optional[bool] = None,
 ):
     """Run Bugster tests."""
     total_start_time = time.time()

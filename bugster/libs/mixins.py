@@ -12,6 +12,28 @@ from bugster.libs.utils.nextjs.pages_finder import (
 console = Console()
 
 
+class DetectAffectedSpecsMixin:
+    """Detect affected specs mixin."""
+
+    def detect(self, *args, **kwargs):
+        """Detect affected specs."""
+        file_paths = self.mapped_changes["modified"]
+        diff_changes_per_page = get_diff_changes_per_page(
+            import_tree=self.import_tree, git_command=GitCommand.DIFF_CHANGES
+        )
+        affected_pages = [
+            page for page in diff_changes_per_page.keys() if page in file_paths
+        ]
+        affected_specs = []
+        specs_pages = get_specs_pages()
+
+        for page in affected_pages:
+            if page in specs_pages:
+                affected_specs.append(specs_pages[page])
+
+        return affected_specs
+
+
 class UpdateMixin:
     """Update mixin."""
 

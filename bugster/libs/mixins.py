@@ -29,7 +29,7 @@ class DetectAffectedSpecsMixin:
         """Detect affected specs."""
         file_paths = self.mapped_changes["modified"]
         diff_changes_per_page = get_diff_changes_per_page(
-            import_tree=self.import_tree, git_command=GitCommand.DIFF_CHANGES
+            import_tree=self.import_tree, git_command=GitCommand.DIFF_UNSTAGED
         )
         affected_pages = [
             page for page in diff_changes_per_page.keys() if page in file_paths
@@ -52,7 +52,7 @@ class UpdateMixin:
         file_paths = self.mapped_changes["modified"]
         console.print(f"✓ Found {len(file_paths)} modified files")
         diff_changes_per_page = get_diff_changes_per_page(
-            import_tree=self.import_tree, git_command=GitCommand.DIFF_CHANGES
+            import_tree=self.import_tree, git_command=GitCommand.DIFF_UNSTAGED
         )
         affected_pages = [
             page for page in diff_changes_per_page.keys() if page in file_paths

@@ -376,7 +376,7 @@ async def test_command(
     output: Optional[str] = None,
     run_id: Optional[str] = None,
     base_url: Optional[str] = None,
-    affected: Optional[str] = None,
+    only_affected: Optional[str] = None,
 ):
     """Run Bugster tests."""
     total_start_time = time.time()
@@ -392,7 +392,7 @@ async def test_command(
 
         path = Path(test_path) if test_path else None
 
-        if affected:
+        if only_affected:
             test_files = DetectAffectedSpecsService().run()
         else:
             test_files = load_test_files(path)

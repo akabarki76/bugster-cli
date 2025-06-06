@@ -74,8 +74,8 @@ def _run_tests(
     base_url: Optional[str] = typer.Option(
         None, "--base-url", help="Base URL to use for the test run"
     ),
-    affected: Optional[str] = typer.Option(
-        None, "--affected", help="Affected files or directories"
+    only_affected: Optional[str] = typer.Option(
+        None, "--only-affected", help="Only run tests for affected files or directories"
     ),
 ):
     """[bold yellow]Run[/bold yellow] Bugster tests.
@@ -86,7 +86,14 @@ def _run_tests(
 
     asyncio.run(
         test_command(
-            path, headless, silent, stream_results, output, run_id, base_url, affected
+            path,
+            headless,
+            silent,
+            stream_results,
+            output,
+            run_id,
+            base_url,
+            only_affected,
         )
     )
 

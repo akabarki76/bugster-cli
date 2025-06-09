@@ -7,6 +7,20 @@ update-deps:
     @echo "✅ Done!"
 
 release version type number:
+# Release commands
+release-dev version variant="beta":
+    #!/usr/bin/env bash
+    ./scripts/release.sh {{version}} development {{variant}}
+
+release-prod version:
+    #!/usr/bin/env bash
+    ./scripts/release.sh {{version}} production
+
+release-interactive:
+    #!/usr/bin/env bash
+    ./scripts/interactive-release.py
+
+release version type:
     #!/usr/bin/env bash
     if [ "{{type}}" = "stable" ]; then
         TAG="v{{version}}"

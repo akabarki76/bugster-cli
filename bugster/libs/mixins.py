@@ -1,3 +1,5 @@
+import uuid
+from datetime import datetime, timezone
 from pathlib import PosixPath
 
 from loguru import logger
@@ -20,6 +22,10 @@ def parse_spec_page_with_file_path(data, spec_path):
     return {
         "file": PosixPath(spec_path),
         "content": [data],
+        "metadata": {
+            "id": str(uuid.uuid4()),
+            "last_modified": datetime.now(timezone.utc).isoformat(),
+        },
     }
 
 

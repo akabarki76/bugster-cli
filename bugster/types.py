@@ -12,7 +12,7 @@ class Test(BaseModel):
     name: str
     task: str
     expected_result: str
-    metadata: Optional[TestMetadata] = None
+    metadata: TestMetadata
     steps: Optional[list[str]] = None
 
 

@@ -37,16 +37,19 @@ Usage:
 Options:
     -v, --version VERSION    Install specific version (e.g., v0.2.8, v0.2.8-beta.1)
     -h, --help              Show this help message
+    -y, --yes              Automatic yes to prompts
 
 Examples:
     ./install.sh                           # Install latest version
     ./install.sh -v v0.2.8                # Install specific version
     ./install.sh -v v0.2.8-beta.1         # Install beta version
+    ./install.sh -y                       # Install with automatic yes to prompts
 EOF
 }
 
 # Parse command line arguments
 VERSION="latest"
+AUTO_YES=false
 while [[ $# -gt 0 ]]; do
     case $1 in
         -v|--version)
@@ -56,6 +59,10 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             show_help
             exit 0
+            ;;
+        -y|--yes)
+            AUTO_YES=true
+            shift
             ;;
         *)
             print_error "Unknown option: $1"
@@ -77,89 +84,191 @@ fi
 
 print_step "Detected operating system: $OS"
 
+# Function to find best Python version
+find_best_python() {
+    for py_cmd in python3.12 python3.11 python3.10 python3 python; do
+        if command -v "$py_cmd" &>/dev/null; then
+            version=$($py_cmd --version 2>&1 | grep -oE '[0-9]+\.[0-9]+')
+            if [[ $(echo "$version >= 3.10" | bc -l) -eq 1 ]]; then
+                echo "$py_cmd"
+                return 0
+            fi
+        fi
+    done
+    return 1
+}
+
+# Function to update shell config
+update_shell_config() {
+    local config_file="$1"
+    local shell_type="$2"
+    local arch_type="$3"
+    local python_path="$4"
+    
+    # Create backup
+    cp "$config_file" "${config_file}.bak"
+    
+    # Add Python configuration
+    cat << EOF >> "$config_file"
+
+# Bugster CLI Python configuration
+if [ -d "$python_path" ]; then
+    export PATH="$python_path:\$PATH"
+    alias python="python3.12"
+    alias python3="python3.12"
+    alias pip="python3.12 -m pip"
+    alias pip3="python3.12 -m pip"
+fi
+EOF
+    
+    if [[ "$OS" == "macOS" ]]; then
+        # Add Homebrew paths based on architecture
+        if [[ "$arch_type" == "arm64" ]]; then
+            echo 'export PATH="/opt/homebrew/bin:$PATH"' >> "$config_file"
+        else
+            echo 'export PATH="/usr/local/bin:$PATH"' >> "$config_file"
+        fi
+    fi
+    
+    print_success "✅ Updated shell configuration in $config_file"
+    print_warning "Please run 'source $config_file' to apply changes"
+}
+
 install_python_macos() {
-    print_step "Attempting to install Python 3.12 automatically..."
+    print_step "Installing Python 3.12 on macOS..."
+    
+    # Detect architecture
+    local arch_type
+    arch_type=$(uname -m)
     
     # Check if Homebrew is installed
-    if command -v brew &>/dev/null; then
-        print_step "Homebrew found, using it to install Python 3.12..."
-        brew install python@3.12
-    else
-        print_step "Installing Homebrew first (may prompt for password)..."
+    if ! command -v brew &>/dev/null; then
+        print_step "Installing Homebrew first..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         
         # Add Homebrew to PATH temporarily
-        if [[ -f /opt/homebrew/bin/brew ]]; then
+        if [[ "$arch_type" == "arm64" ]]; then
             eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [[ -f /usr/local/bin/brew ]]; then
-            eval "$(/usr/local/bin/brew shellenv)"
         else
-            print_error "Unable to find Homebrew after installation"
-            return 1
+            eval "$(/usr/local/bin/brew shellenv)"
         fi
-        
-        print_step "Installing Python 3.12 via Homebrew..."
-        brew install python@3.12
     fi
     
-    # Verify Python was installed
-    if command -v python3 &>/dev/null; then
-        print_success "✅ Python 3 installed successfully!"
-        return 0
+    print_step "Installing Python 3.12 via Homebrew..."
+    brew install python@3.12
+    
+    # Get Python installation path
+    local python_path
+    if [[ "$arch_type" == "arm64" ]]; then
+        python_path="/opt/homebrew/opt/python@3.12/bin"
     else
-        print_error "❌ Python installation failed"
-        return 1
-    fi
-}
-
-install_python_linux() {
-    print_step "Attempting to install Python 3.12 automatically (may prompt for password)..."
-    
-    # Detect package manager and install Python
-    if command -v apt-get &>/dev/null; then
-        print_step "Using apt-get to install Python 3.12..."
-        # Add deadsnakes PPA for newer Python versions
-        sudo add-apt-repository -y ppa:deadsnakes/ppa
-        sudo apt-get update && sudo apt-get install -y python3.12 python3.12-venv python3.12-distutils
-        # Create symlinks if they don't exist
-        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
-        sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1
-    elif command -v dnf &>/dev/null; then
-        print_step "Using dnf to install Python 3.12..."
-        sudo dnf install -y python3.12
-    elif command -v yum &>/dev/null; then
-        print_step "Using yum to install Python 3.12..."
-        # Enable EPEL repository for CentOS/RHEL
-        sudo yum install -y epel-release
-        sudo yum install -y python3.12
-    elif command -v pacman &>/dev/null; then
-        print_step "Using pacman to install Python 3.12..."
-        sudo pacman -S --noconfirm python
-    else
-        print_error "❌ Unable to detect package manager. Please install Python 3.12 manually."
-        return 1
+        python_path="/usr/local/opt/python@3.12/bin"
     fi
     
-    # Verify Python was installed
+    # Update shell configuration
+    local shell_type="${SHELL##*/}"
+    local config_file
+    
+    case "$shell_type" in
+        zsh)
+            config_file="$HOME/.zshrc"
+            ;;
+        bash)
+            if [[ -f "$HOME/.bash_profile" ]]; then
+                config_file="$HOME/.bash_profile"
+            else
+                config_file="$HOME/.bashrc"
+            fi
+            ;;
+        *)
+            config_file="$HOME/.profile"
+            ;;
+    esac
+    
+    update_shell_config "$config_file" "$shell_type" "$arch_type" "$python_path"
+    
+    # Verify Python installation
     if command -v python3.12 &>/dev/null; then
         print_success "✅ Python 3.12 installed successfully!"
         return 0
-    elif command -v python3 &>/dev/null; then
-        # Check if python3 is version 3.12
-        if python3 --version | grep -q "Python 3.12"; then
-            print_success "✅ Python 3.12 installed successfully!"
-            return 0
-        else
-            print_error "❌ Python 3.12 installation failed (different version found)"
-            return 1
-        fi
     else
         print_error "❌ Python 3.12 installation failed"
         return 1
     fi
 }
 
-# Check for minimum Python version
+install_python_linux() {
+    print_step "Installing Python 3.12 on Linux..."
+    
+    local python_path="/usr/local/bin"
+    local install_cmd=""
+    local pkg_manager=""
+    
+    # Detect package manager and prepare installation command
+    if command -v apt-get &>/dev/null; then
+        pkg_manager="apt"
+        install_cmd="sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python3.12 python3.12-venv python3.12-distutils"
+    elif command -v dnf &>/dev/null; then
+        pkg_manager="dnf"
+        install_cmd="sudo dnf install -y python3.12 python3.12-pip"
+    elif command -v yum &>/dev/null; then
+        pkg_manager="yum"
+        install_cmd="sudo yum install -y epel-release && sudo yum install -y python3.12"
+    elif command -v pacman &>/dev/null; then
+        pkg_manager="pacman"
+        install_cmd="sudo pacman -Sy --noconfirm python python-pip"
+    elif command -v zypper &>/dev/null; then
+        pkg_manager="zypper"
+        install_cmd="sudo zypper install -y python312 python312-pip"
+    else
+        print_error "❌ Unsupported package manager. Please install Python 3.12 manually."
+        return 1
+    fi
+    
+    print_step "Using $pkg_manager to install Python 3.12..."
+    eval "$install_cmd"
+    
+    # Set up alternatives system
+    if [[ "$pkg_manager" == "apt" || "$pkg_manager" == "yum" || "$pkg_manager" == "dnf" || "$pkg_manager" == "zypper" ]]; then
+        sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1
+        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+        sudo update-alternatives --set python /usr/bin/python3.12
+        sudo update-alternatives --set python3 /usr/bin/python3.12
+    fi
+    
+    # Update shell configuration
+    local shell_type="${SHELL##*/}"
+    local config_file
+    
+    case "$shell_type" in
+        zsh)
+            config_file="$HOME/.zshrc"
+            ;;
+        bash)
+            if [[ -f "$HOME/.bash_profile" ]]; then
+                config_file="$HOME/.bash_profile"
+            else
+                config_file="$HOME/.bashrc"
+            fi
+            ;;
+        *)
+            config_file="$HOME/.profile"
+            ;;
+    esac
+    
+    update_shell_config "$config_file" "$shell_type" "" "$python_path"
+    
+    # Verify Python installation
+    if command -v python3.12 &>/dev/null; then
+        print_success "✅ Python 3.12 installed successfully!"
+        return 0
+    else
+        print_error "❌ Python 3.12 installation failed"
+        return 1
+    fi
+}
+
+# Check for Python version and install if needed
 check_python_version() {
     local version=$1
     if [[ $version =~ ^Python\ 3\.([0-9]+) ]]; then
@@ -171,34 +280,20 @@ check_python_version() {
     return 1
 }
 
-# Check if Python 3.10+ is installed
-if command -v python3 &>/dev/null; then
-    version=$(python3 --version 2>&1)
+# Find best available Python version
+best_python=$(find_best_python)
+if [[ -n "$best_python" ]]; then
+    version=$($best_python --version 2>&1)
     if check_python_version "$version"; then
-        print_success "✅ Python 3.10+ is installed ($version), continuing with installation..."
+        print_success "✅ Python $version is installed, continuing with installation..."
     else
         print_error "❌ Python 3.10 or higher is required (found $version)"
-        print_warning "Would you like to install Python 3.12? (y/n)"
-        read -r choice
-        if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
-            if [[ "$OS" == "macOS" ]]; then
-                install_python_macos
-            else
-                install_python_linux
-            fi
+        if [[ "$AUTO_YES" == "true" ]]; then
+            choice="y"
         else
-            print_error "Please install Python 3.10 or higher manually and try again."
-            exit 1
+            print_warning "Would you like to install Python 3.12? (y/n)"
+            read -r choice
         fi
-    fi
-elif command -v python &>/dev/null; then
-    version=$(python --version 2>&1)
-    if check_python_version "$version"; then
-        print_success "✅ Python 3.10+ is installed ($version), continuing with installation..."
-    else
-        print_error "❌ Python 3.10 or higher is required (found $version)"
-        print_warning "Would you like to install Python 3.12? (y/n)"
-        read -r choice
         if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
             if [[ "$OS" == "macOS" ]]; then
                 install_python_macos
@@ -212,8 +307,12 @@ elif command -v python &>/dev/null; then
     fi
 else
     print_error "❌ Python 3 is not installed or not in your PATH"
-    print_warning "Would you like to install Python 3.12? (y/n)"
-    read -r choice
+    if [[ "$AUTO_YES" == "true" ]]; then
+        choice="y"
+    else
+        print_warning "Would you like to install Python 3.12? (y/n)"
+        read -r choice
+    fi
     if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
         if [[ "$OS" == "macOS" ]]; then
             install_python_macos
@@ -222,32 +321,27 @@ else
         fi
     else
         print_error "Please install Python 3.10 or higher manually and try again."
-        if [[ "$OS" == "macOS" ]]; then
-            cat << EOF
-To install Python on macOS:
-  1. Install Homebrew (if not already installed):
-     /bin/bash -c "\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  2. Install Python 3.12:
-     brew install python@3.12
-EOF
-        else
-            cat << EOF
-To install Python on your Linux distribution:
-  - Ubuntu/Debian: sudo apt-get update && sudo apt-get install python3.12 python3-pip
-  - Fedora: sudo dnf install python3.12 python3-pip
-  - Arch Linux: sudo pacman -S python python-pip
-EOF
-        fi
         exit 1
     fi
 fi
 
 # Download and run the Python installer script with version argument
 print_step "Downloading the Bugster CLI installer..."
-if [[ "$VERSION" == "latest" ]]; then
-    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | python3
+
+# Get the full path to Python 3.12
+if [[ "$OS" == "macOS" ]]; then
+    PYTHON_PATH="/opt/homebrew/opt/python@3.12/bin/python3.12"
+    if [[ ! -f "$PYTHON_PATH" ]]; then
+        PYTHON_PATH="/usr/local/opt/python@3.12/bin/python3.12"
+    fi
 else
-    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | python3 - -v "$VERSION"
+    PYTHON_PATH="/usr/bin/python3.12"
+fi
+
+if [[ "$VERSION" == "latest" ]]; then
+    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | "$PYTHON_PATH"
+else
+    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | "$PYTHON_PATH" - -v "$VERSION"
 fi
 
 exit_code=$?

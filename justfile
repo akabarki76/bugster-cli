@@ -6,7 +6,6 @@ update-deps:
     python scripts/update_dependencies.py
     @echo "✅ Done!"
 
-release version type number:
 # Release commands
 release-dev version variant="beta":
     #!/usr/bin/env bash
@@ -20,7 +19,7 @@ release-interactive:
     #!/usr/bin/env bash
     ./scripts/interactive-release.py
 
-release version type:
+release version type number:
     #!/usr/bin/env bash
     if [ "{{type}}" = "stable" ]; then
         TAG="v{{version}}"

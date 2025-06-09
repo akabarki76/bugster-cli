@@ -18,7 +18,7 @@ console = Console()
 def parse_spec_page_with_file_path(data, spec_path):
     """Parser for spec page with file path."""
     return {
-        "file_path": PosixPath(spec_path),
+        "file": PosixPath(spec_path),
         "content": data,
     }
 

@@ -30,7 +30,7 @@ def format_diff_branch_head_command():
     """
     target_branch = "origin/main"
     return (
-        " ".join(GitCommand.DIFF_BRANCH_HEAD)
+        " ".join(GitCommand.DIFF_BRANCH_AGAINST_TARGET)
         .format(target_branch=target_branch)
         .split(" ")
     )

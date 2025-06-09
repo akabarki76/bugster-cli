@@ -54,5 +54,15 @@ class GitCommand(list, Enum):
         "*.js",
         "*.jsx",
     ]
+    DIFF_BRANCH_AGAINST_TARGET = [
+        "git",
+        "diff",
+        "{target_branch}",
+        "--",
+        "*.tsx",
+        "*.ts",
+        "*.js",
+        "*.jsx",
+    ]
     DIFF_CACHED = ["git", "diff", "--cached", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
     RESET = ["git", "reset", "--quiet"]

@@ -1,4 +1,5 @@
-from typing import Literal, Optional, Union, Any
+from typing import Literal, Optional
+
 from pydantic import BaseModel
 
 
@@ -11,7 +12,7 @@ class Test(BaseModel):
     name: str
     task: str
     expected_result: str
-    metadata: TestMetadata
+    metadata: Optional[TestMetadata] = None
     steps: Optional[list[str]] = None
 
 

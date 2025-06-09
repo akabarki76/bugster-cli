@@ -19,7 +19,7 @@ def parse_spec_page_with_file_path(data, spec_path):
     """Parser for spec page with file path."""
     return {
         "file": PosixPath(spec_path),
-        "content": data,
+        "content": [data],
     }
 
 

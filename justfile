@@ -6,13 +6,12 @@ update-deps:
     python scripts/update_dependencies.py
     @echo "✅ Done!"
 
-release version type:
+release version type number:
     #!/usr/bin/env bash
     if [ "{{type}}" = "stable" ]; then
         TAG="v{{version}}"
     else
-        TIMESTAMP=$(date +"%d%m%Y-%H%M")
-        TAG="v{{version}}-beta-${TIMESTAMP}"
+        TAG="v{{version}}-beta.{{number}}"
     fi
     echo "🚀 Releasing... $TAG"
     git tag -a "$TAG" -m "Bugster CLI $TAG" && git push origin --tags

@@ -29,7 +29,7 @@ def get_specs_paths(
     return file_paths
 
 
-def parse_spec_page(data, spec_path):
+def parse_spec_page(data, spec_path) -> dict[str, dict]:
     """Default parser for spec page."""
     return {
         "data": data,
@@ -37,7 +37,7 @@ def parse_spec_page(data, spec_path):
     }
 
 
-def get_specs_pages(parser: Callable = parse_spec_page):
+def get_specs_pages(parser: Callable = parse_spec_page) -> dict[str, dict]:
     """Get the specs pages."""
     specs_paths = get_specs_paths()
     specs_pages = {}

@@ -19,12 +19,12 @@ release-interactive:
     #!/usr/bin/env bash
     ./scripts/interactive-release.py
 
-release version type:
+release version type number:
     #!/usr/bin/env bash
     if [ "{{type}}" = "stable" ]; then
         TAG="v{{version}}"
     else
-        TAG="v{{version}}-beta"
+        TAG="v{{version}}-beta.{{number}}"
     fi
     echo "🚀 Releasing... $TAG"
     git tag -a "$TAG" -m "Bugster CLI $TAG" && git push origin --tags

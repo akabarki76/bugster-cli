@@ -19,6 +19,7 @@ def run_git_command(
 ):
     """Run a git command with automatic staging/unstaging."""
     try:
+        # Add the unstaged files — diff head only works with intent-to-add files
         if cmd_key == GitCommand.DIFF_HEAD:
             subprocess.run(GitCommand.ADD_INTENT, check=True)
 
@@ -30,6 +31,7 @@ def run_git_command(
         )
         return result.stdout
     finally:
+        # Reset the intent-to-add files
         if cmd_key == GitCommand.DIFF_HEAD:
             subprocess.run(GitCommand.RESET, check=True)
 

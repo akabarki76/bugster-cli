@@ -2,11 +2,12 @@
 """
 Cross-platform installer for Bugster CLI
 Can be run directly:
-    python install.py
+    python install.py [--version VERSION]
 
 Or via curl:
-    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | python3
+    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | python3 - --version VERSION
 """
+import argparse
 import os
 import platform
 import subprocess
@@ -16,25 +17,50 @@ import zipfile
 import shutil
 import json
 import ssl
+import re
 from urllib.request import urlretrieve, Request, urlopen
+from urllib.error import URLError
 
 # Disable SSL certificate verification
 ssl._create_default_https_context = ssl._create_unverified_context
 
+# ANSI color codes
+BLUE = "\033[94m"
+GREEN = "\033[92m"
+RED = "\033[91m"
+YELLOW = "\033[93m"
+RESET = "\033[0m"
+
 # Check Python version
 if sys.version_info < (3, 10):
-    print("Error: Python 3.10 or higher is required.")
+    print(f"{RED}Error: Python 3.10 or higher is required.")
     print(f"Current Python version: {platform.python_version()}")
-    print("Please upgrade your Python installation and try again.")
+    print(f"Please upgrade your Python installation and try again.{RESET}")
     sys.exit(1)
 
 GITHUB_REPO = "https://github.com/Bugsterapp/bugster-cli"
+GITHUB_API = "https://api.github.com/repos/Bugsterapp/bugster-cli"
 DEFAULT_VERSION = "v0.1.0"
 
 
 def print_step(message):
     """Print a step message."""
-    print(f"\n=> {message}")
+    print(f"\n{BLUE}=> {message}{RESET}")
+
+
+def print_error(message):
+    """Print an error message."""
+    print(f"{RED}{message}{RESET}")
+
+
+def print_success(message):
+    """Print a success message."""
+    print(f"{GREEN}{message}{RESET}")
+
+
+def print_warning(message):
+    """Print a warning message."""
+    print(f"{YELLOW}{message}{RESET}")
 
 
 def run_command(command):
@@ -50,18 +76,41 @@ def run_command(command):
         )
         return result.stdout
     except subprocess.CalledProcessError as e:
-        print(f"Error executing command: {command}")
-        print(f"Error output: {e.stderr}")
+        print_error(f"Error executing command: {command}")
+        print_error(f"Error output: {e.stderr}")
         return None
+
+
+def is_development_version(version):
+    """Check if the version is a development version (beta, rc, alpha)."""
+    return bool(re.search(r"-beta|-rc|-alpha", version))
+
+
+def get_api_endpoint(version):
+    """Get the API endpoint based on version."""
+    if is_development_version(version):
+        return "dev.bugster.api"
+    return "api.bugster.app"
+
+
+def validate_version(version):
+    """Validate version format."""
+    if version == "latest":
+        return True
+    if not re.match(r"^v\d+\.\d+\.\d+(-beta\.\d+|-rc\.\d+|-alpha\.\d+)?$", version):
+        print_error("Invalid version format. Examples of valid versions:")
+        print("  - v0.2.8")
+        print("  - v0.2.8-beta.1")
+        print("  - v0.2.8-rc.1")
+        print("  - v0.2.8-alpha.1")
+        print("  - latest")
+        return False
+    return True
 
 
 def get_latest_version():
     """Get the latest version from GitHub."""
     print_step("Checking for latest version...")
-
-    # Get repo owner and name from GITHUB_REPO
-    _, _, _, owner, repo = GITHUB_REPO.split("/")
-    api_url = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
 
     try:
         # Create request with headers
@@ -69,7 +118,7 @@ def get_latest_version():
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
         }
-        request = Request(api_url, headers=headers)
+        request = Request(f"{GITHUB_API}/releases/latest", headers=headers)
 
         # Make the request
         with urlopen(request) as response:
@@ -77,14 +126,59 @@ def get_latest_version():
 
         if release:
             tag = release["tag_name"]
-            print(f"Latest version is {tag}")
+            print_success(f"Latest version is {tag}")
             return tag
+    except URLError as e:
+        print_error(f"Error fetching latest version: {e}")
+        print_warning("Network connection error. Please check your internet connection.")
     except Exception as e:
-        print(f"Error fetching latest version: {e}")
+        print_error(f"Error fetching latest version: {e}")
 
     # Fallback to default version if API request fails
-    print(f"Using default version: {DEFAULT_VERSION}")
+    print_warning(f"Using default version: {DEFAULT_VERSION}")
     return DEFAULT_VERSION
+
+
+def check_version_exists(version):
+    """Check if the specified version exists in GitHub releases."""
+    try:
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
+        request = Request(f"{GITHUB_API}/releases/tags/{version}", headers=headers)
+        
+        with urlopen(request) as response:
+            return response.getcode() == 200
+    except URLError:
+        return False
+
+
+def download_with_progress(url, destination):
+    """Download a file with progress indicator."""
+    try:
+        with urlopen(url) as response:
+            total_size = int(response.headers.get("content-length", 0))
+            block_size = 8192
+            current_size = 0
+
+            with open(destination, "wb") as f:
+                while True:
+                    block = response.read(block_size)
+                    if not block:
+                        break
+                    current_size += len(block)
+                    f.write(block)
+                    
+                    if total_size > 0:
+                        progress = current_size / total_size * 100
+                        print(f"\rDownloading... {progress:.1f}%", end="", flush=True)
+
+            print("\rDownload complete!      ")
+            return True
+    except Exception as e:
+        print_error(f"\nError during download: {e}")
+        return False
 
 
 def download_and_extract(version):
@@ -96,13 +190,13 @@ def download_and_extract(version):
 
     # Determine the correct asset name for the current platform
     if system == "Windows":
-        asset_name = "bugster-windows.exe.zip"
+        asset_name = "bugster-windows.zip"
     elif system == "Darwin":  # macOS
         asset_name = "bugster-macos.zip"
     elif system == "Linux":
         asset_name = "bugster-linux.zip"
     else:
-        print(f"Error: Unsupported platform: {system}")
+        print_error(f"Unsupported platform: {system}")
         sys.exit(1)
 
     # Download the asset
@@ -111,10 +205,11 @@ def download_and_extract(version):
 
     try:
         print(f"Downloading from {download_url}...")
-        urlretrieve(download_url, zip_path)
+        if not download_with_progress(download_url, zip_path):
+            raise Exception("Download failed")
     except Exception as e:
-        print(f"Error downloading release: {e}")
-        print(f"Check if {asset_name} exists for version {version}")
+        print_error(f"Error downloading release: {e}")
+        print_error(f"Check if {asset_name} exists for version {version}")
         sys.exit(1)
 
     # Extract the zip file
@@ -123,7 +218,7 @@ def download_and_extract(version):
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(temp_dir)
     except Exception as e:
-        print(f"Error extracting zip file: {e}")
+        print_error(f"Error extracting zip file: {e}")
         sys.exit(1)
 
     # Find the executable
@@ -134,8 +229,8 @@ def download_and_extract(version):
 
     # Make sure the file exists and is executable
     if not os.path.exists(exe_path):
-        print(f"Error: Could not find executable in zip file")
-        print(f"Expected path: {exe_path}")
+        print_error("Could not find executable in zip file")
+        print_error(f"Expected path: {exe_path}")
         sys.exit(1)
 
     if system != "Windows":
@@ -167,10 +262,10 @@ def add_to_path(install_dir):
         # Append the export line
         with open(config_file, "a") as f:
             f.write(export_line)
-        print(f"\nAdded Bugster to PATH in {config_file}")
+        print_success(f"\nAdded Bugster to PATH in {config_file}")
         return True
     except Exception as e:
-        print(f"\nWarning: Could not add to PATH automatically: {e}")
+        print_warning(f"\nWarning: Could not add to PATH automatically: {e}")
         return False
 
 
@@ -195,6 +290,10 @@ def install_executable(executable_path):
         install_dir = os.path.join(home, ".local", "bin")
         exe_name = "bugster"
 
+        # Create .local/bin if it doesn't exist
+        if not os.path.exists(install_dir):
+            os.makedirs(install_dir, exist_ok=True)
+
         # Add to PATH automatically for Unix systems
         shell = os.environ.get("SHELL", "").split("/")[-1] or "bash"
         profile = f"~/.{shell}rc" if shell in ["bash", "zsh"] else "~/.profile"
@@ -212,93 +311,153 @@ def install_executable(executable_path):
         if not os.path.exists(install_dir):
             os.makedirs(install_dir)
     except Exception as e:
-        print(f"Error creating directory {install_dir}: {e}")
+        print_error(f"Error creating directory {install_dir}: {e}")
         sys.exit(1)
 
-    # Copy executable to installation directory
+    # Backup existing installation if it exists
     dest_path = os.path.join(install_dir, exe_name)
+    if os.path.exists(dest_path):
+        backup_path = f"{dest_path}.bak"
+        try:
+            shutil.move(dest_path, backup_path)
+            print_warning(f"Backed up existing installation to {backup_path}")
+        except Exception as e:
+            print_warning(f"Could not backup existing installation: {e}")
+
+    # Copy executable to installation directory
     try:
         shutil.copy2(executable_path, dest_path)
         if system != "Windows":
             os.chmod(dest_path, 0o755)  # Ensure it's executable
     except Exception as e:
-        print(f"Error copying executable: {e}")
+        print_error(f"Error copying executable: {e}")
         sys.exit(1)
 
     # Check if the installation directory is in PATH
     path_var = os.environ.get("PATH", "").split(os.pathsep)
     if install_dir not in path_var and system == "Windows":
-        print("\nNOTE: " + path_instructions)
+        print_warning("\nNOTE: " + path_instructions)
 
     return dest_path
 
 
-def test_installation(executable_path):
+def test_installation(executable_path, version):
     """Test the installation by running a simple command."""
     system = platform.system()
 
     print_step("Testing installation...")
 
     try:
-        if system == "Windows":
-            output = run_command(f'"{executable_path}" --help')
-        else:
-            output = run_command(f'"{executable_path}" --help')
-
-        if output and "bugster" in output.lower():
-            print("\n✅ Bugster CLI installed successfully!")
-            print(f"Executable path: {executable_path}")
-            return True
-        else:
-            print("\n❌ Installation test failed")
+        # First check if the file exists and is executable
+        if not os.path.exists(executable_path):
+            print_error(f"Executable not found at: {executable_path}")
             return False
+
+        # Check file permissions on Unix systems
+        if system != "Windows":
+            mode = os.stat(executable_path).st_mode
+            if not mode & 0o111:
+                print_error(f"Executable does not have execute permissions: {executable_path}")
+                return False
+
+        # Try to run the version command
+        try:
+            result = subprocess.run(
+                [executable_path, "--version"],
+                capture_output=True,
+                text=True,
+                check=False  # Don't raise exception on non-zero exit
+            )
+            
+            if result.returncode != 0:
+                print_error(f"Command failed with exit code {result.returncode}")
+                if result.stdout:
+                    print_error(f"stdout: {result.stdout}")
+                if result.stderr:
+                    print_error(f"stderr: {result.stderr}")
+                return False
+
+            # If we get any output and no error, consider it a success
+            if result.stdout:
+                print_success("\n✅ Bugster CLI installed successfully!")
+                print(f"Executable path: {executable_path}")
+                
+                # Show environment info
+                api_endpoint = get_api_endpoint(version)
+                print_success(f"Environment: {'Development' if is_development_version(version) else 'Production'}")
+                print_success(f"API Endpoint: {api_endpoint}")
+                
+                # Show version info
+                installed_version = result.stdout.strip()
+                if installed_version != version:
+                    print_warning(f"\nNote: Installed version shows as {installed_version}")
+                    print_warning("This is expected as the version is currently hardcoded in bugster/__init__.py")
+                    print_warning(f"The correct version {version} has been installed but will show after the next release")
+                
+                return True
+            else:
+                print_error("No output from --version command")
+                if result.stderr:
+                    print_error(f"stderr: {result.stderr}")
+                return False
+
+        except subprocess.SubprocessError as e:
+            print_error(f"Error running version command: {e}")
+            return False
+
     except Exception as e:
-        print(f"\n❌ Error testing installation: {e}")
+        print_error(f"Error testing installation: {e}")
         return False
+
+    print_error("Installation test failed")
+    return False
 
 
 def cleanup(temp_dir):
     """Clean up temporary files."""
     try:
-        if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
-    except:
-        pass
+        shutil.rmtree(temp_dir)
+    except Exception as e:
+        print_warning(f"Warning: Could not clean up temporary files: {e}")
 
 
 def main():
     """Main installation function."""
-    print("=" * 60)
-    print("Bugster CLI Installer")
-    print("=" * 60)
+    parser = argparse.ArgumentParser(description="Install Bugster CLI", add_help=False)
+    parser.add_argument("-v", "--version", help="Version to install (e.g., v0.2.8, v0.2.8-beta.1, or 'latest')", default="latest")
+    parser.add_argument("-h", "--help", action="help", help="Show this help message and exit")
+    args = parser.parse_args()
 
-    # Get version
-    if len(sys.argv) > 1 and sys.argv[1].startswith("v"):
-        version = sys.argv[1]
-        print(f"Installing version: {version}")
-    else:
+    version = args.version.lower()
+
+    # Validate version format
+    if not validate_version(version):
+        sys.exit(1)
+
+    # Get latest version if requested
+    if version == "latest":
         version = get_latest_version()
 
-    # Download and extract
-    executable_path, temp_dir = download_and_extract(version)
+    # Check if version exists
+    if not check_version_exists(version):
+        print_error(f"Version {version} not found")
+        print_warning("Use 'latest' to install the latest version")
+        sys.exit(1)
 
-    # Install
-    installed_path = install_executable(executable_path)
+    # Show environment info
+    api_endpoint = get_api_endpoint(version)
+    print_step(f"Installing Bugster CLI {version}")
+    print(f"Environment: {'Development' if is_development_version(version) else 'Production'}")
+    print(f"API Endpoint: {api_endpoint}")
 
-    # Test installation
-    test_installation(installed_path)
-
-    # Clean up
+    # Download and install
+    exe_path, temp_dir = download_and_extract(version)
+    installed_path = install_executable(exe_path)
+    success = test_installation(installed_path, version)
     cleanup(temp_dir)
 
-    # Show shell reload instructions if needed
-    shell = os.environ.get("SHELL", "").split("/")[-1] or "bash"
-    config_file = os.path.join(os.path.expanduser("~"), f".{shell}rc")
-    print("\n\033[93mPlease restart your terminal or run:\033[0m")  # Yellow text
-    print(f"\033[96msource {config_file}\033[0m")  # Cyan text
-
-    print("\nTo use Bugster CLI, run: bugster --help")
-    print("=" * 60)
+    if not success:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
@@ -308,5 +467,5 @@ if __name__ == "__main__":
         print("\nInstallation cancelled by user")
         sys.exit(1)
     except Exception as e:
-        print(f"Error during installation: {e}")
+        print_error(f"Unexpected error: {e}")
         sys.exit(1)

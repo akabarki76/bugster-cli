@@ -21,11 +21,15 @@ def parse_spec_page_with_file_path(data, spec_path):
     """Parser for spec page with file path."""
     return {
         "file": PosixPath(spec_path),
-        "content": [data],
-        "metadata": {
-            "id": str(uuid.uuid4()),
-            "last_modified": datetime.now(timezone.utc).isoformat(),
-        },
+        "content": [
+            {
+                **data,
+                "metadata": {
+                    "id": str(uuid.uuid4()),
+                    "last_modified": datetime.now(timezone.utc).isoformat(),
+                },
+            }
+        ],
     }
 
 

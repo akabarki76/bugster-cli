@@ -51,7 +51,7 @@ class DetectAffectedSpecsMixin:
             if page in specs_pages:
                 affected_specs.append(specs_pages[page])
 
-        logger.info("Affected specs: ", affected_specs)
+        logger.info("Affected specs: {}", affected_specs)
         return affected_specs
 
 

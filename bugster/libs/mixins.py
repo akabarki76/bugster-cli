@@ -1,5 +1,6 @@
 from pathlib import PosixPath
 
+from loguru import logger
 from rich.console import Console
 from rich.status import Status
 from rich.text import Text
@@ -50,6 +51,7 @@ class DetectAffectedSpecsMixin:
             if page in specs_pages:
                 affected_specs.append(specs_pages[page])
 
+        logger.info("Affected specs: ", affected_specs)
         return affected_specs
 
 

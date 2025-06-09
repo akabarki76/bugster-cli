@@ -38,3 +38,4 @@ ENV/
 *.zip
 release.sh
 dummy
+.env

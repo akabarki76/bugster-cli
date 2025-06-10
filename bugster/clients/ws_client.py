@@ -7,15 +7,15 @@ import ssl
 from typing import Dict, Any, Optional
 import websockets
 from websockets.asyncio.client import ClientConnection
-from bugster.utils.user_config import get_api_key
+from bugster.utils.user_config import get_api_key, get_org_id, get_user_id
 
 
 class WebSocketClient:
     def __init__(self):
         """Initialize WebSocket client"""
         self.ws: Optional[ClientConnection] = None
-        self.url = "wss://websocket.bugster.app/prod/"
-        # self.url = "ws://localhost:8765"
+        self.base_url = "wss://websocket.bugster.app/prod/"
+        # self.base_url = "ws://localhost:8765"
         self.connected = False
 
         # Create SSL context that ignores certificate verification
@@ -32,19 +32,26 @@ class WebSocketClient:
                 "API key not found. Please run 'bugster login' to set up your API key."
             )
 
+        # Get org_id and user_id from config
+        org_id = get_org_id()
+        user_id = get_user_id()
+
+        # Build URL with query parameters
+        url = f"{self.base_url}?org_id={org_id}&user_id={user_id}"
+
         # Add API key to headers
         additional_headers = {"X-API-Key": api_key}
 
-        if self.url.startswith("wss"):
+        if url.startswith("wss"):
             self.ws = await websockets.connect(
-                self.url,
+                url,
                 ssl=self.ssl_context,
                 open_timeout=30,
                 additional_headers=additional_headers,
             )
         else:
             self.ws = await websockets.connect(
-                self.url,
+                url,
                 open_timeout=30,
                 additional_headers=additional_headers,
             )

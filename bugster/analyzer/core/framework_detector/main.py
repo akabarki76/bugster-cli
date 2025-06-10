@@ -5,10 +5,10 @@ import time
 
 from loguru import logger
 
-from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import get_paths
-from bugster.analyzer.utils.errors import BugsterError
-from bugster.analyzer.utils.get_git_info import get_git_info
-from bugster.constants import BUGSTER_DIR
+from src.analyzer.core.app_analyzer.utils.get_tree_structure import get_paths
+from src.analyzer.utils.errors import BugsterError
+from src.analyzer.utils.get_git_info import get_git_info
+from src.constants import BUGSTER_DIR
 
 PROJECT_JSON_PATH = os.path.join(BUGSTER_DIR, "project.json")
 

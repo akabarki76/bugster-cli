@@ -1,21 +1,16 @@
-"""
-Test for metadata consistency issue in sync command.
-"""
+"""Test for metadata consistency issue in sync command."""
 
-import pytest
-from pathlib import Path
 from unittest.mock import MagicMock
-from datetime import datetime, timezone
 
-from bugster.commands.sync import sync_command
-from bugster.utils.yaml_spec import load_spec, save_spec
+from src.commands.sync import sync_command
+from src.utils.yaml_spec import load_spec
 
 
 def test_sync_metadata_consistency_for_spec_without_metadata(tmp_path, monkeypatch):
-    """Test that metadata remains consistent when syncing a spec without initial metadata"""
+    """Test that metadata remains consistent when syncing a spec without initial metadata."""
 
     # Setup test directory
-    test_dir = tmp_path / ".bugster/tests"
+    test_dir = tmp_path / ".src/tests"
     test_dir.mkdir(parents=True)
 
     # Create a spec file WITHOUT metadata
@@ -38,16 +33,14 @@ def test_sync_metadata_consistency_for_spec_without_metadata(tmp_path, monkeypat
         return mock_specs_service
 
     # Mock constants
-    monkeypatch.setattr("bugster.commands.sync.TESTS_DIR", test_dir)
-    monkeypatch.setattr(
-        "bugster.commands.sync.SyncService", mock_specs_service_constructor
-    )
+    monkeypatch.setattr("src.commands.sync.TESTS_DIR", test_dir)
+    monkeypatch.setattr("src.commands.sync.SyncService", mock_specs_service_constructor)
 
     # Mock require_api_key decorator
     def mock_require_api_key(func):
         return func
 
-    monkeypatch.setattr("bugster.commands.sync.require_api_key", mock_require_api_key)
+    monkeypatch.setattr("src.commands.sync.require_api_key", mock_require_api_key)
 
     # Run sync command
     sync_command(branch="main", push=True)
@@ -67,9 +60,9 @@ def test_sync_metadata_consistency_for_spec_without_metadata(tmp_path, monkeypat
     final_metadata = final_spec.metadata
 
     # The metadata should be consistent between what was uploaded and what's saved locally
-    assert (
-        uploaded_metadata["id"] == final_metadata.id
-    ), f"Uploaded ID {uploaded_metadata['id']} != Final ID {final_metadata.id}"
-    assert (
-        uploaded_metadata["last_modified"] == final_metadata.last_modified
-    ), f"Uploaded timestamp {uploaded_metadata['last_modified']} != Final timestamp {final_metadata.last_modified}"
+    assert uploaded_metadata["id"] == final_metadata.id, (
+        f"Uploaded ID {uploaded_metadata['id']} != Final ID {final_metadata.id}"
+    )
+    assert uploaded_metadata["last_modified"] == final_metadata.last_modified, (
+        f"Uploaded timestamp {uploaded_metadata['last_modified']} != Final timestamp {final_metadata.last_modified}"
+    )

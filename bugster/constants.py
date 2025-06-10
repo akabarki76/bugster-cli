@@ -40,7 +40,7 @@ IGNORE_PATTERNS = [
     "scripts/**",  # Build/utility scripts
     "cypress/**",  # E2E testing
     ".github/**",  # GitHub workflows/config
-    ".bugster/**",  # Bugster CLI folder
+    ".src/**",  # Bugster CLI folder
     "build/**",  # Build output
     "__pycache__/**",  # Python cache
     "**/*.egg-info/**",  # Python package metadata

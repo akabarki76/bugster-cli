@@ -41,7 +41,7 @@ get_next_prerelease_number() {
     local version=$1
     local variant=$2
     local max_number=0
-    
+
     # List all matching tags and find the highest number
     for tag in $(git tag -l "v${version}-${variant}.*"); do
         number=$(echo $tag | grep -oE "${variant}\.[0-9]+" | cut -d. -f2)
@@ -49,7 +49,7 @@ get_next_prerelease_number() {
             max_number=$number
         fi
     done
-    
+
     echo $((max_number + 1))
 }
 
@@ -99,10 +99,10 @@ echo -e "${YELLOW}Creating tag: ${TAG}${NC}"
 echo -e "${YELLOW}This will trigger a GitHub Actions workflow to:${NC}"
 if [ "$TYPE" = "production" ]; then
     echo -e "${GREEN}- Create a production release${NC}"
-    echo -e "${GREEN}- Connect to api.bugster.app${NC}"
+    echo -e "${GREEN}- Connect to api.src.app${NC}"
 else
     echo -e "${GREEN}- Create a development pre-release${NC}"
-    echo -e "${GREEN}- Connect to dev.bugster.api${NC}"
+    echo -e "${GREEN}- Connect to dev.src.api${NC}"
 fi
 
 # Ask for confirmation
@@ -127,4 +127,4 @@ echo "=========================================="
 echo "GitHub Actions will now build and release the binaries"
 echo "The release will be available at:"
 echo "https://github.com/Bugsterapp/bugster-cli/releases/tag/v$VERSION"
-echo "==========================================" 
+echo "=========================================="

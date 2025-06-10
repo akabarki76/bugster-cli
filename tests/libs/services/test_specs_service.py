@@ -1,20 +1,19 @@
-"""
-Tests for SyncService.
-"""
+"""Tests for SyncService."""
 
-import pytest
-import responses
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
-from bugster.libs.services.specs_service import SyncService
-from bugster.utils.yaml_spec import YamlTestcase, TestCaseMetadata
+import pytest
+import responses
+
+from src.libs.services.specs_service import SyncService
+from src.utils.yaml_spec import TestCaseMetadata, YamlTestcase
 
 
 @pytest.fixture
 def specs_service():
     return SyncService(
-        base_url="https://test.bugster.dev",
+        base_url="https://test.src.dev",
         api_key="test-key",
         project_id="test-project",
     )
@@ -32,10 +31,10 @@ def mock_spec():
 
 @responses.activate
 def test_get_remote_specs(specs_service):
-    """Test getting specs from remote"""
+    """Test getting specs from remote."""
     responses.add(
         responses.GET,
-        "https://test.bugster.dev/api/v1/sync/test-project?branch=main",
+        "https://test.src.dev/api/v1/sync/test-project?branch=main",
         json={
             "test/file.yaml": [
                 {
@@ -58,7 +57,7 @@ def test_get_remote_specs(specs_service):
 
 @responses.activate
 def test_upload_specs(specs_service, mock_spec):
-    """Test uploading specs to remote"""
+    """Test uploading specs to remote."""
     specs_data = {
         "test/file.yaml": [
             {
@@ -73,7 +72,7 @@ def test_upload_specs(specs_service, mock_spec):
 
     responses.add(
         responses.PUT,
-        "https://test.bugster.dev/api/v1/sync/test-project?branch=main",
+        "https://test.src.dev/api/v1/sync/test-project?branch=main",
         json={"status": "success"},
         status=200,
     )
@@ -84,10 +83,10 @@ def test_upload_specs(specs_service, mock_spec):
 
 @responses.activate
 def test_delete_specs(specs_service):
-    """Test deleting specs from remote"""
+    """Test deleting specs from remote."""
     responses.add(
         responses.POST,
-        "https://test.bugster.dev/api/v1/sync/test-project/delete?branch=main",
+        "https://test.src.dev/api/v1/sync/test-project/delete?branch=main",
         status=200,
     )
 
@@ -97,10 +96,10 @@ def test_delete_specs(specs_service):
 
 @responses.activate
 def test_delete_specific_specs(specs_service):
-    """Test deleting specific specs by ID from remote"""
+    """Test deleting specific specs by ID from remote."""
     responses.add(
         responses.POST,
-        "https://test.bugster.dev/api/v1/sync/test-project/delete-test-cases?branch=main",
+        "https://test.src.dev/api/v1/sync/test-project/delete-test-cases?branch=main",
         status=200,
     )
 
@@ -114,19 +113,17 @@ def test_delete_specific_specs(specs_service):
 
 
 def test_specs_service_requires_api_key(monkeypatch):
-    """Test that SyncService requires an API key"""
+    """Test that SyncService requires an API key."""
     # Mock environment variable
     monkeypatch.delenv("BUGSTER_CLI_API_KEY", raising=False)
 
     # Mock get_api_key to return None
-    monkeypatch.setattr("bugster.utils.user_config.load_user_config", lambda: {})
+    monkeypatch.setattr("src.utils.user_config.load_user_config", lambda: {})
 
     # Mock libs_settings
     mock_settings = MagicMock()
-    mock_settings.bugster_api_url = "https://test.bugster.dev"
-    monkeypatch.setattr(
-        "bugster.libs.services.specs_service.libs_settings", mock_settings
-    )
+    mock_settings.bugster_api_url = "https://test.src.dev"
+    monkeypatch.setattr("src.libs.services.specs_service.libs_settings", mock_settings)
 
     with pytest.raises(
         ValueError,

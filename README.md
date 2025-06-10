@@ -44,5 +44,5 @@ pip install -e .
 ### Building
 
 ```bash
-pyinstaller bugster.spec
+pyinstaller src.spec
 ```

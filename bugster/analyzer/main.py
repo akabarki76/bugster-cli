@@ -2,8 +2,8 @@ import sys
 
 from loguru import logger
 
-from bugster.analyzer.core.app_analyzer import AppAnalyzer, detect_supported_framework
-from bugster.analyzer.core.framework_detector import detect_framework
+from src.analyzer.core.app_analyzer import AppAnalyzer, detect_supported_framework
+from src.analyzer.core.framework_detector import detect_framework
 
 
 def analyze_codebase(options: dict = {}) -> None:

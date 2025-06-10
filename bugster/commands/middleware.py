@@ -1,12 +1,11 @@
-"""
-Command middleware implementations.
-"""
+"""Command middleware implementations."""
 
 import functools
-from rich.console import Console
-import typer
 
-from bugster.utils.user_config import get_api_key
+import typer
+from rich.console import Console
+
+from src.utils.user_config import get_api_key
 
 console = Console()
 
@@ -15,11 +14,13 @@ def require_authenticated(console=None):
     """Raise an error if user is not authenticated."""
     if console is None:
         console = Console()
-    
+
     api_key = get_api_key()
     if not api_key:
         console.print("\n❌ [red]You are not authenticated.[/red]")
-        console.print("Run [bold]bugster auth[/bold] to set up your API key before using this command.\n")
+        console.print(
+            "Run [bold]bugster auth[/bold] to set up your API key before using this command.\n"
+        )
         raise RuntimeError("Not authenticated")
     return api_key
 

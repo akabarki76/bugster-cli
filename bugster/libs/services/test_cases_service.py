@@ -6,13 +6,13 @@ from typing import Any
 import yaml
 from loguru import logger
 
-from bugster.analyzer.core.framework_detector import get_project_info
-from bugster.clients.http_client import BugsterHTTPClient
-from bugster.constants import BUGSTER_DIR, TESTS_DIR
-from bugster.libs.utils.enums import BugsterApiPath
-from bugster.libs.utils.errors import BugsterError
-from bugster.libs.utils.files import get_specs_paths
-from bugster.libs.utils.nextjs.extract_page_folder import extract_page_folder
+from src.analyzer.core.framework_detector import get_project_info
+from src.clients.http_client import BugsterHTTPClient
+from src.constants import BUGSTER_DIR, TESTS_DIR
+from src.libs.utils.enums import BugsterApiPath
+from src.libs.utils.errors import BugsterError
+from src.libs.utils.files import get_specs_paths
+from src.libs.utils.nextjs.extract_page_folder import extract_page_folder
 
 
 def _ordered_dict_representer(dumper: yaml.Dumper, data: OrderedDict):

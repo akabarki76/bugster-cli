@@ -2,7 +2,7 @@ import json
 from contextlib import contextmanager
 from datetime import datetime
 
-from bugster.constants import BUGSTER_DIR
+from src.constants import BUGSTER_DIR
 
 STATE_FILE = BUGSTER_DIR / ".analysis_state.json"
 

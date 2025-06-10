@@ -5,10 +5,10 @@ from collections import defaultdict
 import pathspec
 from loguru import logger
 
-from bugster.constants import WORKING_DIR
-from bugster.libs.utils.diff_parser import parse_git_diff
-from bugster.libs.utils.enums import GitCommand
-from bugster.libs.utils.files import filter_path
+from src.constants import WORKING_DIR
+from src.libs.utils.diff_parser import parse_git_diff
+from src.libs.utils.enums import GitCommand
+from src.libs.utils.files import filter_path
 
 
 def run_git_command(
@@ -178,7 +178,7 @@ def get_diff_changes_per_page(
     :param import_tree: The import tree of the user's repository.
     :return: A dictionary with the page path as the key and the diff changes as the values.
     """
-    from bugster.libs.utils.nextjs.pages_finder import (
+    from src.libs.utils.nextjs.pages_finder import (
         find_pages_that_use_file,
         is_nextjs_page,
     )

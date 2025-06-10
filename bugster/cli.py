@@ -7,7 +7,7 @@ import click
 import typer
 from rich.console import Console
 
-from bugster import __version__
+from src import __version__
 
 app = typer.Typer(
     name="bugster",
@@ -41,7 +41,7 @@ def version(
 @app.command()
 def auth():
     """[bold blue]Authenticate[/bold blue] to Bugster by setting up your API key."""
-    from bugster.commands.auth import auth_command
+    from src.commands.auth import auth_command
 
     auth_command()
 
@@ -49,7 +49,7 @@ def auth():
 @app.command()
 def init():
     """[bold green]Initialize[/bold green] Bugster CLI configuration in your project."""
-    from bugster.commands.init import init_command
+    from src.commands.init import init_command
 
     init_command()
 
@@ -80,9 +80,9 @@ def _run_tests(
 ):
     """[bold yellow]Run[/bold yellow] Bugster tests.
 
-    If no path is provided, runs all tests in .bugster/tests.
+    If no path is provided, runs all tests in .src/tests.
     """
-    from bugster.commands.test import test_command
+    from src.commands.test import test_command
 
     asyncio.run(
         test_command(
@@ -117,7 +117,7 @@ def _analyze_codebase(
     ),
 ):
     """[bold magenta]Analyze[/bold magenta] your codebase to generate test specs."""
-    from bugster.commands.analyze import analyze_command
+    from src.commands.analyze import analyze_command
 
     analyze_command(options={"show_logs": show_logs, "force": force})
 
@@ -145,7 +145,7 @@ def update(
     ),
 ):
     """[bold magenta]Update[/bold magenta] your codebase with the latest changes."""
-    from bugster.commands.update import update_command
+    from src.commands.update import update_command
 
     update_command(
         update_only=update_only,
@@ -176,7 +176,7 @@ def sync(
     ),
 ):
     """[bold magenta]Sync[/bold magenta] your codebase with Bugster."""
-    from bugster.commands.sync import sync_command
+    from src.commands.sync import sync_command
 
     sync_command(branch, pull, push, clean_remote, dry_run, prefer)
 

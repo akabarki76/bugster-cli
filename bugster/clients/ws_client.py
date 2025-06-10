@@ -1,20 +1,20 @@
-"""
-WebSocket client implementation using websockets library
-"""
+"""WebSocket client implementation using websockets library."""
 
 import json
 import ssl
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 import websockets
 from websockets.asyncio.client import ClientConnection
-from bugster.utils.user_config import get_api_key
+
+from src.utils.user_config import get_api_key
 
 
 class WebSocketClient:
     def __init__(self):
-        """Initialize WebSocket client"""
+        """Initialize WebSocket client."""
         self.ws: Optional[ClientConnection] = None
-        self.url = "wss://websocket.bugster.app/prod/"
+        self.url = "wss://websocket.src.app/prod/"
         # self.url = "ws://localhost:8765"
         self.connected = False
 
@@ -24,7 +24,7 @@ class WebSocketClient:
         self.ssl_context.verify_mode = ssl.CERT_NONE
 
     async def connect(self):
-        """Connect to WebSocket server"""
+        """Connect to WebSocket server."""
         # Get API key from config
         api_key = get_api_key()
         if not api_key:
@@ -51,20 +51,20 @@ class WebSocketClient:
         self.connected = True
 
     async def close(self):
-        """Close WebSocket connection"""
+        """Close WebSocket connection."""
         if self.ws:
             await self.ws.close()
             self.connected = False
             self.ws = None
 
     async def send(self, data: Dict[str, Any]):
-        """Send data to WebSocket server"""
+        """Send data to WebSocket server."""
         if not self.ws:
             raise RuntimeError("WebSocket not connected")
         await self.ws.send(json.dumps(data))
 
     async def receive(self) -> Dict[str, Any]:
-        """Receive data from WebSocket server"""
+        """Receive data from WebSocket server."""
         if not self.ws:
             raise RuntimeError("WebSocket not connected")
         message = await self.ws.recv()

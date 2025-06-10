@@ -1,3 +1,1 @@
-"""
-Utility functions for Bugster.
-"""
+"""Utility functions for Bugster."""

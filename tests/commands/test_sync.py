@@ -1,26 +1,23 @@
-"""
-Tests for sync command.
-"""
+"""Tests for sync command."""
+
+import json
+import os
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
 
 import pytest
-from pathlib import Path
-import os
-from datetime import datetime, timezone, timedelta
 import responses
-from typer.testing import CliRunner
 import typer
-from unittest.mock import MagicMock, patch
-import json
+from typer.testing import CliRunner
 
-from bugster.commands.sync import sync_command, sync_specs
-from bugster.libs.services.specs_service import SyncService
-from bugster.utils.yaml_spec import (
-    YamlTestcase,
+from src.commands.sync import sync_command, sync_specs
+from src.libs.services.specs_service import SyncService
+from src.utils.yaml_spec import (
     TestCaseMetadata,
-    save_spec,
+    YamlTestcase,
     load_spec,
+    save_spec,
 )
-from bugster.constants import TESTS_DIR
 
 # Create a Typer app for testing
 app = typer.Typer()
@@ -32,7 +29,7 @@ runner = CliRunner()
 @pytest.fixture
 def specs_service():
     os.environ["BUGSTER_API_KEY"] = "test-key"
-    return SyncService(base_url="https://test.bugster.dev", project_id="test-project")
+    return SyncService(base_url="https://test.src.dev", project_id="test-project")
 
 
 @pytest.fixture
@@ -59,7 +56,7 @@ def mock_remote_spec():
 
 
 def test_sync_specs_new_local_uploads_to_remote(specs_service, tmp_path):
-    """Test that specs only in local get uploaded to remote"""
+    """Test that specs only in local get uploaded to remote."""
     # Create local spec
     local_spec = YamlTestcase(
         data={"name": "Local Only Test", "steps": ["step1", "step2"]},
@@ -71,14 +68,14 @@ def test_sync_specs_new_local_uploads_to_remote(specs_service, tmp_path):
     remote_specs = {}
 
     # Create temporary test directory
-    test_dir = tmp_path / ".bugster/tests"
+    test_dir = tmp_path / ".src/tests"
     test_dir.mkdir(parents=True)
 
     # Mock the upload call
     with responses.RequestsMock() as rsps:
         upload_mock = rsps.add(
             responses.PUT,
-            "https://test.bugster.dev/api/v1/sync/test-project?branch=main",
+            "https://test.src.dev/api/v1/sync/test-project?branch=main",
             json={"status": "success"},
             status=200,
         )
@@ -100,7 +97,7 @@ def test_sync_specs_new_local_uploads_to_remote(specs_service, tmp_path):
 
 
 def test_sync_specs_new_remote_saves_locally(specs_service, tmp_path):
-    """Test that specs only in remote get saved locally"""
+    """Test that specs only in remote get saved locally."""
     local_specs = {}
     remote_spec = {
         "content": {"name": "Remote Only Test", "steps": ["step3", "step4"]},
@@ -112,7 +109,7 @@ def test_sync_specs_new_remote_saves_locally(specs_service, tmp_path):
     remote_specs = {"test/remote_only.yaml": [remote_spec]}
 
     # Create temporary test directory
-    test_dir = tmp_path / ".bugster/tests"
+    test_dir = tmp_path / ".src/tests"
     test_dir.mkdir(parents=True)
 
     sync_specs(specs_service, "main", local_specs, remote_specs, tests_dir=test_dir)
@@ -132,7 +129,7 @@ def test_sync_specs_new_remote_saves_locally(specs_service, tmp_path):
 
 
 def test_sync_specs_conflict_local_newer_updates_remote(specs_service, tmp_path):
-    """Test that when local spec is newer, it updates remote"""
+    """Test that when local spec is newer, it updates remote."""
     # Local spec is newer
     local_spec = YamlTestcase(
         data={"name": "Updated Local Version", "steps": ["step1", "step2", "step3"]},
@@ -153,7 +150,7 @@ def test_sync_specs_conflict_local_newer_updates_remote(specs_service, tmp_path)
     local_specs = {"test/conflict.yaml": [local_spec]}
     remote_specs = {"test/conflict.yaml": [remote_spec]}
 
-    test_dir = tmp_path / ".bugster/tests"
+    test_dir = tmp_path / ".src/tests"
     test_dir.mkdir(parents=True)
 
     # Create initial local file
@@ -164,7 +161,7 @@ def test_sync_specs_conflict_local_newer_updates_remote(specs_service, tmp_path)
     with responses.RequestsMock() as rsps:
         upload_mock = rsps.add(
             responses.PUT,
-            "https://test.bugster.dev/api/v1/sync/test-project?branch=main",
+            "https://test.src.dev/api/v1/sync/test-project?branch=main",
             json={"status": "success"},
             status=200,
         )
@@ -188,7 +185,7 @@ def test_sync_specs_conflict_local_newer_updates_remote(specs_service, tmp_path)
 
 
 def test_sync_specs_conflict_remote_newer_updates_local(specs_service, tmp_path):
-    """Test that when remote spec is newer, it updates local"""
+    """Test that when remote spec is newer, it updates local."""
     # Local spec is older
     local_spec = YamlTestcase(
         data={"name": "Old Local Version", "steps": ["step1"]},
@@ -212,7 +209,7 @@ def test_sync_specs_conflict_remote_newer_updates_local(specs_service, tmp_path)
     local_specs = {"test/conflict.yaml": [local_spec]}
     remote_specs = {"test/conflict.yaml": [remote_spec]}
 
-    test_dir = tmp_path / ".bugster/tests"
+    test_dir = tmp_path / ".src/tests"
     test_dir.mkdir(parents=True)
 
     # Create initial local file with old version
@@ -234,7 +231,7 @@ def test_sync_specs_conflict_remote_newer_updates_local(specs_service, tmp_path)
 
 
 def test_sync_specs_prefer_local_overrides_timestamp(specs_service, tmp_path):
-    """Test that prefer='local' overrides timestamp comparison"""
+    """Test that prefer='local' overrides timestamp comparison."""
     # Local spec is older but we prefer local
     local_spec = YamlTestcase(
         data={"name": "Local Version", "steps": ["local_step"]},
@@ -255,13 +252,13 @@ def test_sync_specs_prefer_local_overrides_timestamp(specs_service, tmp_path):
     local_specs = {"test/prefer_local.yaml": [local_spec]}
     remote_specs = {"test/prefer_local.yaml": [remote_spec]}
 
-    test_dir = tmp_path / ".bugster/tests"
+    test_dir = tmp_path / ".src/tests"
     test_dir.mkdir(parents=True)
 
     with responses.RequestsMock() as rsps:
         upload_mock = rsps.add(
             responses.PUT,
-            "https://test.bugster.dev/api/v1/sync/test-project?branch=main",
+            "https://test.src.dev/api/v1/sync/test-project?branch=main",
             json={"status": "success"},
             status=200,
         )
@@ -285,7 +282,7 @@ def test_sync_specs_prefer_local_overrides_timestamp(specs_service, tmp_path):
 
 
 def test_sync_specs_prefer_remote_overrides_timestamp(specs_service, tmp_path):
-    """Test that prefer='remote' overrides timestamp comparison"""
+    """Test that prefer='remote' overrides timestamp comparison."""
     # Local spec is newer but we prefer remote
     local_spec = YamlTestcase(
         data={"name": "Local Version", "steps": ["local_step"]},
@@ -306,7 +303,7 @@ def test_sync_specs_prefer_remote_overrides_timestamp(specs_service, tmp_path):
     local_specs = {"test/prefer_remote.yaml": [local_spec]}
     remote_specs = {"test/prefer_remote.yaml": [remote_spec]}
 
-    test_dir = tmp_path / ".bugster/tests"
+    test_dir = tmp_path / ".src/tests"
     test_dir.mkdir(parents=True)
 
     # Create initial local file
@@ -333,7 +330,7 @@ def test_sync_specs_prefer_remote_overrides_timestamp(specs_service, tmp_path):
 
 
 def test_sync_specs_multiple_specs_partial_update(specs_service, tmp_path):
-    """Test syncing when a file has multiple specs and only some need updates"""
+    """Test syncing when a file has multiple specs and only some need updates."""
     # Create 3 local specs
     local_spec1 = YamlTestcase(
         data={"name": "Spec 1", "steps": ["step1"]},
@@ -376,7 +373,7 @@ def test_sync_specs_multiple_specs_partial_update(specs_service, tmp_path):
         ]
     }
 
-    test_dir = tmp_path / ".bugster/tests"
+    test_dir = tmp_path / ".src/tests"
     test_dir.mkdir(parents=True)
 
     # Create initial local file
@@ -387,7 +384,7 @@ def test_sync_specs_multiple_specs_partial_update(specs_service, tmp_path):
     with responses.RequestsMock() as rsps:
         upload_mock = rsps.add(
             responses.PUT,
-            "https://test.bugster.dev/api/v1/sync/test-project?branch=main",
+            "https://test.src.dev/api/v1/sync/test-project?branch=main",
             json={"status": "success"},
             status=200,
         )
@@ -425,7 +422,7 @@ def test_sync_specs_multiple_specs_partial_update(specs_service, tmp_path):
 
 
 def test_sync_specs_same_content_no_sync_needed(specs_service, tmp_path):
-    """Test that when specs have same content, no sync is performed regardless of timestamps"""
+    """Test that when specs have same content, no sync is performed regardless of timestamps."""
     # Create specs with same content but different timestamps
     local_spec = YamlTestcase(
         data={"name": "Same Content", "steps": ["step1", "step2"]},
@@ -445,7 +442,7 @@ def test_sync_specs_same_content_no_sync_needed(specs_service, tmp_path):
     local_specs = {"test/same_content.yaml": [local_spec]}
     remote_specs = {"test/same_content.yaml": [remote_spec]}
 
-    test_dir = tmp_path / ".bugster/tests"
+    test_dir = tmp_path / ".src/tests"
     test_dir.mkdir(parents=True)
 
     with responses.RequestsMock() as rsps:
@@ -459,7 +456,7 @@ def test_sync_specs_same_content_no_sync_needed(specs_service, tmp_path):
 def test_sync_specs_same_timestamp_different_content_prefers_local(
     specs_service, tmp_path
 ):
-    """Test that when timestamps are equal but content differs, local is preferred with updated timestamp"""
+    """Test that when timestamps are equal but content differs, local is preferred with updated timestamp."""
     # Create specs with different content but same timestamp
     local_spec = YamlTestcase(
         data={"name": "Local Content", "steps": ["step1", "step2"]},
@@ -479,7 +476,7 @@ def test_sync_specs_same_timestamp_different_content_prefers_local(
     local_specs = {"test/equal_timestamp.yaml": [local_spec]}
     remote_specs = {"test/equal_timestamp.yaml": [remote_spec]}
 
-    test_dir = tmp_path / ".bugster/tests"
+    test_dir = tmp_path / ".src/tests"
     test_dir.mkdir(parents=True)
 
     # Create initial local file
@@ -490,7 +487,7 @@ def test_sync_specs_same_timestamp_different_content_prefers_local(
     with responses.RequestsMock() as rsps:
         upload_mock = rsps.add(
             responses.PUT,
-            "https://test.bugster.dev/api/v1/sync/test-project?branch=main",
+            "https://test.src.dev/api/v1/sync/test-project?branch=main",
             json={"status": "success"},
             status=200,
         )
@@ -524,25 +521,23 @@ def test_sync_specs_same_timestamp_different_content_prefers_local(
 
 @responses.activate
 def test_sync_command_full_integration(tmp_path, monkeypatch):
-    """Test full sync command integration with all scenarios"""
+    """Test full sync command integration with all scenarios."""
     os.environ["BUGSTER_API_KEY"] = "test-key"
 
     # Mock TESTS_DIR to use temporary directory
-    test_dir = tmp_path / ".bugster/tests"
-    monkeypatch.setattr("bugster.commands.sync.TESTS_DIR", test_dir)
-    monkeypatch.setattr("bugster.commands.sync.get_current_branch", lambda: "main")
+    test_dir = tmp_path / ".src/tests"
+    monkeypatch.setattr("src.commands.sync.TESTS_DIR", test_dir)
+    monkeypatch.setattr("src.commands.sync.get_current_branch", lambda: "main")
 
     monkeypatch.setattr(
-        "bugster.libs.services.specs_service.SyncService._get_project_id",
+        "src.libs.services.specs_service.SyncService._get_project_id",
         lambda self: "test-project",
     )
 
     # Mock libs_settings
     mock_settings = MagicMock()
-    mock_settings.bugster_api_url = "https://api.bugster.dev"
-    monkeypatch.setattr(
-        "bugster.libs.services.specs_service.libs_settings", mock_settings
-    )
+    mock_settings.bugster_api_url = "https://api.src.dev"
+    monkeypatch.setattr("src.libs.services.specs_service.libs_settings", mock_settings)
 
     # Create test directory and files
     test_dir.mkdir(parents=True)
@@ -582,7 +577,7 @@ def test_sync_command_full_integration(tmp_path, monkeypatch):
     # This will be called twice (once for pull, once for push)
     responses.add(
         responses.GET,
-        "https://api.bugster.dev/api/v1/sync/test-project?branch=main",
+        "https://api.src.dev/api/v1/sync/test-project?branch=main",
         json={
             "remote_only.yaml": [
                 {
@@ -609,7 +604,7 @@ def test_sync_command_full_integration(tmp_path, monkeypatch):
     # Mock upload response
     responses.add(
         responses.PUT,
-        "https://api.bugster.dev/api/v1/sync/test-project?branch=main",
+        "https://api.src.dev/api/v1/sync/test-project?branch=main",
         json={"status": "success"},
         status=200,
     )
@@ -659,22 +654,20 @@ def test_sync_command_full_integration(tmp_path, monkeypatch):
 
 @responses.activate
 def test_sync_command_pull_only_downloads_remote_specs(tmp_path, monkeypatch):
-    """Test sync command with --pull flag downloads remote specs"""
+    """Test sync command with --pull flag downloads remote specs."""
     os.environ["BUGSTER_API_KEY"] = "test-key"
 
-    test_dir = tmp_path / ".bugster/tests"
-    monkeypatch.setattr("bugster.commands.sync.TESTS_DIR", test_dir)
-    monkeypatch.setattr("bugster.commands.sync.get_current_branch", lambda: "main")
+    test_dir = tmp_path / ".src/tests"
+    monkeypatch.setattr("src.commands.sync.TESTS_DIR", test_dir)
+    monkeypatch.setattr("src.commands.sync.get_current_branch", lambda: "main")
     monkeypatch.setattr(
-        "bugster.libs.services.specs_service.SyncService._get_project_id",
+        "src.libs.services.specs_service.SyncService._get_project_id",
         lambda self: "test-project",
     )
 
     mock_settings = MagicMock()
-    mock_settings.bugster_api_url = "https://api.bugster.dev"
-    monkeypatch.setattr(
-        "bugster.libs.services.specs_service.libs_settings", mock_settings
-    )
+    mock_settings.bugster_api_url = "https://api.src.dev"
+    monkeypatch.setattr("src.libs.services.specs_service.libs_settings", mock_settings)
 
     # Create test directory (empty initially)
     test_dir.mkdir(parents=True)
@@ -682,7 +675,7 @@ def test_sync_command_pull_only_downloads_remote_specs(tmp_path, monkeypatch):
     # Mock remote response with remote-only specs
     responses.add(
         responses.GET,
-        "https://api.bugster.dev/api/v1/sync/test-project?branch=main",
+        "https://api.src.dev/api/v1/sync/test-project?branch=main",
         json={
             "remote_only.yaml": [
                 {
@@ -719,22 +712,20 @@ def test_sync_command_pull_only_downloads_remote_specs(tmp_path, monkeypatch):
 
 @responses.activate
 def test_sync_command_clean_remote(tmp_path, monkeypatch):
-    """Test that --clean-remote deletes remote specs not present locally"""
+    """Test that --clean-remote deletes remote specs not present locally."""
     os.environ["BUGSTER_API_KEY"] = "test-key"
 
-    test_dir = tmp_path / ".bugster/tests"
-    monkeypatch.setattr("bugster.commands.sync.TESTS_DIR", test_dir)
-    monkeypatch.setattr("bugster.commands.sync.get_current_branch", lambda: "main")
+    test_dir = tmp_path / ".src/tests"
+    monkeypatch.setattr("src.commands.sync.TESTS_DIR", test_dir)
+    monkeypatch.setattr("src.commands.sync.get_current_branch", lambda: "main")
     monkeypatch.setattr(
-        "bugster.libs.services.specs_service.SyncService._get_project_id",
+        "src.libs.services.specs_service.SyncService._get_project_id",
         lambda self: "test-project",
     )
 
     mock_settings = MagicMock()
-    mock_settings.bugster_api_url = "https://api.bugster.dev"
-    monkeypatch.setattr(
-        "bugster.libs.services.specs_service.libs_settings", mock_settings
-    )
+    mock_settings.bugster_api_url = "https://api.src.dev"
+    monkeypatch.setattr("src.libs.services.specs_service.libs_settings", mock_settings)
 
     # Create only one local file
     test_dir.mkdir(parents=True)
@@ -750,7 +741,7 @@ def test_sync_command_clean_remote(tmp_path, monkeypatch):
     # Mock remote response with multiple files (some should be deleted)
     responses.add(
         responses.GET,
-        "https://api.bugster.dev/api/v1/sync/test-project?branch=main",
+        "https://api.src.dev/api/v1/sync/test-project?branch=main",
         json={
             "local.yaml": [
                 {
@@ -786,7 +777,7 @@ def test_sync_command_clean_remote(tmp_path, monkeypatch):
     # Mock upload response
     responses.add(
         responses.PUT,
-        "https://api.bugster.dev/api/v1/sync/test-project?branch=main",
+        "https://api.src.dev/api/v1/sync/test-project?branch=main",
         json={"status": "success"},
         status=200,
     )
@@ -794,7 +785,7 @@ def test_sync_command_clean_remote(tmp_path, monkeypatch):
     # Mock delete response (for complete files)
     delete_mock = responses.add(
         responses.POST,
-        "https://api.bugster.dev/api/v1/sync/test-project/delete?branch=main",
+        "https://api.src.dev/api/v1/sync/test-project/delete?branch=main",
         json={"status": "success"},
         status=200,
     )
@@ -802,7 +793,7 @@ def test_sync_command_clean_remote(tmp_path, monkeypatch):
     # Mock delete_specific_test_cases response (for individual specs)
     delete_specific_mock = responses.add(
         responses.POST,
-        "https://api.bugster.dev/api/v1/sync/test-project/delete-test-cases?branch=main",
+        "https://api.src.dev/api/v1/sync/test-project/delete-test-cases?branch=main",
         json={"status": "success"},
         status=200,
     )
@@ -843,22 +834,20 @@ def test_sync_command_clean_remote(tmp_path, monkeypatch):
 
 @responses.activate
 def test_sync_command_clean_remote_individual_specs(tmp_path, monkeypatch):
-    """Test that --clean-remote deletes individual specs but keeps files with remaining specs"""
+    """Test that --clean-remote deletes individual specs but keeps files with remaining specs."""
     os.environ["BUGSTER_API_KEY"] = "test-key"
 
-    test_dir = tmp_path / ".bugster/tests"
-    monkeypatch.setattr("bugster.commands.sync.TESTS_DIR", test_dir)
-    monkeypatch.setattr("bugster.commands.sync.get_current_branch", lambda: "main")
+    test_dir = tmp_path / ".src/tests"
+    monkeypatch.setattr("src.commands.sync.TESTS_DIR", test_dir)
+    monkeypatch.setattr("src.commands.sync.get_current_branch", lambda: "main")
     monkeypatch.setattr(
-        "bugster.libs.services.specs_service.SyncService._get_project_id",
+        "src.libs.services.specs_service.SyncService._get_project_id",
         lambda self: "test-project",
     )
 
     mock_settings = MagicMock()
-    mock_settings.bugster_api_url = "https://api.bugster.dev"
-    monkeypatch.setattr(
-        "bugster.libs.services.specs_service.libs_settings", mock_settings
-    )
+    mock_settings.bugster_api_url = "https://api.src.dev"
+    monkeypatch.setattr("src.libs.services.specs_service.libs_settings", mock_settings)
 
     # Create local file with one spec
     test_dir.mkdir(parents=True)
@@ -874,7 +863,7 @@ def test_sync_command_clean_remote_individual_specs(tmp_path, monkeypatch):
     # Mock remote response with the same file but additional specs
     responses.add(
         responses.GET,
-        "https://api.bugster.dev/api/v1/sync/test-project?branch=main",
+        "https://api.src.dev/api/v1/sync/test-project?branch=main",
         json={
             "shared.yaml": [
                 {
@@ -906,7 +895,7 @@ def test_sync_command_clean_remote_individual_specs(tmp_path, monkeypatch):
     # Mock upload response
     responses.add(
         responses.PUT,
-        "https://api.bugster.dev/api/v1/sync/test-project?branch=main",
+        "https://api.src.dev/api/v1/sync/test-project?branch=main",
         json={"status": "success"},
         status=200,
     )
@@ -914,7 +903,7 @@ def test_sync_command_clean_remote_individual_specs(tmp_path, monkeypatch):
     # Mock delete response (for complete files)
     delete_mock = responses.add(
         responses.POST,
-        "https://api.bugster.dev/api/v1/sync/test-project/delete?branch=main",
+        "https://api.src.dev/api/v1/sync/test-project/delete?branch=main",
         json={"status": "success"},
         status=200,
     )
@@ -922,7 +911,7 @@ def test_sync_command_clean_remote_individual_specs(tmp_path, monkeypatch):
     # Mock delete_specific_test_cases response (for individual specs)
     delete_specific_mock = responses.add(
         responses.POST,
-        "https://api.bugster.dev/api/v1/sync/test-project/delete-test-cases?branch=main",
+        "https://api.src.dev/api/v1/sync/test-project/delete-test-cases?branch=main",
         json={"status": "success"},
         status=200,
     )
@@ -968,15 +957,13 @@ def test_sync_command_clean_remote_individual_specs(tmp_path, monkeypatch):
 
 
 def test_sync_command_no_api_key(monkeypatch):
-    """Test sync command fails gracefully without API key"""
+    """Test sync command fails gracefully without API key."""
     monkeypatch.delenv("BUGSTER_CLI_API_KEY", raising=False)
-    monkeypatch.setattr("bugster.utils.user_config.load_user_config", lambda: {})
+    monkeypatch.setattr("src.utils.user_config.load_user_config", lambda: {})
 
     mock_settings = MagicMock()
-    mock_settings.bugster_api_url = "https://test.bugster.dev"
-    monkeypatch.setattr(
-        "bugster.libs.services.specs_service.libs_settings", mock_settings
-    )
+    mock_settings.bugster_api_url = "https://test.src.dev"
+    monkeypatch.setattr("src.libs.services.specs_service.libs_settings", mock_settings)
 
     result = runner.invoke(app)
     assert result.exit_code == 1
@@ -985,22 +972,20 @@ def test_sync_command_no_api_key(monkeypatch):
 
 @responses.activate
 def test_sync_command_dry_run_shows_changes_without_executing(tmp_path, monkeypatch):
-    """Test that dry-run shows what would happen without making changes"""
+    """Test that dry-run shows what would happen without making changes."""
     os.environ["BUGSTER_API_KEY"] = "test-key"
 
-    test_dir = tmp_path / ".bugster/tests"
-    monkeypatch.setattr("bugster.commands.sync.TESTS_DIR", test_dir)
-    monkeypatch.setattr("bugster.commands.sync.get_current_branch", lambda: "main")
+    test_dir = tmp_path / ".src/tests"
+    monkeypatch.setattr("src.commands.sync.TESTS_DIR", test_dir)
+    monkeypatch.setattr("src.commands.sync.get_current_branch", lambda: "main")
     monkeypatch.setattr(
-        "bugster.libs.services.specs_service.SyncService._get_project_id",
+        "src.libs.services.specs_service.SyncService._get_project_id",
         lambda self: "test-project",
     )
 
     mock_settings = MagicMock()
-    mock_settings.bugster_api_url = "https://api.bugster.dev"
-    monkeypatch.setattr(
-        "bugster.libs.services.specs_service.libs_settings", mock_settings
-    )
+    mock_settings.bugster_api_url = "https://api.src.dev"
+    monkeypatch.setattr("src.libs.services.specs_service.libs_settings", mock_settings)
 
     # Create local spec
     test_dir.mkdir(parents=True)
@@ -1016,7 +1001,7 @@ def test_sync_command_dry_run_shows_changes_without_executing(tmp_path, monkeypa
     # Mock remote response
     responses.add(
         responses.GET,
-        "https://api.bugster.dev/api/v1/sync/test-project?branch=main",
+        "https://api.src.dev/api/v1/sync/test-project?branch=main",
         json={
             "remote.yaml": [
                 {

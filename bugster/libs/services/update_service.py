@@ -1,16 +1,16 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from bugster.libs.mixins import (
+from src.libs.mixins import (
     DeleteMixin,
     DetectAffectedSpecsMixin,
     SuggestMixin,
     UpdateMixin,
 )
-from bugster.libs.services.test_cases_service import TestCasesService
-from bugster.libs.utils.enums import GitCommand
-from bugster.libs.utils.git import parse_diff_status, run_git_command
-from bugster.libs.utils.nextjs.import_tree_generator import (
+from src.libs.services.test_cases_service import TestCasesService
+from src.libs.utils.enums import GitCommand
+from src.libs.utils.git import parse_diff_status, run_git_command
+from src.libs.utils.nextjs.import_tree_generator import (
     generate_and_save_import_tree,
 )
 

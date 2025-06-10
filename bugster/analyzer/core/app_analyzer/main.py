@@ -3,10 +3,10 @@ import os
 
 from loguru import logger
 
-from bugster.analyzer.core.app_analyzer.nextjs_analyzer import NextjsAnalyzer
-from bugster.analyzer.core.framework_detector import get_project_info
-from bugster.analyzer.utils.errors import BugsterError
-from bugster.constants import BUGSTER_DIR
+from src.analyzer.core.app_analyzer.nextjs_analyzer import NextjsAnalyzer
+from src.analyzer.core.framework_detector import get_project_info
+from src.analyzer.utils.errors import BugsterError
+from src.constants import BUGSTER_DIR
 
 SUPPORTED_FRAMEWORKS_IDS = ["next"]
 
@@ -51,7 +51,7 @@ def get_existing_analysis(framework_id):
             logger.error("Failed to check if analysis file exists: {}", err)
             return None
 
-        with open(analysis_json_path, "r", encoding="utf-8") as file:
+        with open(analysis_json_path, encoding="utf-8") as file:
             analysis_json = file.read()
 
         analysis_data = json.loads(analysis_json)

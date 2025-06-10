@@ -1,14 +1,13 @@
-"""
-YAML Spec parser with metadata handling.
-"""
+"""YAML Spec parser with metadata handling."""
 
-from datetime import datetime, timezone
-import uuid
-from typing import List, Dict, Any, Optional
-from pathlib import Path
-import yaml
 import json
+import uuid
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, List, Optional
+
+import yaml
 from loguru import logger
 
 
@@ -19,14 +18,14 @@ class TestCaseMetadata:
 
     @classmethod
     def create_new(cls) -> "TestCaseMetadata":
-        """Create new metadata with default values"""
+        """Create new metadata with default values."""
         return cls(
             id=str(uuid.uuid4()), last_modified=datetime.now(timezone.utc).isoformat()
         )
 
     @classmethod
     def from_comment(cls, comment: str) -> Optional["TestCaseMetadata"]:
-        """Try to parse metadata from a comment string"""
+        """Try to parse metadata from a comment string."""
         try:
             if not comment.startswith("# @META:"):
                 return None
@@ -47,7 +46,7 @@ class TestCaseMetadata:
             return None
 
     def to_comment(self) -> str:
-        """Convert metadata to YAML comment format"""
+        """Convert metadata to YAML comment format."""
         return f"# @META:{json.dumps(self.__dict__)}\n# This comment contains machine-readable metadata that should not be modified"
 
 
@@ -57,7 +56,7 @@ class YamlTestcase:
         self.metadata = metadata or TestCaseMetadata.create_new()
 
     def to_yaml(self) -> str:
-        """Convert spec to YAML string with metadata comment"""
+        """Convert spec to YAML string with metadata comment."""
         # Ensure data is wrapped in a list if it's a dict
         yaml_data = [self.data] if isinstance(self.data, dict) else self.data
         yaml_str = yaml.dump(yaml_data, sort_keys=False)
@@ -65,7 +64,7 @@ class YamlTestcase:
 
 
 def parse_yaml_with_testcases(content: str) -> List[YamlTestcase]:
-    """Parse YAML content and extract test cases with their metadata"""
+    """Parse YAML content and extract test cases with their metadata."""
     test_cases = []
     current_lines = []
     current_metadata = None
@@ -114,7 +113,7 @@ def parse_yaml_with_testcases(content: str) -> List[YamlTestcase]:
 
 
 def load_spec(file_path: Path) -> List[YamlTestcase]:
-    """Load test cases from a YAML file"""
+    """Load test cases from a YAML file."""
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
 
@@ -125,7 +124,7 @@ def load_spec(file_path: Path) -> List[YamlTestcase]:
 
 
 def save_spec(file_path: Path, test_cases: List[YamlTestcase]) -> None:
-    """Save test cases to a YAML file"""
+    """Save test cases to a YAML file."""
     content = "\n\n".join(test_case.to_yaml() for test_case in test_cases)
     with open(file_path, "w") as f:
         f.write(content)

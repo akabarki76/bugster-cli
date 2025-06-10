@@ -9,9 +9,9 @@ import typer
 import yaml
 from rich.console import Console
 
-from bugster.constants import CONFIG_PATH, TESTS_DIR
-from bugster.types import Config
-from bugster.utils.yaml_spec import load_spec
+from src.constants import CONFIG_PATH, TESTS_DIR
+from src.types import Config
+from src.utils.yaml_spec import load_spec
 
 console = Console()
 

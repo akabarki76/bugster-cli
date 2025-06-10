@@ -2,8 +2,8 @@ import re
 
 from setuptools import find_packages, setup
 
-# Read version from bugster/__init__.py
-with open("bugster/__init__.py") as f:
+# Read version from src/__init__.py
+with open("src/__init__.py") as f:
     version_match = re.search(r'__version__ = ["\']([^"\']*)["\']', f.read())
     if version_match:
         version = version_match.group(1)
@@ -71,7 +71,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "bugster=bugster.cli:main",
+            "bugster=src.cli:main",
         ],
     },
     author="Bugster Team",

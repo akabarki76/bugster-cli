@@ -2,15 +2,16 @@
 
 ## Ambientes y Propósito
 
-| Ambiente | Distribución | Tag Pattern | API Endpoint | Propósito |
-|----------|-------------|-------------|--------------|-----------|
-| **Local** | Solo desarrollo local | - | `localhost:8000` o `dev.bugster.api` | Desarrollo individual |
-| **Development** | Pre-releases públicos | `v*-beta.*`, `v*-rc.*`, `v*-alpha.*` | `dev.bugster.api` | Testing público antes de producción |
-| **Production** | Releases finales | `v*.*.*` | `api.bugster.app` | Usuarios finales |
+| Ambiente        | Distribución          | Tag Pattern                          | API Endpoint                     | Propósito                           |
+| --------------- | --------------------- | ------------------------------------ | -------------------------------- | ----------------------------------- |
+| **Local**       | Solo desarrollo local | -                                    | `localhost:8000` o `dev.src.api` | Desarrollo individual               |
+| **Development** | Pre-releases públicos | `v*-beta.*`, `v*-rc.*`, `v*-alpha.*` | `dev.src.api`                    | Testing público antes de producción |
+| **Production**  | Releases finales      | `v*.*.*`                             | `api.src.app`                    | Usuarios finales                    |
 
 ## Flujo de Trabajo
 
 ### 1. Desarrollo Local (Sin Releases)
+
 ```bash
 # Desarrollo en rama feature - SOLO LOCAL
 git checkout -b feature/nueva-funcionalidad
@@ -21,12 +22,13 @@ echo "BUGSTER_API_URL=http://localhost:8000" >> .env
 bugster test  # → Conecta a localhost:8000
 
 # Opción 2: Desarrollo contra API development remoto
-BUGSTER_ENVIRONMENT=development bugster test  # → Conecta a dev.bugster.api
+BUGSTER_ENVIRONMENT=development bugster test  # → Conecta a dev.src.api
 
 # NO se crean releases desde local
 ```
 
 ### 2. Pre-Release Development (Público)
+
 ```bash
 # Cuando la feature está lista para testing público
 git checkout main  # o rama de release
@@ -37,41 +39,44 @@ git tag v1.2.3-beta.1
 git push origin --tags
 
 # El CI construye automáticamente con environment=development
-# Cualquiera puede instalar: dev.bugster.api
+# Cualquiera puede instalar: dev.src.api
 curl -sSL .../releases/download/v1.2.3-beta.1/install.sh | bash
 ```
 
 ### 3. Production Release
+
 ```bash
 # Cuando el beta está aprobado
 git tag v1.2.3
 git push origin --tags
 
 # El CI construye automáticamente con environment=production
-# Distribución final: api.bugster.app
+# Distribución final: api.src.app
 curl -sSL .../releases/download/v1.2.3/install.sh | bash
 ```
 
 ## Configuración para Usuarios
 
 ### Variables de Ambiente
+
 ```bash
 # Desarrollo local: Los desarrolladores eligen su API
 export BUGSTER_ENVIRONMENT=local          # → localhost:8000
-export BUGSTER_ENVIRONMENT=development    # → dev.bugster.api
+export BUGSTER_ENVIRONMENT=development    # → dev.src.api
 
 # Pre-releases instalados: Automáticamente usan development
-# → dev.bugster.api (sin configuración extra)
+# → dev.src.api (sin configuración extra)
 
-# Production instalado: Automáticamente usa production  
-# → api.bugster.app (sin configuración extra)
+# Production instalado: Automáticamente usa production
+# → api.src.app (sin configuración extra)
 ```
 
 ### Archivo de configuración local
+
 ```yaml
 # ~/.bugsterrc (para desarrollo local)
-environment: local  # o development
-api_url: http://localhost:8000  # o custom
+environment: local # o development
+api_url: http://localhost:8000 # o custom
 log_level: DEBUG
 ```
 
@@ -92,14 +97,14 @@ def test_environment_detection():
     os.environ["BUGSTER_ENVIRONMENT"] = "local"
     settings = LibsSettings()
     assert settings.bugster_api_url == "http://localhost:8000"
-    
-    # Test development environment  
+
+    # Test development environment
     os.environ["BUGSTER_ENVIRONMENT"] = "development"
     settings = LibsSettings()
-    assert settings.bugster_api_url == "https://dev.bugster.api"
-    
+    assert settings.bugster_api_url == "https://dev.src.api"
+
     # Test production environment
-    os.environ["BUGSTER_ENVIRONMENT"] = "production" 
+    os.environ["BUGSTER_ENVIRONMENT"] = "production"
     settings = LibsSettings()
-    assert settings.bugster_api_url == "https://api.bugster.app"
+    assert settings.bugster_api_url == "https://api.src.app"
 ```

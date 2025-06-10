@@ -11,13 +11,13 @@ from rich.status import Status
 from rich.style import Style
 from rich.table import Table
 
-from bugster.clients.mcp_client import MCPStdioClient
-from bugster.clients.ws_client import WebSocketClient
-from bugster.commands.middleware import require_api_key
-from bugster.commands.sync import get_current_branch
-from bugster.libs.services.results_stream_service import ResultsStreamService
-from bugster.libs.services.update_service import DetectAffectedSpecsService
-from bugster.types import (
+from src.clients.mcp_client import MCPStdioClient
+from src.clients.ws_client import WebSocketClient
+from src.commands.middleware import require_api_key
+from src.commands.sync import get_current_branch
+from src.libs.services.results_stream_service import ResultsStreamService
+from src.libs.services.update_service import DetectAffectedSpecsService
+from src.types import (
     Config,
     NamedTestResult,
     Test,
@@ -26,7 +26,7 @@ from bugster.types import (
     WebSocketStepRequestMessage,
     WebSocketStepResultMessage,
 )
-from bugster.utils.file import get_mcp_config_path, load_config, load_test_files
+from src.utils.file import get_mcp_config_path, load_config, load_test_files
 
 console = Console()
 
@@ -243,7 +243,7 @@ async def execute_test(test: Test, config: Config, **kwargs) -> NamedTestResult:
                 "contextOptions": {
                     "viewport": {"width": 1280, "height": 720},
                     "recordVideo": {
-                        "dir": f".bugster/videos/{run_id}/{test.metadata.id}",
+                        "dir": f".src/videos/{run_id}/{test.metadata.id}",
                         "size": {"width": 1280, "height": 720},
                     },
                 }
@@ -348,7 +348,7 @@ async def execute_single_test(
     )
 
     # Rename the video to the test name
-    video_dir = Path(".bugster/videos") / run_id / test.metadata.id
+    video_dir = Path(".src/videos") / run_id / test.metadata.id
     rename_video(video_dir, test.name)
 
     # Stream result if enabled (in background)

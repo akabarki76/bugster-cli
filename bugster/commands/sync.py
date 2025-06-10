@@ -1,24 +1,23 @@
-"""
-Sync command implementation.
-"""
+"""Sync command implementation."""
 
+import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, List, Optional
+
 import typer
 from rich.console import Console
 from rich.status import Status
-import subprocess
-from datetime import datetime, timezone
 
-from bugster.libs.services.specs_service import SyncService
-from bugster.commands.middleware import require_api_key
-from bugster.utils.yaml_spec import (
+from src.commands.middleware import require_api_key
+from src.constants import TESTS_DIR
+from src.libs.services.specs_service import SyncService
+from src.utils.yaml_spec import (
+    TestCaseMetadata,
+    YamlTestcase,
     load_spec,
     save_spec,
-    YamlTestcase,
-    TestCaseMetadata,
 )
-from bugster.constants import TESTS_DIR
 
 console = Console()
 
@@ -357,7 +356,7 @@ def sync_command(
                                 ].metadata
 
                     # Check if any spec needs metadata update by comparing file content
-                    with open(file, "r") as f:
+                    with open(file) as f:
                         original_content = f.read()
 
                     # Generate new content with metadata

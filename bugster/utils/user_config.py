@@ -1,9 +1,7 @@
-"""
-User configuration utilities for Bugster CLI.
-"""
+"""User configuration utilities for Bugster CLI."""
 
-import os
 import json
+import os
 from pathlib import Path
 from typing import Optional
 

@@ -104,13 +104,8 @@ def find_existing_config():
 @require_api_key
 def init_command():
     """Initialize Bugster CLI configuration."""
-    start_time = time.time()
-    
     # Check for existing configuration in current or parent directories
-    config_check_start = time.time()
     config_exists, existing_config_path = find_existing_config()
-    config_check_time = time.time() - config_check_start
-    console.print(f"[dim]Config check took: {config_check_time:.2f}s[/dim]")
     
     if config_exists:
         if existing_config_path == CONFIG_PATH:
@@ -127,10 +122,9 @@ def init_command():
             raise typer.Exit(1)
 
     # Ask for project name
-    project_name = Prompt.ask("Project name", default="My Project") 
+    project_name = Prompt.ask("Project name", default="My Project")
     
     # Get project ID from API
-    api_start_time = time.time()
     try:
         api_key = get_api_key()
         
@@ -158,9 +152,6 @@ def init_command():
         console.print(f"[red]Unexpected error: {str(e)}[/red]")
         console.print("[yellow]Falling back to local project ID generation[/yellow]")
         project_id = generate_project_id(project_name)
-    
-    api_time = time.time() - api_start_time
-    console.print(f"[dim]API call took: {api_time:.2f}s[/dim]")
 
     base_url = Prompt.ask("Base URL", default="http://localhost:3000")
 
@@ -190,19 +181,12 @@ def init_command():
         credentials.append(create_credential_entry())
 
     # Create folders
-    folder_start_time = time.time()
     EXAMPLE_DIR.mkdir(parents=True, exist_ok=True)
-    folder_time = time.time() - folder_start_time
-    console.print(f"[dim]Folder creation took: {folder_time:.2f}s[/dim]")
 
     # Update .gitignore
-    gitignore_start_time = time.time()
     update_gitignore()
-    gitignore_time = time.time() - gitignore_start_time
-    console.print(f"[dim]Gitignore update took: {gitignore_time:.2f}s[/dim]")
 
     # Save config
-    config_save_start_time = time.time()
     config = {
         "project_name": project_name,
         "project_id": project_id,
@@ -211,15 +195,10 @@ def init_command():
     }
     with open(CONFIG_PATH, "w") as f:
         yaml.dump(config, f, default_flow_style=False)
-    config_save_time = time.time() - config_save_start_time
-    console.print(f"[dim]Config save took: {config_save_time:.2f}s[/dim]")
 
     # Save example test
-    example_start_time = time.time()
     with open(EXAMPLE_TEST_FILE, "w") as f:
         f.write(EXAMPLE_TEST)
-    example_time = time.time() - example_start_time
-    console.print(f"[dim]Example test save took: {example_time:.2f}s[/dim]")
 
     # Show results
     console.print(f"[green]Configuration created at {CONFIG_PATH}")
@@ -236,6 +215,3 @@ def init_command():
             table.add_row(cred["id"], cred["username"], cred["password"])
 
         console.print(table)
-
-    total_time = time.time() - start_time
-    console.print(f"\n[dim]Total initialization time: {total_time:.2f}s[/dim]")

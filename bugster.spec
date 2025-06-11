@@ -3,15 +3,15 @@
 block_cipher = None
 
 a = Analysis(
-    ['src/cli.py'],
+    ['bugster/cli.py'],
     pathex=[],
     binaries=[],
     datas=[],
     hiddenimports=[
         'typer',
         'rich',
-        'src.commands.init',
-        'src.commands.test',
+        'bugster.commands.init',
+        'bugster.commands.test',
         'tiktoken_ext.openai_public',
     ],
     hookspath=[
@@ -52,4 +52,4 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-)
+) 

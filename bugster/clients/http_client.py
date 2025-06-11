@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 import requests
 from loguru import logger
 
-from src.libs.settings import libs_settings
+from bugster.libs.settings import libs_settings
 
 
 class BugsterHTTPError(Exception):

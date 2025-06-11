@@ -4,7 +4,7 @@ from typing import Callable, Optional
 
 import yaml
 
-from src.constants import IGNORE_PATTERNS, TESTS_DIR
+from bugster.constants import IGNORE_PATTERNS, TESTS_DIR
 
 
 def get_specs_paths(
@@ -67,7 +67,7 @@ def filter_path(
     path: str, allowed_extensions: Optional[list[str]] = None
 ) -> Optional[str]:
     """Filter a single path based on ignore patterns and `.gitignore` rules."""
-    from src.libs.utils.git import get_gitignore
+    from bugster.libs.utils.git import get_gitignore
 
     gitignore = get_gitignore()
     GITIGNORE_PATH = ".gitignore"

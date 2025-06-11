@@ -1,1 +1,3 @@
-"""Bugster CLI commands."""
+"""
+Bugster CLI commands.
+"""

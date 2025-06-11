@@ -1,4 +1,4 @@
-from src.analyzer.utils.errors import BugsterError
+from bugster.analyzer.utils.errors import BugsterError
 
 
 def assert_condition(condition, msg="Assertion failed"):

@@ -1,25 +1,26 @@
-"""Initialize command implementation."""
+"""
+Initialize command implementation.
+"""
 
-import os
-import time
-from pathlib import Path
-
-import typer
 import yaml
+import time
+import os
+from pathlib import Path
+from rich.prompt import Prompt, Confirm
 from rich.console import Console
-from rich.prompt import Confirm, Prompt
 from rich.table import Table
+import typer
 
-from src.clients.http_client import BugsterHTTPClient, BugsterHTTPError
-from src.commands.middleware import require_api_key
-from src.constants import (
+from bugster.constants import (
     BUGSTER_DIR,
     CONFIG_PATH,
     EXAMPLE_DIR,
-    EXAMPLE_TEST,
     EXAMPLE_TEST_FILE,
+    EXAMPLE_TEST,
 )
-from src.utils.user_config import get_api_key
+from bugster.commands.middleware import require_api_key
+from bugster.utils.user_config import get_api_key
+from bugster.clients.http_client import BugsterHTTPClient, BugsterHTTPError
 
 console = Console()
 
@@ -59,7 +60,7 @@ def update_gitignore():
     # Check if .gitignore exists
     if os.path.exists(gitignore_path):
         # Read existing content
-        with open(gitignore_path) as f:
+        with open(gitignore_path, "r") as f:
             content = f.read()
 
         # Check which patterns need to be added
@@ -84,19 +85,19 @@ def update_gitignore():
 
 def find_existing_config():
     """Check for existing Bugster configuration in current or parent directories.
-
+    
     Returns:
         tuple: (exists: bool, config_path: Path) - Whether config exists and its path
     """
     current = Path.cwd()
-
+    
     # Check all parent directories up to root
     while current != current.parent:
-        config_path = current / ".bugster" / "config.yaml"
+        config_path = current / '.bugster' / 'config.yaml'
         if config_path.exists():
             return True, config_path
         current = current.parent
-
+    
     return False, None
 
 
@@ -105,52 +106,44 @@ def init_command():
     """Initialize Bugster CLI configuration."""
     # Check for existing configuration in current or parent directories
     config_exists, existing_config_path = find_existing_config()
-
+    
     if config_exists:
         if existing_config_path == CONFIG_PATH:
-            if not Confirm.ask(
-                "There is a project in the repository, are you sure to initialize again? This action will remove the current configuration of the project",
-                default=False,
-            ):
+            if not Confirm.ask("There is a project in the repository, are you sure to initialize again? This action will remove the current configuration of the project", default=False):
                 console.print("[yellow]Initialization cancelled.[/yellow]")
                 raise typer.Exit(0)
         else:
             current_dir = Path.cwd()
-            project_dir = (
-                existing_config_path.parent.parent
-            )  # Go up two levels: .src/config.yaml -> .bugster -> project_dir
-            console.print(
-                "\n[red]Error: Cannot initialize a new project inside an existing Bugster project.[/red]"
-            )
+            project_dir = existing_config_path.parent.parent  # Go up two levels: .bugster/config.yaml -> .bugster -> project_dir
+            console.print(f"\n[red]Error: Cannot initialize a new project inside an existing Bugster project.[/red]")
             console.print(f"[yellow]Current directory:[/yellow] {current_dir}")
             console.print(f"[yellow]Existing project directory:[/yellow] {project_dir}")
-            console.print(
-                "\n[red]Please initialize the project in a directory that is not inside an existing Bugster project.[/red]"
-            )
+            console.print("\n[red]Please initialize the project in a directory that is not inside an existing Bugster project.[/red]")
             raise typer.Exit(1)
 
     # Ask for project name
     project_name = Prompt.ask("Project name", default="My Project")
-
+    
     # Get project ID from API
     try:
         api_key = get_api_key()
-
+        
         with BugsterHTTPClient() as client:
             # Set the API key header
             client.set_headers({"x-api-key": api_key})
-
+            
             # Make the POST request
             project_data = client.post(
-                "/api/v1/gui/project", json={"name": project_name}
+                "/api/v1/gui/project",
+                json={"name": project_name}
             )
-
+            
             project_id = project_data.get("project_id") or project_data.get("id")
-
+            
             if not project_id:
                 console.print("[red]Error: Project ID not found in API response[/red]")
                 raise typer.Exit(1)
-
+                
     except BugsterHTTPError as e:
         console.print(f"[red]Error creating project via API: {str(e)}[/red]")
         console.print("[yellow]Falling back to local project ID generation[/yellow]")
@@ -212,9 +205,7 @@ def init_command():
     console.print(f"[green]Example test created at {EXAMPLE_TEST_FILE}")
 
     # Show credentials table only if custom credentials were added
-    if len(credentials) > 1 or (
-        len(credentials) == 1 and credentials[0] != create_credential_entry()
-    ):
+    if len(credentials) > 1 or (len(credentials) == 1 and credentials[0] != create_credential_entry()):
         table = Table(title="Configured Credentials")
         table.add_column("ID", style="cyan")
         table.add_column("Username", style="green")

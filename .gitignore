@@ -32,7 +32,7 @@ ENV/
 *.swo
 
 # Bugster
-.src/
+.bugster/
 
 # PyInstaller build files
 *.zip

@@ -2,14 +2,14 @@ import typer
 from rich.console import Console
 from rich.status import Status
 
-from src.analyzer import analyze_codebase
-from src.analyzer.utils.analysis_tracker import (
+from bugster.analyzer import analyze_codebase
+from bugster.analyzer.utils.analysis_tracker import (
     analysis_tracker,
     has_analysis_completed,
 )
-from src.commands.middleware import require_api_key
-from src.constants import TESTS_DIR
-from src.libs.services.test_cases_service import TestCasesService
+from bugster.commands.middleware import require_api_key
+from bugster.constants import TESTS_DIR
+from bugster.libs.services.test_cases_service import TestCasesService
 
 console = Console()
 

@@ -1,15 +1,17 @@
-"""Login command implementation for Bugster CLI."""
-
-import webbrowser
+"""
+Login command implementation for Bugster CLI.
+"""
 
 from rich.console import Console
 from rich.prompt import Prompt
-
-from src.utils.user_config import save_api_key
+from bugster.utils.user_config import save_api_key
+import webbrowser
 
 console = Console()
 
-DASHBOARD_URL = "https://gui.src.dev/"  # Update this with your actual dashboard URL
+DASHBOARD_URL = (
+    "https://gui.bugster.dev/"  # Update this with your actual dashboard URL
+)
 API_KEY_HINT = "bugster_..."
 
 
@@ -19,15 +21,8 @@ def auth_command():
         "To use Bugster CLI, you'll need an API key. "
         "Generate it from your [bold][link]%s[/link][/bold]." % DASHBOARD_URL
     )
-    console.print(
-        "\n[dim]Tip: In the dashboard, navigate to Dashboard > API Keys.[/dim]\n"
-    )
-    if (
-        Prompt.ask(
-            "🌐 Open the dashboard in your browser now? (y/N)", default="N"
-        ).lower()
-        == "y"
-    ):
+    console.print("\n[dim]Tip: In the dashboard, navigate to Dashboard > API Keys.[/dim]\n")
+    if Prompt.ask("🌐 Open the dashboard in your browser now? (y/N)", default="N").lower() == "y":
         webbrowser.open(DASHBOARD_URL)
 
     # Prompt for API key
@@ -38,9 +33,7 @@ def auth_command():
         console.print("\n❌ [red]API key cannot be empty.[/red]")
         return
     if not api_key.startswith("bugster_"):
-        console.print(
-            "\n⚠️ [yellow]Warning: API keys should start with 'bugster_'. Please double-check.[/yellow]"
-        )
+        console.print("\n⚠️ [yellow]Warning: API keys should start with 'bugster_'. Please double-check.[/yellow]")
 
     # Save
     try:

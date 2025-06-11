@@ -119,9 +119,12 @@ class SuggestMixin:
         diff_changes_per_page = get_diff_changes_per_page(
             import_tree=self.import_tree, git_command=GitCommand.DIFF_HEAD
         )
+        new_pages = [
+            page for page in diff_changes_per_page.keys() if page in file_paths
+        ]
         suggested_specs = []
 
-        for page in diff_changes_per_page.keys():
+        for page in new_pages:
             with Status(
                 f"[yellow]Suggesting new spec for {page}[/yellow]", spinner="dots"
             ) as status:

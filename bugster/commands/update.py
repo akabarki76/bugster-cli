@@ -1,11 +1,11 @@
 import typer
 from rich.console import Console
 
-from src.commands.middleware import require_api_key
-from src.libs.services.update_service import (
+from bugster.commands.middleware import require_api_key
+from bugster.libs.services.update_service import (
     get_update_service,
 )
-from src.libs.utils.log import setup_logger
+from bugster.libs.utils.log import setup_logger
 
 console = Console()
 

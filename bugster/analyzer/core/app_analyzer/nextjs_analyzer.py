@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 
 from loguru import logger
 
-from src.analyzer.core.app_analyzer.dataclasses import (
+from bugster.analyzer.core.app_analyzer.dataclasses import (
     ApiInfo,
     AppAnalysis,
     FileAnalysisResult,
@@ -15,13 +15,13 @@ from src.analyzer.core.app_analyzer.dataclasses import (
     LayoutInfo,
     PageInfo,
 )
-from src.analyzer.core.app_analyzer.utils.get_tree_structure import (
+from bugster.analyzer.core.app_analyzer.utils.get_tree_structure import (
     get_paths,
     get_tree_structure,
 )
-from src.analyzer.utils.assert_utils import assert_defined
-from src.analyzer.utils.get_git_info import get_git_info
-from src.constants import BUGSTER_DIR
+from bugster.analyzer.utils.assert_utils import assert_defined
+from bugster.analyzer.utils.get_git_info import get_git_info
+from bugster.constants import BUGSTER_DIR
 
 
 class TreeNode:
@@ -321,6 +321,7 @@ class NextjsAnalyzer:
                                     self.framework_info["dir_path"],
                                     file.relative_file_path,
                                 ),
+                                "r",
                                 encoding="utf-8",
                             ) as f:
                                 file.content = f.read()

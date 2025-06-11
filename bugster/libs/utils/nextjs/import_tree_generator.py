@@ -6,8 +6,8 @@ from typing import Dict, List, Optional, Set
 
 from loguru import logger
 
-from src.analyzer.core.framework_detector.main import get_project_info
-from src.constants import BUGSTER_DIR
+from bugster.analyzer.core.framework_detector.main import get_project_info
+from bugster.constants import BUGSTER_DIR
 
 
 class ImportTreeGenerator:

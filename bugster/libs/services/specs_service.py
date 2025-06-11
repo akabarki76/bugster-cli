@@ -1,12 +1,13 @@
-"""Specs service for Bugster remote operations."""
+"""
+Specs service for Bugster remote operations.
+"""
 
 from typing import Dict, List
-
 import requests
 
-from src.libs.settings import libs_settings
-from src.utils.file import load_config
-from src.utils.user_config import get_api_key
+from bugster.libs.settings import libs_settings
+from bugster.utils.user_config import get_api_key
+from bugster.utils.file import load_config
 
 
 class SyncService:
@@ -25,7 +26,7 @@ class SyncService:
             )
 
     def _get_project_id(self) -> str:
-        """Get project_id from config or use provided one."""
+        """Get project_id from config or use provided one"""
         if self.project_id:
             return self.project_id
 
@@ -33,7 +34,7 @@ class SyncService:
         return config.project_id
 
     def get_remote_test_cases(self, branch: str) -> Dict[str, List[Dict]]:
-        """Get all specs for a branch from remote."""
+        """Get all specs for a branch from remote"""
         project_id = self._get_project_id()
         response = requests.get(
             f"{self.base_url}/api/v1/sync/{project_id}",
@@ -44,7 +45,7 @@ class SyncService:
         return response.json()
 
     def upload_test_cases(self, branch: str, specs_data: Dict[str, List[Dict]]) -> Dict:
-        """Upload multiple specs to remote in a single call."""
+        """Upload multiple specs to remote in a single call"""
         project_id = self._get_project_id()
         response = requests.put(
             f"{self.base_url}/api/v1/sync/{project_id}",
@@ -56,7 +57,7 @@ class SyncService:
         return response.json()
 
     def delete_specs(self, branch: str, file_paths: List[str]) -> None:
-        """Delete multiple specs from remote in a single call."""
+        """Delete multiple specs from remote in a single call"""
         project_id = self._get_project_id()
         response = requests.post(
             f"{self.base_url}/api/v1/sync/{project_id}/delete",
@@ -69,7 +70,7 @@ class SyncService:
     def delete_specific_test_cases(
         self, branch: str, test_cases_to_delete: Dict[str, List[str]]
     ) -> None:
-        """Delete specific specs by ID from remote files."""
+        """Delete specific specs by ID from remote files"""
         project_id = self._get_project_id()
         response = requests.post(
             f"{self.base_url}/api/v1/sync/{project_id}/delete-test-cases",

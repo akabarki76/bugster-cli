@@ -1,23 +1,25 @@
-"""Tests for YAML spec parser."""
-
-import tempfile
-import uuid
-from datetime import datetime
-from pathlib import Path
+"""
+Tests for YAML spec parser.
+"""
 
 import pytest
+from pathlib import Path
+import tempfile
+from datetime import datetime
+import uuid
+import json
 
-from src.utils.yaml_spec import (
+from bugster.utils.yaml_spec import (
     TestCaseMetadata,
     YamlTestcase,
-    load_spec,
     parse_yaml_with_testcases,
+    load_spec,
     save_spec,
 )
 
 
 def test_spec_metadata_creation():
-    """Test creation of new metadata."""
+    """Test creation of new metadata"""
     metadata = TestCaseMetadata.create_new()
     assert isinstance(metadata.id, str)
     assert uuid.UUID(metadata.id)  # Validates UUID format
@@ -25,7 +27,7 @@ def test_spec_metadata_creation():
 
 
 def test_metadata_from_comment():
-    """Test parsing metadata from comment."""
+    """Test parsing metadata from comment"""
     comment = '# @META:{"id":"123","last_modified":"2024-03-20T10:00:00"}'
     metadata = TestCaseMetadata.from_comment(comment)
     assert metadata is not None
@@ -34,7 +36,7 @@ def test_metadata_from_comment():
 
 
 def test_metadata_from_legacy_comment():
-    """Test parsing metadata from legacy comment with version field."""
+    """Test parsing metadata from legacy comment with version field"""
     comment = '# @META:{"id":"123","version":2,"last_modified":"2024-03-20T10:00:00"}'
     metadata = TestCaseMetadata.from_comment(comment)
     assert metadata is not None
@@ -45,14 +47,14 @@ def test_metadata_from_legacy_comment():
 
 
 def test_metadata_from_invalid_comment():
-    """Test parsing invalid metadata comment."""
+    """Test parsing invalid metadata comment"""
     comment = "# Invalid comment"
     metadata = TestCaseMetadata.from_comment(comment)
     assert metadata is None
 
 
 def test_yaml_spec_creation():
-    """Test creation of YamlTestcase."""
+    """Test creation of YamlTestcase"""
     data = {"name": "Test", "steps": ["step1", "step2"]}
     spec = YamlTestcase(data)
     assert spec.data == data
@@ -60,7 +62,7 @@ def test_yaml_spec_creation():
 
 
 def test_parse_yaml_with_specs():
-    """Test parsing YAML content with multiple specs."""
+    """Test parsing YAML content with multiple specs"""
     content = """# @META:{"id":"123","last_modified":"2024-03-20T10:00:00"}
 # This comment contains machine-readable metadata that should not be modified
 - name: Test 1
@@ -91,7 +93,7 @@ def test_parse_yaml_with_specs():
 
 
 def test_load_and_save_yaml_specs():
-    """Test loading and saving specs to/from file."""
+    """Test loading and saving specs to/from file"""
     # Create a temporary file
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as tmp:
         content = """# @META:{"id":"123","last_modified":"2024-03-20T10:00:00"}
@@ -131,6 +133,6 @@ def test_load_and_save_yaml_specs():
 
 
 def test_load_yaml_specs_file_not_found():
-    """Test loading specs from non-existent file."""
+    """Test loading specs from non-existent file"""
     with pytest.raises(FileNotFoundError):
         load_spec(Path("non_existent.yaml"))

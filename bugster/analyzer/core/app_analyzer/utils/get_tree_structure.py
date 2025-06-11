@@ -4,7 +4,7 @@ from typing import Dict, List, Literal, Optional, TypedDict, Union
 
 from loguru import logger
 
-from src.libs.utils.files import filter_path
+from bugster.libs.utils.files import filter_path
 
 
 def filter_paths(all_paths: List[str], allowed_extensions: Optional[list[str]] = None):

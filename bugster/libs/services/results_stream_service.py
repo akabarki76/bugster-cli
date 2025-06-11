@@ -1,12 +1,13 @@
-"""Results streaming service for Bugster test execution."""
+"""
+Results streaming service for Bugster test execution.
+"""
 
 from pathlib import Path
-
 import requests
 
-from src.libs.settings import libs_settings
-from src.utils.file import load_config
-from src.utils.user_config import get_api_key
+from bugster.libs.settings import libs_settings
+from bugster.utils.user_config import get_api_key
+from bugster.utils.file import load_config
 
 
 class ResultsStreamService:
@@ -25,7 +26,7 @@ class ResultsStreamService:
             )
 
     def _get_project_id(self) -> str:
-        """Get project_id from config or use provided one."""
+        """Get project_id from config or use provided one"""
         if self.project_id:
             return self.project_id
 
@@ -123,7 +124,7 @@ class ResultsStreamService:
             # Step 3: Return the final URL where video will be accessible
             return presigned_data["final_url"]
 
-        except OSError as e:
+        except (OSError, IOError) as e:
             raise RuntimeError(f"Failed to read video file {video_path}: {e}") from e
 
     def update_test_case_with_video(

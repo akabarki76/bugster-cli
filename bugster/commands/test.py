@@ -283,7 +283,11 @@ async def execute_test(test: Test, config: Config, **kwargs) -> NamedTestResult:
             max_retries = 2
 
             while True:
-                message = await ws_client.receive()
+                try:
+                    message = await ws_client.receive(timeout=300)
+                except asyncio.TimeoutError:
+                    console.print("[red]Timeout: No response from Bugster Agent[/red]")
+                    raise typer.Exit(1)
 
                 if message.get("action") == "step_request":
                     step_request = WebSocketStepRequestMessage(**message)
@@ -532,6 +536,9 @@ async def test_command(
         # Exit with non-zero status if any test failed
         if any(result.result == "fail" for result in results):
             raise typer.Exit(1)
+
+    except typer.Exit:
+        raise
 
     except Exception as e:
         console.print(f"[red]Error: {str(e)}[/red]")

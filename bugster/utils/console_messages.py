@@ -225,4 +225,84 @@ class AuthMessages:
     @staticmethod
     def auth_error(error):
         """Show authentication error message."""
-        console.print(f"❌ [{BugsterColors.ERROR}]Error saving API key: {str(error)}[/{BugsterColors.ERROR}]") 
+        console.print(f"❌ [{BugsterColors.ERROR}]Error saving API key: {str(error)}[/{BugsterColors.ERROR}]")
+
+class CLIMessages:
+    """Messages for the CLI commands."""
+    
+    @staticmethod
+    def get_version_header(version: str):
+        """Get version header message."""
+        messages = [
+            (f"🐛 [bold {BugsterColors.PRIMARY}]Bugster CLI[/bold {BugsterColors.PRIMARY}]", "center"),
+            (f"[{BugsterColors.TEXT_DIM}]Version[/{BugsterColors.TEXT_DIM}] [bold {BugsterColors.SUCCESS}]{version}[/bold {BugsterColors.SUCCESS}]", "center"),
+            ("", None),
+            (f"[{BugsterColors.TEXT_DIM}]AI-powered end-to-end testing for web applications[/{BugsterColors.TEXT_DIM}]", "center"),
+            ("", None),
+            (f"[{BugsterColors.TEXT_DIM}]Links:[/{BugsterColors.TEXT_DIM}]", "left"),
+            (f"  🌐 Dashboard: [{BugsterColors.LINK}]https://gui.bugster.dev[/{BugsterColors.LINK}]", "left"),
+            (f"  📚 Docs: [{BugsterColors.LINK}]https://docs.bugster.dev[/{BugsterColors.LINK}]", "left"),
+            (f"  🐙 GitHub: [{BugsterColors.LINK}]https://github.com/Bugsterapp/bugster-cli[/{BugsterColors.LINK}]", "left"),
+            ("", None)
+        ]
+        return messages
+
+    @staticmethod
+    def get_main_help():
+        """Get main help message."""
+        return f"""🐛 [bold {BugsterColors.PRIMARY}]Bugster CLI[/bold {BugsterColors.PRIMARY}] - AI-powered end-to-end testing for web applications
+    
+    [{BugsterColors.TEXT_DIM}]Transform your manual testing into automated test cases with intelligent code analysis.[/{BugsterColors.TEXT_DIM}]
+    
+    [{BugsterColors.TEXT_PRIMARY}]Quick Start:[/{BugsterColors.TEXT_PRIMARY}]
+    1. [bold {BugsterColors.COMMAND}]bugster init[/bold {BugsterColors.COMMAND}]        - Initialize your project  
+    2. [bold {BugsterColors.COMMAND}]bugster generate[/bold {BugsterColors.COMMAND}]    - Generate test cases
+    3. [bold {BugsterColors.COMMAND}]bugster run[/bold {BugsterColors.COMMAND}]         - Run your tests
+    4. [bold {BugsterColors.COMMAND}]bugster update[/bold {BugsterColors.COMMAND}]      - Update your test cases
+    5. [bold {BugsterColors.COMMAND}]bugster sync[/bold {BugsterColors.COMMAND}]        - Sync your test cases with the remote repository
+    
+    [{BugsterColors.TEXT_DIM}]Visit [{BugsterColors.LINK}]https://gui.bugster.dev[/{BugsterColors.LINK}] to get started![/{BugsterColors.TEXT_DIM}]"""
+
+    @staticmethod
+    def get_init_help():
+        """Get init command help message."""
+        return f"""[bold {BugsterColors.COMMAND}]Initialize[/bold {BugsterColors.COMMAND}] Bugster CLI configuration in your project.
+
+    Set up Bugster configuration in your repository.
+    Creates .bugster/ directory with project settings."""
+
+    @staticmethod
+    def get_run_help():
+        """Get run command help message."""
+        return f"""🧪 [bold {BugsterColors.COMMAND}]Run[/bold {BugsterColors.COMMAND}] your Bugster tests
+    
+    Execute AI-generated test cases against your application.
+    
+    [{BugsterColors.TEXT_DIM}]Examples:[/{BugsterColors.TEXT_DIM}]
+      [{BugsterColors.PRIMARY}]bugster run[/{BugsterColors.PRIMARY}]                    - Run all tests
+      [{BugsterColors.PRIMARY}]bugster run auth/[/{BugsterColors.PRIMARY}]              - Run tests in auth/ directory  
+      [{BugsterColors.PRIMARY}]bugster run --headless[/{BugsterColors.PRIMARY}]         - Run without browser UI
+      [{BugsterColors.PRIMARY}]bugster run --stream-results[/{BugsterColors.PRIMARY}]   - Stream to dashboard"""
+
+    @staticmethod
+    def get_analyze_help():
+        """Get analyze command help message."""
+        return f"""🔍 [bold {BugsterColors.COMMAND}]Analyze[/bold {BugsterColors.COMMAND}] your codebase
+    
+    Scan your application code and generate test specs.
+    Uses AI to understand your app structure and create comprehensive tests.
+    
+    [{BugsterColors.TEXT_DIM}]This may take a few minutes for large codebases.[/{BugsterColors.TEXT_DIM}]"""
+
+    @staticmethod
+    def get_update_help():
+        """Get update command help message."""
+        return f"""🔄 [bold {BugsterColors.COMMAND}]Update[/bold {BugsterColors.COMMAND}] your test specs with the latest changes."""
+
+    @staticmethod
+    def get_sync_help():
+        """Get sync command help message."""
+        return f"""🔄 [bold {BugsterColors.COMMAND}]Sync[/bold {BugsterColors.COMMAND}] test cases with team
+    
+    Keep your test cases in sync across team members and environments.
+    Handles conflicts intelligently based on modification timestamps.""" 

@@ -13,14 +13,12 @@ import typer
 
 from bugster.constants import (
     CONFIG_PATH,
-    EXAMPLE_DIR,
-    EXAMPLE_TEST_FILE,
-    EXAMPLE_TEST,
+    TESTS_DIR,
 )
 from bugster.utils.user_config import get_api_key
 from bugster.clients.http_client import BugsterHTTPClient, BugsterHTTPError
 from bugster.commands.auth import auth_command
-from bugster.utils.colors import BugsterColors
+from bugster.utils.console_messages import InitMessages
 
 console = Console()
 
@@ -89,16 +87,12 @@ def generate_project_id(project_name: str) -> str:
 
 def init_command():
     """Initialize Bugster CLI configuration."""
-    
-    console.print()
-    console.print(f"🚀 [{BugsterColors.TEXT_PRIMARY}]Welcome to Bugster![/{BugsterColors.TEXT_PRIMARY}]")
-    console.print(f"[{BugsterColors.TEXT_DIM}]Let's set up your project[/{BugsterColors.TEXT_DIM}]\n")
+    InitMessages.welcome()
     
     # First check if user is authenticated
     api_key = get_api_key()
     if not api_key:
-        console.print(f"⚠️  [{BugsterColors.WARNING}]Authentication Required[/{BugsterColors.WARNING}]")
-        console.print(f"[{BugsterColors.TEXT_DIM}]First, let's set up your API key[/{BugsterColors.TEXT_DIM}]\n")
+        InitMessages.auth_required()
         
         # Run auth command
         auth_command()
@@ -106,111 +100,77 @@ def init_command():
         # Check if auth was successful
         api_key = get_api_key()
         if not api_key:
-            console.print(f"\n❌ [{BugsterColors.ERROR}]Authentication failed. Please try again.[/{BugsterColors.ERROR}]")
+            InitMessages.auth_failed()
             raise typer.Exit(1)
         
-        console.print(f"\n✅ [{BugsterColors.SUCCESS}]Authentication successful![/{BugsterColors.SUCCESS}]")
-        console.print(f"[{BugsterColors.TEXT_DIM}]Now let's configure your project[/{BugsterColors.TEXT_DIM}]\n")
+        InitMessages.auth_success()
 
-    # Check for existing configuration in current or parent directories
+    # Check for existing configuration
     config_exists, existing_config_path = find_existing_config()
     
     if config_exists:
         if existing_config_path == CONFIG_PATH:
-            if not Confirm.ask(
-                f"⚠️  [{BugsterColors.WARNING}]Existing Bugster project detected. Would you like to reinitialize? This will overwrite current settings[/{BugsterColors.WARNING}]",
-                default=False
-            ):
-                console.print(f"\n❌ [{BugsterColors.WARNING}]Initialization cancelled[/{BugsterColors.WARNING}]")
+            if not Confirm.ask(InitMessages.get_existing_project_warning(), default=False):
+                InitMessages.initialization_cancelled()
                 raise typer.Exit(0)
         else:
             current_dir = Path.cwd()
-            project_dir = existing_config_path.parent.parent  # Go up two levels: .bugster/config.yaml -> .bugster -> project_dir
-            console.print(f"\n🚫 [{BugsterColors.ERROR}]Cannot initialize nested Bugster project[/{BugsterColors.ERROR}]")
-            console.print(f"📁 [{BugsterColors.WARNING}]Current directory:[/{BugsterColors.WARNING}] {current_dir}")
-            console.print(f"📁 [{BugsterColors.WARNING}]Parent project:[/{BugsterColors.WARNING}] {project_dir}")
-            console.print(f"\n💡 [{BugsterColors.ERROR}]Please initialize the project outside of any existing Bugster project[/{BugsterColors.ERROR}]")
+            project_dir = existing_config_path.parent.parent
+            InitMessages.nested_project_error(current_dir, project_dir)
             raise typer.Exit(1)
 
     # Project setup
-    console.print(f"\n📝 [{BugsterColors.TEXT_PRIMARY}]Project Setup[/{BugsterColors.TEXT_PRIMARY}]")
-    console.print(f"[{BugsterColors.TEXT_DIM}]Let's configure your project details[/{BugsterColors.TEXT_DIM}]\n")
+    InitMessages.project_setup()
+    project_name = Prompt.ask("🏷️  Project name", default=Path.cwd().name)
     
-    project_name = Prompt.ask(f"🏷️  [{BugsterColors.TEXT_PRIMARY}]Project name[/{BugsterColors.TEXT_PRIMARY}]", default="My Project")
-    
-    # Get project ID from API
+    # Create project via API
     try:
         with BugsterHTTPClient() as client:
-            # Set the API key header
             client.set_headers({"x-api-key": api_key})
+            InitMessages.creating_project()
             
-            console.print(f"\n[{BugsterColors.TEXT_DIM}]Creating project on Bugster...[/{BugsterColors.TEXT_DIM}]")
-            
-            # Make the POST request
-            project_data = client.post(
-                "/api/v1/gui/project",
-                json={"name": project_name}
-            )
-            
+            project_data = client.post("/api/v1/gui/project", json={"name": project_name})
             project_id = project_data.get("project_id") or project_data.get("id")
             
             if not project_id:
-                console.print(f"[{BugsterColors.ERROR}]Error: Project ID not found in API response[/{BugsterColors.ERROR}]")
-                raise typer.Exit(1)
+                raise Exception("Project ID not found in response")
                 
-            console.print(f"✨ [{BugsterColors.SUCCESS}]Project created successfully![/{BugsterColors.SUCCESS}]")
+            InitMessages.project_created()
             
-    except BugsterHTTPError as e:
-        console.print(f"⚠️  [{BugsterColors.ERROR}]API connection error: {str(e)}[/{BugsterColors.ERROR}]")
-        console.print(f"↪️  [{BugsterColors.WARNING}]Falling back to local project ID[/{BugsterColors.WARNING}]")
-        project_id = generate_project_id(project_name)
     except Exception as e:
-        console.print(f"⚠️  [{BugsterColors.ERROR}]Unexpected error: {str(e)}[/{BugsterColors.ERROR}]")
-        console.print(f"↪️  [{BugsterColors.WARNING}]Falling back to local project ID[/{BugsterColors.WARNING}]")
+        InitMessages.project_creation_error(str(e))
         project_id = generate_project_id(project_name)
 
-    console.print(f"\n🆔 Project ID: [{BugsterColors.INFO}]{project_id}[/{BugsterColors.INFO}]")
-    
-    base_url = Prompt.ask(f"\n🌐 [{BugsterColors.TEXT_PRIMARY}]Application URL[/{BugsterColors.TEXT_PRIMARY}]", default="http://localhost:3000")
+    InitMessages.show_project_id(project_id)
+    base_url = Prompt.ask("\n🌐 Application URL", default="http://localhost:3000")
 
-    # Initialize empty credentials array
+    # Credentials setup
+    InitMessages.auth_setup()
     credentials = []
 
-    console.print(f"\n🔐 [{BugsterColors.TEXT_PRIMARY}]Authentication Setup[/{BugsterColors.TEXT_PRIMARY}]")
-    console.print(f"[{BugsterColors.TEXT_DIM}]Configure login credentials for your application[/{BugsterColors.TEXT_DIM}]\n")
-
-    if Prompt.ask(f"➕ [{BugsterColors.TEXT_PRIMARY}]Would you like to add custom login credentials? (y/n)[/{BugsterColors.TEXT_PRIMARY}]", default="y").lower() == "y":
+    if Prompt.ask("➕ Would you like to add custom login credentials? (y/n)", default="y").lower() == "y":
         while True:
             identifier = Prompt.ask(
-                f"👤 [{BugsterColors.TEXT_PRIMARY}]Credential name (e.g. admin-user, test-manager)[/{BugsterColors.TEXT_PRIMARY}]",
+                "👤 Credential name",
                 default="admin",
             )
-            username = Prompt.ask(f"📧 [{BugsterColors.TEXT_PRIMARY}]Username/Email[/{BugsterColors.TEXT_PRIMARY}]")
-            password = Prompt.ask(f"🔒 [{BugsterColors.TEXT_PRIMARY}]Password[/{BugsterColors.TEXT_PRIMARY}]", password=True)
+            username = Prompt.ask("📧 Username/Email")
+            password = Prompt.ask("🔒 Password", password=True)
 
-            credentials.append(
-                create_credential_entry(
-                    identifier=identifier,
-                    username=username,
-                    password=password,
-                )
-            )
-            console.print(f"✓ [{BugsterColors.SUCCESS}]Credential added successfully[/{BugsterColors.SUCCESS}]\n")
+            credentials.append(create_credential_entry(identifier, username, password))
+            InitMessages.credential_added()
             
-            if not Prompt.ask(f"➕ [{BugsterColors.TEXT_PRIMARY}]Add another credential? (y/n)[/{BugsterColors.TEXT_PRIMARY}]", default="n").lower() == "y":
+            if not Prompt.ask("➕ Add another credential? (y/n)", default="n").lower() == "y":
                 break
-
     else:
-        # If no custom credentials, use default admin
         credentials.append(create_credential_entry())
-        console.print(f"ℹ️  [{BugsterColors.TEXT_DIM}]Using default credentials (admin/admin)[/{BugsterColors.TEXT_DIM}]\n")
+        InitMessages.using_default_credentials()
 
     # Create project structure
-    console.print(f"🏗️  [{BugsterColors.TEXT_PRIMARY}]Setting Up Project Structure[/{BugsterColors.TEXT_PRIMARY}]")
-    console.print(f"[{BugsterColors.TEXT_DIM}]Creating necessary files and directories[/{BugsterColors.TEXT_DIM}]\n")
+    InitMessages.project_structure_setup()
 
     # Create folders
-    EXAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+    TESTS_DIR.mkdir(parents=True, exist_ok=True)
 
     # Update .gitignore
     update_gitignore()
@@ -225,59 +185,28 @@ def init_command():
     with open(CONFIG_PATH, "w") as f:
         yaml.dump(config, f, default_flow_style=False)
 
-    # Save example test
-    with open(EXAMPLE_TEST_FILE, "w") as f:
-        f.write(EXAMPLE_TEST)
-
-    # Show results
-    console.print(f"\n🎉 [{BugsterColors.SUCCESS}]Project Initialized Successfully![/{BugsterColors.SUCCESS}]")
+    # Show success message and summary
+    InitMessages.initialization_success()
     
-    # Project summary
-    table = Table(
-        title="📋 Project Summary",
-        show_header=True,
-        header_style=BugsterColors.INFO
+    # Show project summary
+    summary_table = InitMessages.create_project_summary_table(
+        project_name,
+        project_id,
+        base_url,
+        CONFIG_PATH,
+        len(credentials)
     )
-    table.add_column("Setting", style=BugsterColors.INFO)
-    table.add_column("Value", style=BugsterColors.SUCCESS)
-    
-    table.add_row("Project Name", project_name)
-    table.add_row("Project ID", project_id)
-    table.add_row("Base URL", base_url)
-    table.add_row("Config Location", str(CONFIG_PATH))
-    table.add_row("Example Test", str(EXAMPLE_TEST_FILE))
-    table.add_row("Credentials", f"{len(credentials)} configured")
-    
     console.print()
-    console.print(table)
+    console.print(summary_table)
 
-    # Show credentials table only if custom credentials were added
-    if len(credentials) > 1 or (len(credentials) == 1 and credentials[0] != create_credential_entry()):
-        creds_table = Table(title="🔐 Configured Credentials")
-        creds_table.add_column("ID", style=BugsterColors.INFO)
-        creds_table.add_column("Username", style=BugsterColors.SUCCESS)
-        creds_table.add_column("Password", style=BugsterColors.WARNING)
-
-        for cred in credentials:
-            password_masked = "•" * len(cred["password"])
-            creds_table.add_row(cred["id"], cred["username"], password_masked)
-
+    # Show credentials if custom ones were added
+    if len(credentials) > 1 or (len(credentials) == 1 and credentials[0]["id"] != "admin"):
+        creds_table = InitMessages.create_credentials_table(credentials)
         console.print()
         console.print(creds_table)
     
-    # Next steps panel
-    from rich.panel import Panel
-    
-    success_panel = Panel(
-            f"[bold][{BugsterColors.SUCCESS}]🎉 You're all set![/{BugsterColors.SUCCESS}][/bold]\n\n"
-            f"[bold][{BugsterColors.TEXT_PRIMARY}]Next steps:[/{BugsterColors.TEXT_PRIMARY}][/bold]\n"
-            f"1. [{BugsterColors.COMMAND}]bugster generate[/{BugsterColors.COMMAND}] - Generate test specs\n"
-            f"2. [{BugsterColors.COMMAND}]bugster run[/{BugsterColors.COMMAND}] - Run your specs\n"
-            f"3. [{BugsterColors.TEXT_DIM}]Integrate Bugster with GitHub[{BugsterColors.LINK}]https://gui.bugster.dev/dashboard[/{BugsterColors.LINK}][/{BugsterColors.TEXT_DIM}]\n\n"
-            f"[{BugsterColors.TEXT_DIM}]Need help? Visit [{BugsterColors.LINK}]https://docs.bugster.dev[/{BugsterColors.LINK}][/{BugsterColors.TEXT_DIM}]",
-            title="🚀 Ready to Go",
-            border_style=BugsterColors.SUCCESS
-        )
+    # Show success panel
+    success_panel = InitMessages.create_success_panel()
     console.print()
     console.print(success_panel)
     console.print()

@@ -10,6 +10,7 @@ from rich.console import Console
 from loguru import logger
 
 from bugster import __version__
+from bugster.utils.colors import BugsterColors
 
 app = typer.Typer(
     name="bugster",
@@ -22,7 +23,20 @@ console = Console()
 
 def version_callback(value: bool):
     if value:
-        print(__version__)
+        # Create a styled version output
+        console = Console()
+        console.print()
+        console.print(f"🐛 [bold {BugsterColors.PRIMARY}]Bugster CLI[/bold {BugsterColors.PRIMARY}]", justify="center")
+        console.print(f"[{BugsterColors.TEXT_DIM}]Version[/{BugsterColors.TEXT_DIM}] [bold {BugsterColors.SUCCESS}]{__version__}[/bold {BugsterColors.SUCCESS}]", justify="center")
+        console.print()
+        console.print(f"[{BugsterColors.TEXT_DIM}]AI-powered end-to-end testing for web applications[/{BugsterColors.TEXT_DIM}]", justify="center")
+        console.print()
+        console.print(f"[{BugsterColors.TEXT_DIM}]Links:[/{BugsterColors.TEXT_DIM}]")
+        console.print(f"  🌐 Dashboard: [{BugsterColors.LINK}]https://gui.bugster.dev[/{BugsterColors.LINK}]")
+        console.print(f"  📚 Docs: [{BugsterColors.LINK}]https://docs.bugster.dev[/{BugsterColors.LINK}]")
+        console.print(f"  🐙 GitHub: [{BugsterColors.LINK}]https://github.com/Bugsterapp/bugster-cli[/{BugsterColors.LINK}]")
+        console.print()
+        
         raise typer.Exit()
 
 
@@ -84,23 +98,31 @@ def main_callback(
         help="Enable debug logging",
     ),
 ):
-    """Bugster CLI - End-to-end testing for web applications."""
+    f"""🐛 [bold {BugsterColors.PRIMARY}]Bugster CLI[/bold {BugsterColors.PRIMARY}] - AI-powered end-to-end testing for web applications
+    
+    [{BugsterColors.TEXT_DIM}]Transform your manual testing into automated test cases with intelligent code analysis.[/{BugsterColors.TEXT_DIM}]
+    
+    [{BugsterColors.TEXT_PRIMARY}]Quick Start:[/{BugsterColors.TEXT_PRIMARY}]
+    1. [bold {BugsterColors.COMMAND}]bugster init[/bold {BugsterColors.COMMAND}]        - Initialize your project  
+    2. [bold {BugsterColors.COMMAND}]bugster generate[/bold {BugsterColors.COMMAND}]    - Generate test cases
+    3. [bold {BugsterColors.COMMAND}]bugster run[/bold {BugsterColors.COMMAND}]         - Run your tests
+    4. [bold {BugsterColors.COMMAND}]bugster update[/bold {BugsterColors.COMMAND}]      - Update your test cases
+    5. [bold {BugsterColors.COMMAND}]bugster sync[/bold {BugsterColors.COMMAND}]        - Sync your test cases with the remote repository
+    
+    [{BugsterColors.TEXT_DIM}]Visit [{BugsterColors.LINK}]https://gui.bugster.dev[/{BugsterColors.LINK}] to get started![/{BugsterColors.TEXT_DIM}]
+    """
     global _debug_enabled
     _debug_enabled = debug
     configure_logging(debug)
 
 
 @app.command()
-def auth():
-    """[bold blue]Authenticate[/bold blue] to Bugster by setting up your API key."""
-    from bugster.commands.auth import auth_command
-
-    auth_command()
-
-
-@app.command()
 def init():
-    """[bold green]Initialize[/bold green] Bugster CLI configuration in your project."""
+    f"""[bold {BugsterColors.COMMAND}]Initialize[/bold {BugsterColors.COMMAND}] Bugster CLI configuration in your project.
+
+    Set up Bugster configuration in your repository.
+    Creates .bugster/ directory with project settings.
+    """
     from bugster.commands.init import init_command
 
     init_command()
@@ -130,9 +152,15 @@ def _run_tests(
         None, "--only-affected", help="Only run tests for affected files or directories"
     ),
 ):
-    """[bold yellow]Run[/bold yellow] Bugster tests.
-
-    If no path is provided, runs all tests in .bugster/tests.
+    f"""🧪 [bold {BugsterColors.COMMAND}]Run[/bold {BugsterColors.COMMAND}] your Bugster tests
+    
+    Execute AI-generated test cases against your application.
+    
+    [{BugsterColors.TEXT_DIM}]Examples:[/{BugsterColors.TEXT_DIM}]
+      [{BugsterColors.PRIMARY}]bugster run[/{BugsterColors.PRIMARY}]                    - Run all tests
+      [{BugsterColors.PRIMARY}]bugster run auth/[/{BugsterColors.PRIMARY}]              - Run tests in auth/ directory  
+      [{BugsterColors.PRIMARY}]bugster run --headless[/{BugsterColors.PRIMARY}]         - Run without browser UI
+      [{BugsterColors.PRIMARY}]bugster run --stream-results[/{BugsterColors.PRIMARY}]   - Stream to dashboard
     """
     from bugster.commands.test import test_command
 
@@ -168,7 +196,13 @@ def _analyze_codebase(
         help="Force analysis even if the codebase has already been analyzed",
     ),
 ):
-    """[bold magenta]Analyze[/bold magenta] your codebase to generate test specs."""
+    f"""🔍 [bold {BugsterColors.COMMAND}]Analyze[/bold {BugsterColors.COMMAND}] your codebase
+    
+    Scan your application code and generate test specs.
+    Uses AI to understand your app structure and create comprehensive tests.
+    
+    [{BugsterColors.TEXT_DIM}]This may take a few minutes for large codebases.[/{BugsterColors.TEXT_DIM}]
+    """
     from bugster.commands.analyze import analyze_command
 
     analyze_command(options={"show_logs": show_logs, "force": force})
@@ -196,7 +230,7 @@ def update(
         help="Show detailed logs during analysis",
     ),
 ):
-    """[bold magenta]Update[/bold magenta] your codebase with the latest changes."""
+    f"""🔄 [bold {BugsterColors.COMMAND}]Update[/bold {BugsterColors.COMMAND}] your test specs with the latest changes."""
     from bugster.commands.update import update_command
 
     update_command(
@@ -227,7 +261,12 @@ def sync(
         click_type=click.Choice(["local", "remote"]),
     ),
 ):
-    """[bold magenta]Sync[/bold magenta] your codebase with Bugster."""
+    f"""🔄 [bold {BugsterColors.COMMAND}]Sync[/bold {BugsterColors.COMMAND}] test cases with team
+    
+    Keep your test cases in sync across team members and environments.
+    Handles conflicts intelligently based on modification timestamps.
+    """
+
     from bugster.commands.sync import sync_command
 
     sync_command(branch, pull, push, clean_remote, dry_run, prefer)

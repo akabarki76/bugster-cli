@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import json
 import time
 import uuid
@@ -10,7 +11,6 @@ import typer
 from loguru import logger
 from rich.console import Console
 from rich.status import Status
-
 from bugster.clients.mcp_client import MCPStdioClient
 from bugster.clients.ws_client import WebSocketClient
 from bugster.commands.middleware import require_api_key
@@ -31,6 +31,71 @@ from bugster.libs.services.run_limits_service import apply_test_limit, get_test_
 from bugster.utils.console_messages import RunMessages
 
 console = Console()
+
+# Color palette for parallel test execution
+TEST_COLORS = [
+    "cyan",
+    "magenta",
+    "yellow",
+    "green",
+    "blue",
+    "red",
+    "bright_cyan",
+    "bright_magenta",
+    "bright_yellow",
+    "bright_green",
+    "bright_blue",
+    "bright_red",
+]
+
+
+def get_test_color(test_name: str) -> str:
+    """Get a consistent color for a test name using hash."""
+    hash_value = hashlib.md5(test_name.encode()).hexdigest()
+    color_index = int(hash_value, 16) % len(TEST_COLORS)
+    return TEST_COLORS[color_index]
+
+
+def format_parallel_message(test_name: str, message: str, level: str = "info") -> str:
+    """Format message for parallel execution with color and compact format."""
+    color = get_test_color(test_name)
+    # Truncate test name if too long
+    display_name = test_name[:20] + "..." if len(test_name) > 23 else test_name
+
+    # Color-code by level
+    level_colors = {
+        "info": color,
+        "warning": "yellow",
+        "error": "red",
+        "success": "green",
+    }
+
+    level_color = level_colors.get(level, color)
+    return f"[{level_color}][{display_name:23}][/{level_color}] {message}"
+
+
+def should_show_detailed_logs(max_concurrent: int, verbose: bool) -> bool:
+    """Determine if detailed logs should be shown based on concurrency and verbosity."""
+    return verbose or max_concurrent == 1
+
+
+def print_parallel_safe(
+    test_name: str,
+    message: str,
+    level: str = "info",
+    max_concurrent: int = 1,
+    verbose: bool = False,
+    silent: bool = False,
+    force_compact: bool = False,
+):
+    """Print message in a parallel-safe way with appropriate formatting."""
+    if silent:
+        return
+
+    if should_show_detailed_logs(max_concurrent, verbose) or force_compact:
+        # Detailed mode or explicitly marked for compact mode: show message
+        console.print(format_parallel_message(test_name, message, level))
+
 
 def handle_test_result_streaming(
     stream_service: ResultsStreamService,
@@ -161,8 +226,16 @@ async def handle_step_request(
     mcp_client: MCPStdioClient,
     ws_client: WebSocketClient,
     silent: bool = False,
+    max_concurrent: int = 1,
+    verbose: bool = False,
+    test_name: str = "",
 ) -> None:
-    """Handle a step request from the WebSocket server.""" 
+    """Handle a step request from the WebSocket server."""
+    # Print step details using consistent parallel-safe formatting
+    print_parallel_safe(
+        test_name, step_request.message, "info", max_concurrent, verbose, silent
+    )
+
     result = await mcp_client.execute(step_request.tool)
 
     await ws_client.send(
@@ -193,13 +266,33 @@ async def execute_test(test: Test, config: Config, **kwargs) -> NamedTestResult:
     mcp_client = MCPStdioClient()
     silent = kwargs.get("silent", False)
     run_id = kwargs.get("run_id", str(uuid.uuid4()))
+    max_concurrent = kwargs.get("max_concurrent", 1)
+    verbose = kwargs.get("verbose", False)
 
     try:
         # Connect to WebSocket and initialize MCP
-        with Status(RunMessages.connecting_to_agent(), spinner="dots") as status:
-            await ws_client.connect()
-            status.update(RunMessages.connected_successfully())
+        print_parallel_safe(
+            test.name,
+            "Connecting to Bugster Agent...",
+            "info",
+            max_concurrent,
+            verbose,
+            silent,
+            force_compact=True,
+        )
+        await ws_client.connect()
+        print_parallel_safe(
+            test.name,
+            "Connected successfully!",
+            "success",
+            max_concurrent,
+            verbose,
+            silent,
+            force_compact=True,
+        )
 
+        # ================================
+        # TODO: We should inject the config, command, args and env vars from the web socket
         mcp_config = {
             "browser": {
                 "contextOptions": {
@@ -234,92 +327,183 @@ async def execute_test(test: Test, config: Config, **kwargs) -> NamedTestResult:
         )
 
         # Main test loop
-        with Status(RunMessages.running_test_status(test.name), spinner="line") as status:
-            last_step_request = None
-            timeout_retry_count = 0
-            unknown_retry_count = 0
-            max_retries = 2
-
-            while True:
-                try:
-                    message = await ws_client.receive(timeout=300)
-                except asyncio.TimeoutError:
-                    RunMessages.error("Timeout: No response from Bugster Agent")
-                    raise typer.Exit(1)
-
-                if message.get("action") == "step_request":
-                    step_request = WebSocketStepRequestMessage(**message)
-                    last_step_request = step_request
-                    timeout_retry_count = 0  # Reset retry count for new step
-                    unknown_retry_count = 0  # Reset retry count for new step
-
-                    await handle_step_request(
-                        step_request, mcp_client, ws_client, silent
-                    )
-                    if not silent:
-                        status.update(RunMessages.running_test_status(test.name, step_request.message))
-
-                elif message.get("action") == "complete":
-                    complete_message = WebSocketCompleteMessage(**message)
-                    result = handle_complete_message(
-                        complete_message, test, 0
-                    )  # time is added later
-                    return result
-                elif message.get("message") == "Endpoint request timed out":
-                    if last_step_request and timeout_retry_count < max_retries:
-                        timeout_retry_count += 1
-                        logger.warning(
-                            f"Timeout occurred, retrying step ({timeout_retry_count}/{max_retries}): {last_step_request.message}"
-                        )
-                        if not silent:
-                            status.update(RunMessages.retrying_step(
-                                test.name, timeout_retry_count, max_retries, last_step_request.message
-                            ))
-
-                        await handle_step_request(
-                            last_step_request, mcp_client, ws_client, silent
-                        )
-                    else:
-                        logger.error(
-                            f"Max retries ({max_retries}) exceeded for step: {last_step_request.message if last_step_request else 'Unknown step'}"
-                        )
-                        if not silent:
-                            RunMessages.max_retries_exceeded()
-                        raise typer.Exit(1)
-                else:
-                    if last_step_request and unknown_retry_count < max_retries:
-                        unknown_retry_count += 1
-                        logger.warning(
-                            f"Unknown message received, waiting 30s and retrying step ({unknown_retry_count}/{max_retries}): {last_step_request.message}"
-                        )
-                        logger.debug(f"Unknown message content: {message}")
-                        if not silent:
-                            status.update(RunMessages.retrying_step(
-                                test.name, unknown_retry_count, max_retries, last_step_request.message, False
-                            ))
-
-                        await asyncio.sleep(30)
-
-                        if not silent:
-                            status.update(RunMessages.running_test_status(
-                                test.name, f"Retrying ({unknown_retry_count}/{max_retries}): {last_step_request.message}"
-                            ))
-
-                        await handle_step_request(
-                            last_step_request, mcp_client, ws_client, silent
-                        )
-                    else:
-                        logger.error(
-                            f"Max retries ({max_retries}) exceeded for unknown message. Last step: {last_step_request.message if last_step_request else 'Unknown step'}"
-                        )
-                        logger.error(f"Final unknown message: {message}")
-                        if not silent:
-                            RunMessages.internal_error()
-                        raise typer.Exit(1)
+        print_parallel_safe(
+            test.name,
+            "Starting test execution",
+            "info",
+            max_concurrent,
+            verbose,
+            silent,
+            force_compact=True,
+        )
+        return await _execute_test_loop(
+            ws_client,
+            mcp_client,
+            test,
+            silent,
+            max_concurrent,
+            verbose,
+        )
 
     finally:
         await ws_client.close()
         await mcp_client.close()
+
+
+async def _execute_test_loop(
+    ws_client: WebSocketClient,
+    mcp_client: MCPStdioClient,
+    test: Test,
+    silent: bool,
+    max_concurrent: int,
+    verbose: bool,
+) -> NamedTestResult:
+    """Execute the main test loop."""
+    last_step_request = None
+    timeout_retry_count = 0
+    unknown_retry_count = 0
+    max_retries = 2
+
+    while True:
+        try:
+            message = await ws_client.receive(timeout=300)
+        except asyncio.TimeoutError:
+            console.print("[red]Timeout: No response from Bugster Agent[/red]")
+            raise typer.Exit(1)
+
+        if message.get("action") == "step_request":
+            step_request = WebSocketStepRequestMessage(**message)
+            last_step_request = step_request
+            timeout_retry_count = 0  # Reset retry count for new step
+            unknown_retry_count = 0  # Reset retry count for new step
+
+            await handle_step_request(
+                step_request,
+                mcp_client,
+                ws_client,
+                silent,
+                max_concurrent,
+                verbose,
+                test.name,
+            )
+            # Los mensajes del WebSocket NO usan force_compact=True para que se filtren en modo compacto
+            print_parallel_safe(
+                test.name,
+                step_request.message,
+                "info",
+                max_concurrent,
+                verbose,
+                silent,
+            )
+
+        elif message.get("action") == "complete":
+            complete_message = WebSocketCompleteMessage(**message)
+            result = handle_complete_message(
+                complete_message, test, 0
+            )  # time is added later
+            print_parallel_safe(
+                test.name,
+                f"Test completed: {result.result}",
+                "success" if result.result == "pass" else "error",
+                max_concurrent,
+                verbose,
+                silent,
+                force_compact=True,
+            )
+            return result
+        elif message.get("message") == "Endpoint request timed out":
+            if last_step_request and timeout_retry_count < max_retries:
+                timeout_retry_count += 1
+                logger.warning(
+                    f"Timeout occurred, retrying step ({timeout_retry_count}/{max_retries}): {last_step_request.message}"
+                )
+                print_parallel_safe(
+                    test.name,
+                    f"Retrying ({timeout_retry_count}/{max_retries}): {last_step_request.message}",
+                    "warning",
+                    max_concurrent,
+                    verbose,
+                    silent,
+                    force_compact=True,
+                )
+
+                await handle_step_request(
+                    last_step_request,
+                    mcp_client,
+                    ws_client,
+                    silent,
+                    max_concurrent,
+                    verbose,
+                    test.name,
+                )
+            else:
+                logger.error(
+                    f"Max retries ({max_retries}) exceeded for step: {last_step_request.message if last_step_request else 'Unknown step'}"
+                )
+                print_parallel_safe(
+                    test.name,
+                    "Max retries exceeded. Please try again later",
+                    "error",
+                    max_concurrent,
+                    verbose,
+                    silent,
+                    force_compact=True,
+                )
+                raise typer.Exit(1)
+        else:
+            if last_step_request and unknown_retry_count < max_retries:
+                unknown_retry_count += 1
+                logger.warning(
+                    f"Unknown message received, waiting 30s and retrying step ({unknown_retry_count}/{max_retries}): {last_step_request.message}"
+                )
+                logger.debug(f"Unknown message content: {message}")
+                print_parallel_safe(
+                    test.name,
+                    f"Waiting 30s, then retrying ({unknown_retry_count}/{max_retries}): {last_step_request.message}",
+                    "warning",
+                    max_concurrent,
+                    verbose,
+                    silent,
+                    force_compact=True,
+                )
+
+                await asyncio.sleep(30)
+
+                print_parallel_safe(
+                    test.name,
+                    f"Retrying ({unknown_retry_count}/{max_retries}): {last_step_request.message}",
+                    "info",
+                    max_concurrent,
+                    verbose,
+                    silent,
+                    force_compact=True,
+                )
+
+                await handle_step_request(
+                    last_step_request,
+                    mcp_client,
+                    ws_client,
+                    silent,
+                    max_concurrent,
+                    verbose,
+                    test.name,
+                )
+            else:
+                logger.error(
+                    f"Max retries ({max_retries}) exceeded for unknown message. Last step: {last_step_request.message if last_step_request else 'Unknown step'}"
+                )
+                logger.error(f"Final unknown message: {message}")
+                print_parallel_safe(
+                    test.name,
+                    "Internal error. Please try again later",
+                    "error",
+                    max_concurrent,
+                    verbose,
+                    silent,
+                    force_compact=True,
+                )
+                raise typer.Exit(1)
+
 
 def rename_video(video_dir: Path, test_name: str) -> None:
     """Rename video files to include the test name."""
@@ -348,8 +532,18 @@ async def execute_single_test(
     silent: bool = False,
 ) -> NamedTestResult:
     """Execute a single test and handle streaming."""
-    if not silent:
-        RunMessages.test_start(test.name)
+    max_concurrent = test_executor_kwargs.get("max_concurrent", 1)
+    verbose = test_executor_kwargs.get("verbose", False)
+
+    print_parallel_safe(
+        test.name,
+        "Starting test",
+        "info",
+        max_concurrent,
+        verbose,
+        silent,
+        force_compact=True,
+    )
 
     test_start_time = time.time()
     result = await execute_test(test, config, **test_executor_kwargs)
@@ -358,7 +552,15 @@ async def execute_single_test(
     # Add elapsed time to result
     result.time = test_elapsed_time
 
-    RunMessages.test_result(test.name, result.result, test_elapsed_time)
+    print_parallel_safe(
+        test.name,
+        f"Finished: {result.result} (Time: {test_elapsed_time:.2f}s)",
+        "success" if result.result == "pass" else "error",
+        max_concurrent,
+        verbose,
+        silent,
+        force_compact=True,
+    )
 
     # Rename the video to the test name
     video_dir = Path(".bugster/videos") / run_id / test.metadata.id
@@ -379,6 +581,32 @@ async def execute_single_test(
 
     return result
 
+
+async def execute_single_test_with_semaphore(
+    semaphore: asyncio.Semaphore,
+    test: Test,
+    config: Config,
+    test_executor_kwargs: dict,
+    stream_service: Optional[ResultsStreamService],
+    api_run_id: Optional[str],
+    run_id: str,
+    executor: ThreadPoolExecutor,
+    silent: bool = False,
+) -> NamedTestResult:
+    """Execute a single test with semaphore for concurrency control."""
+    async with semaphore:
+        return await execute_single_test(
+            test,
+            config,
+            test_executor_kwargs,
+            stream_service,
+            api_run_id,
+            run_id,
+            executor,
+            silent,
+        )
+
+
 @require_api_key
 async def test_command(
     test_path: Optional[str] = None,
@@ -389,7 +617,9 @@ async def test_command(
     run_id: Optional[str] = None,
     base_url: Optional[str] = None,
     only_affected: Optional[bool] = None,
-):
+    max_concurrent: Optional[int] = None,
+    verbose: Optional[bool] = False,
+) -> None:
     """Run Bugster tests."""
     total_start_time = time.time()
 
@@ -442,59 +672,107 @@ async def test_command(
                 config, run_id, silent
             )
 
+        # Collect all tests first
+        all_tests = []
+        for test_file in test_files:
+            if not silent:
+                console.print(f"\n[blue]Loading tests from {test_file['file']}[/blue]")
+
+            # Handle both single test object and list of test objects
+            content = test_file["content"]
+            if not isinstance(content, list):
+                console.print(
+                    f"[red]Error: Invalid test file format in {test_file['file']}[/red]"
+                )
+                continue
+
+            for test_data in content:
+                test = Test(**test_data)
+                all_tests.append((test, test_file["file"]))
+
+        if not all_tests:
+            console.print("[yellow]No tests found[/yellow]")
+            return
+
+        # Determine max concurrent tests (default to 3 for safety)
+        max_concurrent = max_concurrent or 3
+        semaphore = asyncio.Semaphore(max_concurrent)
+
+        if not silent:
+            console.print(
+                f"\n[blue]Running {len(all_tests)} tests with max {max_concurrent} concurrent[/blue]"
+            )
+
         # Create thread pool executor for background operations
         with ThreadPoolExecutor(max_workers=5) as executor:
-            # Execute each test
-            for test_file in test_files:
-                if not silent:
-                    RunMessages.running_test_file(test_file['file'])
+            # Create tasks for all tests
+            tasks = []
+            for test, source_file in all_tests:
+                test_executor_kwargs = {
+                    "headless": headless,
+                    "silent": silent,
+                    "run_id": run_id,
+                    "max_concurrent": max_concurrent,
+                    "verbose": verbose,
+                }
 
-                # Handle both single test object and list of test objects
-                content = test_file["content"]
-                if not isinstance(content, list):
-                    RunMessages.invalid_test_file_format(test_file['file'])
-                    continue
+                task = execute_single_test_with_semaphore(
+                    semaphore,
+                    test,
+                    config,
+                    test_executor_kwargs,
+                    stream_service,
+                    api_run_id,
+                    run_id,
+                    executor,
+                    silent,
+                )
+                tasks.append(task)
 
-                for test_data in content:
-                    # Extract metadata before creating Test object
-                    test = Test(**test_data)
-                    test_executor_kwargs = {
-                        "headless": headless,
-                        "silent": silent,
-                        "run_id": run_id,
-                    }
+            # Execute all tests concurrently
+            if not silent:
+                console.print(f"[blue]Executing tests...[/blue]")
 
-                    result = await execute_single_test(
-                        test,
-                        config,
-                        test_executor_kwargs,
-                        stream_service,
-                        api_run_id,
-                        run_id,
-                        executor,
-                        silent,
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # Handle any exceptions
+            final_results = []
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    test_name = all_tests[i][0].name
+                    console.print(
+                        f"[red]Test {test_name} failed with exception: {str(result)}[/red]"
                     )
-
-                    results.append(result)
+                    # Create a failed result for the exception
+                    failed_result = NamedTestResult(
+                        name=test_name,
+                        metadata=all_tests[i][0].metadata,
+                        result="fail",
+                        reason=f"Exception: {str(result)}",
+                    )
+                    failed_result.time = 0
+                    final_results.append(failed_result)
+                else:
+                    final_results.append(result)
 
             if stream_results:
                 RunMessages.updating_final_status()
 
         # Display results table
-        console.print(RunMessages.create_results_table(results))
+        console.print(create_results_table(final_results))
 
         # Display total time
         RunMessages.total_execution_time(time.time() - total_start_time)
 
         # Update final run status if streaming
-        finalize_streaming_run(stream_service, api_run_id, results, time.time() - total_start_time)
+        finalize_streaming_run(stream_service, api_run_id, final_results, total_time)
 
         # Save results to JSON if output specified
         if output:
-            save_results_to_json(output, config, run_id, results, time.time() - total_start_time)
+            save_results_to_json(output, config, run_id, final_results, total_time)
 
         # Exit with non-zero status if any test failed
-        if any(result.result == "fail" for result in results):
+        if any(result.result == "fail" for result in final_results):
             raise typer.Exit(1)
 
     except typer.Exit:

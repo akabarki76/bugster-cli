@@ -126,7 +126,6 @@ def select_representative_tests(folder_groups: dict[str, List[dict]], max_tests:
             if folder_tests:
                 selected_tests.append(folder_tests[0])
                 folder_distribution[folder] = 1
-    
     return selected_tests[:max_tests], folder_distribution
 
 
@@ -187,17 +186,6 @@ def get_test_limit_from_config() -> Optional[int]:
     Returns:
         Maximum number of tests to run, or None if no limit
     """
-    import os
-    
-    # Check environment variable first
-    env_limit = os.getenv('BUGSTER_MAX_TESTS')
-    if env_limit:
-        try:
-            return int(env_limit)
-        except ValueError:
-            pass
-    
-    # Default limit (can be made configurable)
-    return 2
+    return 5
 
 

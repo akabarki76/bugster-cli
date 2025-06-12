@@ -29,6 +29,7 @@ from bugster.types import (
     WebSocketStepResultMessage,
 )
 from bugster.utils.file import get_mcp_config_path, load_config, load_test_files
+from bugster.libs.services.run_limits_service import apply_test_limit, get_test_limit_from_config, count_total_tests, print_test_limit_info
 
 console = Console()
 
@@ -450,6 +451,7 @@ async def test_command(
     try:
         # Load configuration and test files
         config = load_config()
+        max_tests = get_test_limit_from_config()
 
         if base_url:
             # Override the base URL in the config
@@ -466,6 +468,15 @@ async def test_command(
         if not test_files:
             console.print("[yellow]No test files found[/yellow]")
             return
+        original_count = count_total_tests(test_files)
+        limited_test_files, folder_distribution = apply_test_limit(test_files, max_tests)
+        selected_count = count_total_tests(limited_test_files)
+        # Print test limit information if limiting was applied
+        if max_tests is not None:
+            print_test_limit_info(original_count, selected_count, max_tests, folder_distribution)
+
+        # Use the limited test files for execution
+        test_files = limited_test_files
 
         results = []
         run_id = run_id or str(uuid.uuid4())

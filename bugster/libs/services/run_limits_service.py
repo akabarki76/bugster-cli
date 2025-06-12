@@ -148,34 +148,6 @@ def count_total_tests(test_files: List[dict]) -> int:
             total += 1
     return total
 
-def print_test_limit_info(original_count: int, selected_count: int, max_tests: int, folder_distribution: Dict[str, int]):
-    """
-    Print information about test limiting to the console.
-    
-    Args:
-        original_count: Original number of tests
-        selected_count: Number of tests selected
-        max_tests: Maximum allowed tests
-        folder_distribution: Distribution of tests per folder
-    """
-    from rich.console import Console
-    from rich.table import Table
-    
-    console = Console()
-    
-    if selected_count < original_count:
-        console.print(f"\n[yellow]⚠️  Test limit applied: Running {selected_count} out of {original_count} tests (limit: {max_tests})[/yellow]")
-        
-        # Show distribution table
-        table = Table(title="Test Distribution by Folder")
-        table.add_column("Folder", style="cyan")
-        table.add_column("Tests Selected", style="green", justify="right")
-        
-        for folder, count in sorted(folder_distribution.items()):
-            table.add_row(folder, str(count))
-        
-        console.print(table)
-        console.print()
 
 
 def get_test_limit_from_config() -> Optional[int]:

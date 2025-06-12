@@ -27,7 +27,7 @@ from bugster.types import (
     WebSocketStepResultMessage,
 )
 from bugster.utils.file import get_mcp_config_path, load_config, load_test_files
-from bugster.libs.services.run_limits_service import apply_test_limit, get_test_limit_from_config, count_total_tests, print_test_limit_info
+from bugster.libs.services.run_limits_service import apply_test_limit, get_test_limit_from_config, count_total_tests
 from bugster.utils.console_messages import RunMessages
 
 console = Console()
@@ -407,6 +407,9 @@ async def test_command(
 
         if only_affected:
             test_files = DetectAffectedSpecsService().run()
+            if test_files:
+                console.print(RunMessages.create_affected_tests_table(test_files))
+                console.print()
         else:
             test_files = load_test_files(path)
 
@@ -419,7 +422,12 @@ async def test_command(
         selected_count = count_total_tests(limited_test_files)
         # Print test limit information if limiting was applied
         if max_tests is not None:
-            print_test_limit_info(original_count, selected_count, max_tests, folder_distribution)
+            console.print(RunMessages.create_test_limit_panel(
+                original_count=original_count,
+                selected_count=selected_count,
+                max_tests=max_tests,
+                folder_distribution=folder_distribution
+            ))
 
         # Use the limited test files for execution
         test_files = limited_test_files

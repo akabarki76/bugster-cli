@@ -436,3 +436,51 @@ class RunMessages:
             )
 
         return table 
+    @staticmethod
+    def create_affected_tests_table(test_files):
+        """Create a panel showing tests affected by recent changes."""
+        content = []
+        content.append(f"[bold]The following tests will be executed based on your recent changes:[/bold]\n")
+
+        for test_file in test_files:
+            # Get the relative path by splitting on .bugster and taking the last part
+            full_path = str(test_file['file'])
+            relative_path = full_path.split('.bugster/')[-1] if '.bugster/' in full_path else full_path
+            test_names = [test['name'] for test in test_file['content']] if isinstance(test_file['content'], list) else []
+            
+            if test_names:
+                content.append(f"📄 [{BugsterColors.TEXT_DIM}]{relative_path}[/{BugsterColors.TEXT_DIM}]")
+                for test_name in test_names:
+                    content.append(f"   ▸ [{BugsterColors.TEXT_PRIMARY}]{test_name}[/{BugsterColors.TEXT_PRIMARY}]")
+                content.append("")  # Add empty line between files
+
+        panel_content = "\n".join(content)
+        return Panel(
+            panel_content,
+            title="🎯 Affected Tests",
+            border_style=BugsterColors.PRIMARY,
+            padding=(1, 2)
+        )
+
+    @staticmethod
+    def create_test_limit_panel(original_count: int, selected_count: int, max_tests: int, folder_distribution: dict):
+        """Create a panel showing test limit information."""
+        content = []
+        
+        if selected_count < original_count:
+            content.append(f"[bold]Test limit applied:[/bold] Running {selected_count} out of {original_count} tests (limit: {max_tests})")
+            content.append("")  # Empty line for spacing
+            content.append(f"[bold]Distribution by folder:[/bold]")
+            
+            # Add folder distribution
+            for folder, count in sorted(folder_distribution.items()):
+                content.append(f"📁 [{BugsterColors.TEXT_DIM}]{folder}[/{BugsterColors.TEXT_DIM}]")
+                content.append(f"   ▸ [{BugsterColors.TEXT_PRIMARY}]{count} tests[/{BugsterColors.TEXT_PRIMARY}]")
+            
+        panel_content = "\n".join(content)
+        return Panel(
+            panel_content,
+            title="⚠️  Test Limit Applied",
+            border_style=BugsterColors.WARNING,
+            padding=(1, 2)
+        )

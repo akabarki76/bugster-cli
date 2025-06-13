@@ -17,6 +17,7 @@ from bugster.clients.mcp_client import MCPStdioClient
 from bugster.clients.ws_client import WebSocketClient
 from bugster.commands.middleware import require_api_key
 from bugster.commands.sync import get_current_branch
+from bugster.libs.services.run_limits_service import apply_test_limit, count_total_tests, get_test_limit_from_config
 from bugster.libs.services.results_stream_service import ResultsStreamService
 from bugster.libs.services.update_service import DetectAffectedSpecsService
 from bugster.types import (
@@ -29,9 +30,8 @@ from bugster.types import (
     WebSocketStepResultMessage,
 )
 from bugster.utils.file import get_mcp_config_path, load_config, load_test_files
-
+from bugster.utils.console_messages import RunMessages
 console = Console()
-
 # Color palette for parallel test execution
 TEST_COLORS = [
     "cyan",
@@ -125,9 +125,7 @@ def handle_test_result_streaming(
                 )
 
     except Exception as e:
-        console.print(
-            f"[yellow]Warning: Failed to stream result for {result.name}: {str(e)}[/yellow]"
-        )
+        RunMessages.streaming_warning(result.name, e)
 
 
 def initialize_streaming_service(
@@ -151,13 +149,11 @@ def initialize_streaming_service(
         api_run_id = api_run.get("id", run_id)
 
         if not silent:
-            console.print(f"[blue]Streaming results to run: {api_run_id}[/blue]")
+            RunMessages.streaming_results_to_run(api_run_id)
 
         return stream_service, api_run_id
     except Exception as e:
-        console.print(
-            f"[yellow]Warning: Failed to initialize streaming service: {str(e)}[/yellow]"
-        )
+        RunMessages.streaming_init_warning(e)
         return None, None
 
 
@@ -176,9 +172,7 @@ def finalize_streaming_run(
         final_run_data = {"result": overall_result, "time": total_time}
         stream_service.update_run(api_run_id, final_run_data)
     except Exception as e:
-        console.print(
-            f"[yellow]Warning: Failed to update final run status: {str(e)}[/yellow]"
-        )
+        RunMessages.streaming_init_warning(e)
 
 
 def save_results_to_json(
@@ -215,9 +209,9 @@ def save_results_to_json(
         with open(output_path, "w") as f:
             json.dump(output_data, f, indent=2)
 
-        console.print(f"\n[green]Results saved to: {output}[/green]")
+        RunMessages.results_saved(output)
     except Exception as e:
-        console.print(f"[red]Failed to save results to {output}: {str(e)}[/red]")
+        RunMessages.save_results_error(output, e)
 
 
 def get_video_path_for_test(video_dir: Path, test_name: str) -> Optional[Path]:
@@ -401,7 +395,7 @@ async def _execute_test_loop(
         try:
             message = await ws_client.receive(timeout=300)
         except asyncio.TimeoutError:
-            console.print("[red]Timeout: No response from Bugster Agent[/red]")
+            RunMessages.error("Timeout: No response from Bugster Agent")
             raise typer.Exit(1)
 
         if message.get("action") == "step_request":
@@ -651,7 +645,7 @@ async def test_command(
     try:
         # Load configuration and test files
         config = load_config()
-
+        max_tests = get_test_limit_from_config()
         if base_url:
             # Override the base URL in the config
             # Used for CI/CD pipelines
@@ -665,9 +659,23 @@ async def test_command(
             test_files = load_test_files(path)
 
         if not test_files:
-            console.print("[yellow]No test files found[/yellow]")
+            RunMessages.no_tests_found()
             return
+        
+        original_count = count_total_tests(test_files)
+        limited_test_files, folder_distribution = apply_test_limit(test_files, max_tests)
+        selected_count = count_total_tests(limited_test_files)
+        # Print test limit information if limiting was applied
+        if int(original_count) > int(max_tests):
+            console.print(RunMessages.create_test_limit_panel(
+                original_count=original_count,
+                selected_count=selected_count,
+                max_tests=max_tests,
+                folder_distribution=folder_distribution
+            ))
 
+        # Use the limited test files for execution
+        test_files = limited_test_files
         run_id = run_id or str(uuid.uuid4())
 
         # Initialize streaming service if requested
@@ -681,14 +689,12 @@ async def test_command(
         all_tests = []
         for test_file in test_files:
             if not silent:
-                console.print(f"\n[blue]Loading tests from {test_file['file']}[/blue]")
+                RunMessages.running_test_file(test_file['file'])
 
             # Handle both single test object and list of test objects
             content = test_file["content"]
             if not isinstance(content, list):
-                console.print(
-                    f"[red]Error: Invalid test file format in {test_file['file']}[/red]"
-                )
+                RunMessages.invalid_test_file_format(test_file['file'])
                 continue
 
             for test_data in content:
@@ -696,7 +702,7 @@ async def test_command(
                 all_tests.append((test, test_file["file"]))
 
         if not all_tests:
-            console.print("[yellow]No tests found[/yellow]")
+            RunMessages.no_tests_found()
             return
 
         # Determine max concurrent tests (default to 3 for safety)
@@ -704,9 +710,7 @@ async def test_command(
         semaphore = asyncio.Semaphore(max_concurrent)
 
         if not silent:
-            console.print(
-                f"\n[blue]Running {len(all_tests)} tests with max {max_concurrent} concurrent[/blue]"
-            )
+            RunMessages.running_test_status(f"{len(all_tests)} tests", f"max {max_concurrent} concurrent")
 
         # Create thread pool executor for background operations
         with ThreadPoolExecutor(max_workers=5) as executor:
@@ -736,7 +740,7 @@ async def test_command(
 
             # Execute all tests concurrently
             if not silent:
-                console.print(f"[blue]Executing tests...[/blue]")
+                RunMessages.running_test_status("Executing tests...")
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -745,9 +749,7 @@ async def test_command(
             for i, result in enumerate(results):
                 if isinstance(result, Exception):
                     test_name = all_tests[i][0].name
-                    console.print(
-                        f"[red]Test {test_name} failed with exception: {str(result)}[/red]"
-                    )
+                    RunMessages.error(f"Test {test_name} failed with exception: {str(result)}")
                     # Create a failed result for the exception
                     failed_result = NamedTestResult(
                         name=test_name,
@@ -761,14 +763,17 @@ async def test_command(
                     final_results.append(result)
 
             if stream_results:
-                console.print("Updating final run status")
+                RunMessages.updating_final_status()
 
         # Display results table
-        console.print(create_results_table(final_results))
+        RunMessages.create_results_table(final_results)
+
+        # Display results panel
+        console.print(RunMessages.create_results_panel(final_results))
 
         # Display total time
         total_time = time.time() - total_start_time
-        console.print(f"\n[blue]Total execution time: {total_time:.2f}s[/blue]")
+        RunMessages.total_execution_time(total_time)
 
         # Update final run status if streaming
         finalize_streaming_run(stream_service, api_run_id, final_results, total_time)
@@ -785,5 +790,5 @@ async def test_command(
         raise
 
     except Exception as e:
-        console.print(f"[red]Error: {str(e)}[/red]")
+        RunMessages.error(e)
         raise typer.Exit(1)

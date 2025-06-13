@@ -4,6 +4,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from bugster.utils.colors import BugsterColors
+from rich.style import Style
 
 console = Console()
 
@@ -305,4 +306,210 @@ class CLIMessages:
         return f"""🔄 [bold {BugsterColors.COMMAND}]Sync[/bold {BugsterColors.COMMAND}] test cases with team
     
     Keep your test cases in sync across team members and environments.
-    Handles conflicts intelligently based on modification timestamps.""" 
+    Handles conflicts intelligently based on modification timestamps."""
+
+class RunMessages:
+    """Messages for the test command."""
+    
+    @staticmethod
+    def no_tests_found():
+        """Show no tests found message."""
+        console.print(f"[{BugsterColors.WARNING}]No test files found[/{BugsterColors.WARNING}]")
+
+    @staticmethod
+    def running_test_file(file_path):
+        """Show running test file message."""
+        console.print(f"\n[{BugsterColors.INFO}]Running tests from {file_path}[/{BugsterColors.INFO}]")
+
+    @staticmethod
+    def invalid_test_file_format(file_path):
+        """Show invalid test file format message."""
+        console.print(f"[{BugsterColors.ERROR}]Error: Invalid test file format in {file_path}[/{BugsterColors.ERROR}]")
+
+    @staticmethod
+    def test_start(test_name):
+        """Show test start message."""
+        console.print(f"\n[{BugsterColors.PRIMARY}]Test: {test_name}[/{BugsterColors.PRIMARY}]")
+
+    @staticmethod
+    def test_result(test_name, result, elapsed_time):
+        """Show test result message."""
+        status_color = BugsterColors.SUCCESS if result == "pass" else BugsterColors.ERROR
+        console.print(
+            f"[{status_color}]Test: {test_name} -> {result} (Time: {elapsed_time:.2f}s)[/{status_color}]"
+        )
+
+    @staticmethod
+    def connecting_to_agent():
+        """Show connecting to agent message."""
+        return f"[{BugsterColors.TEXT_PRIMARY}]Connecting to Bugster Agent. Sometimes this may take a few seconds...[/{BugsterColors.TEXT_PRIMARY}]"
+
+    @staticmethod
+    def connected_successfully():
+        """Show connected successfully message."""
+        return f"[{BugsterColors.SUCCESS}]Connected successfully!"
+
+    @staticmethod
+    def running_test_status(test_name, message=""):
+        """Show running test status message."""
+        return f"[{BugsterColors.PRIMARY}]Running test: {test_name}[/{BugsterColors.PRIMARY}]{f'[{BugsterColors.TEXT_PRIMARY}] - {message}[/{BugsterColors.TEXT_PRIMARY}]' if message else ''}"
+
+    @staticmethod
+    def retrying_step(test_name, retry_count, max_retries, message, is_timeout=True):
+        """Show retrying step message."""
+        retry_type = "Retrying" if is_timeout else "Waiting 30s, then retrying"
+        return f"[{BugsterColors.WARNING}]Running test: {test_name} - {retry_type} ({retry_count}/{max_retries}): {message}[/{BugsterColors.WARNING}]"
+
+    @staticmethod
+    def max_retries_exceeded():
+        """Show max retries exceeded message."""
+        console.print(f"[{BugsterColors.ERROR}]Max retries exceeded. Please try again later[/{BugsterColors.ERROR}]")
+
+    @staticmethod
+    def internal_error():
+        """Show internal error message."""
+        console.print(f"[{BugsterColors.ERROR}]Internal error. Please try again later[/{BugsterColors.ERROR}]")
+
+    @staticmethod
+    def streaming_results_to_run(run_id):
+        """Show streaming results message."""
+        console.print(f"[{BugsterColors.INFO}]Streaming results to run: {run_id}[/{BugsterColors.INFO}]")
+
+    @staticmethod
+    def streaming_warning(test_name, error):
+        """Show streaming warning message."""
+        console.print(
+            f"[{BugsterColors.WARNING}]Warning: Failed to stream result for {test_name}: {str(error)}[/{BugsterColors.WARNING}]"
+        )
+
+    @staticmethod
+    def streaming_init_warning(error):
+        """Show streaming initialization warning message."""
+        console.print(
+            f"[{BugsterColors.WARNING}]Warning: Failed to initialize streaming service: {str(error)}[/{BugsterColors.WARNING}]"
+        )
+
+    @staticmethod
+    def updating_final_status():
+        """Show updating final status message."""
+        console.print(f"[{BugsterColors.TEXT_DIM}]Updating final run status[/{BugsterColors.TEXT_DIM}]")
+
+    @staticmethod
+    def results_saved(output_path):
+        """Show results saved message."""
+        console.print(f"\n[{BugsterColors.SUCCESS}]Results saved to: {output_path}[/{BugsterColors.SUCCESS}]")
+
+    @staticmethod
+    def save_results_error(output_path, error):
+        """Show save results error message."""
+        console.print(f"[{BugsterColors.ERROR}]Failed to save results to {output_path}: {str(error)}[/{BugsterColors.ERROR}]")
+
+    @staticmethod
+    def total_execution_time(total_time):
+        """Show total execution time message."""
+        console.print(f"\n[{BugsterColors.PRIMARY}]Total execution time: {total_time:.2f}s[/{BugsterColors.PRIMARY}]")
+
+    @staticmethod
+    def error(error):
+        """Show error message."""
+        console.print(f"[{BugsterColors.ERROR}]Error: {str(error)}[/{BugsterColors.ERROR}]")
+
+    @staticmethod
+    def create_results_table(results):
+        """Create a formatted table with test results."""
+        table = Table(
+            title="Test Results",
+            title_style=BugsterColors.PRIMARY
+        )
+        table.add_column("Name", justify="left", style=BugsterColors.TEXT_PRIMARY)
+        table.add_column("Result", justify="left", style=BugsterColors.TEXT_PRIMARY)
+        table.add_column("Reason", justify="left", style=BugsterColors.TEXT_PRIMARY)
+        table.add_column("Time (s)", justify="right", style=BugsterColors.TEXT_PRIMARY)
+
+        for result in results:
+            table.add_row(
+                result.name,
+                result.result,
+                result.reason,
+                f"{result.time:.2f}" if hasattr(result, "time") else "N/A",
+                style=Style(color=BugsterColors.SUCCESS if result.result == "pass" else BugsterColors.ERROR),
+            )
+
+        return table
+
+    @staticmethod
+    def create_affected_tests_table(test_files):
+        """Create a panel showing tests affected by recent changes."""
+        content = []
+        content.append(f"[bold]The following tests will be executed based on your recent changes:[/bold]\n")
+
+        for test_file in test_files:
+            # Get the relative path by splitting on .bugster and taking the last part
+            full_path = str(test_file['file'])
+            relative_path = full_path.split('.bugster/')[-1] if '.bugster/' in full_path else full_path
+            test_names = [test['name'] for test in test_file['content']] if isinstance(test_file['content'], list) else []
+            
+            if test_names:
+                content.append(f"📄 [{BugsterColors.TEXT_DIM}]{relative_path}[/{BugsterColors.TEXT_DIM}]")
+                for test_name in test_names:
+                    content.append(f"   ▸ [{BugsterColors.TEXT_PRIMARY}]{test_name}[/{BugsterColors.TEXT_PRIMARY}]")
+                content.append("")  # Add empty line between files
+
+        panel_content = "\n".join(content)
+        return Panel(
+            panel_content,
+            title="🎯 Affected Tests",
+            border_style=BugsterColors.PRIMARY,
+            padding=(1, 2)
+        )
+
+    @staticmethod
+    def create_test_limit_panel(original_count: int, selected_count: int, max_tests: int, folder_distribution: dict):
+        """Create a panel showing test limit information."""
+        content = []
+        
+        if selected_count < original_count:
+            content.append(f"[bold]Test limit applied:[/bold] Running {selected_count} out of {original_count} tests (limit: {max_tests})")
+            content.append("")  # Empty line for spacing
+            content.append(f"[bold]Distribution by folder:[/bold]")
+            
+            # Add folder distribution
+            for folder, count in sorted(folder_distribution.items()):
+                content.append(f"📁 [{BugsterColors.TEXT_DIM}]{folder}[/{BugsterColors.TEXT_DIM}]")
+                content.append(f"   ▸ [{BugsterColors.TEXT_PRIMARY}]{count} tests[/{BugsterColors.TEXT_PRIMARY}]")
+            
+        panel_content = "\n".join(content)
+        return Panel(
+            panel_content,
+            title="⚠️  Test Limit Applied",
+            border_style=BugsterColors.WARNING,
+            padding=(1, 2)
+        )
+
+    @staticmethod
+    def create_results_panel(results):
+        """Create a panel with a table of all test results."""
+        table = Table(
+            show_header=True,
+            header_style=BugsterColors.INFO
+        )
+        table.add_column("Name", justify="left", style=BugsterColors.TEXT_PRIMARY)
+        table.add_column("Result", justify="left", style=BugsterColors.TEXT_PRIMARY)
+        table.add_column("Reason", justify="left", style=BugsterColors.TEXT_PRIMARY)
+        table.add_column("Time (s)", justify="right", style=BugsterColors.TEXT_PRIMARY)
+
+        for result in results:
+            table.add_row(
+                result.name,
+                result.result,
+                result.reason,
+                f"{result.time:.2f}" if hasattr(result, "time") else "N/A",
+                style=Style(color=BugsterColors.SUCCESS if result.result == "pass" else BugsterColors.ERROR),
+            )
+
+        return Panel(
+            table,
+            title="🧪 Test Results Summary",
+            border_style=BugsterColors.PRIMARY,
+            padding=(1, 2)
+        )

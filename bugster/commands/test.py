@@ -10,11 +10,14 @@ from typing import List, Optional
 import typer
 from loguru import logger
 from rich.console import Console
-from rich.status import Status
+from rich.style import Style
+from rich.table import Table
+
 from bugster.clients.mcp_client import MCPStdioClient
 from bugster.clients.ws_client import WebSocketClient
 from bugster.commands.middleware import require_api_key
 from bugster.commands.sync import get_current_branch
+from bugster.libs.services.run_limits_service import apply_test_limit, count_total_tests, get_test_limit_from_config
 from bugster.libs.services.results_stream_service import ResultsStreamService
 from bugster.libs.services.update_service import DetectAffectedSpecsService
 from bugster.types import (
@@ -27,11 +30,8 @@ from bugster.types import (
     WebSocketStepResultMessage,
 )
 from bugster.utils.file import get_mcp_config_path, load_config, load_test_files
-from bugster.libs.services.run_limits_service import apply_test_limit, get_test_limit_from_config, count_total_tests
 from bugster.utils.console_messages import RunMessages
-
 console = Console()
-
 # Color palette for parallel test execution
 TEST_COLORS = [
     "cyan",
@@ -125,7 +125,8 @@ def handle_test_result_streaming(
                 )
 
     except Exception as e:
-        RunMessages.streaming_warning(result.name, str(e))
+        RunMessages.streaming_warning(result.name, e)
+
 
 def initialize_streaming_service(
     config: Config, run_id: str, silent: bool = False
@@ -152,8 +153,9 @@ def initialize_streaming_service(
 
         return stream_service, api_run_id
     except Exception as e:
-        RunMessages.streaming_init_warning(str(e))
+        RunMessages.streaming_init_warning(e)
         return None, None
+
 
 def finalize_streaming_run(
     stream_service: Optional[ResultsStreamService],
@@ -170,7 +172,8 @@ def finalize_streaming_run(
         final_run_data = {"result": overall_result, "time": total_time}
         stream_service.update_run(api_run_id, final_run_data)
     except Exception as e:
-        RunMessages.streaming_warning("final run status", str(e))
+        RunMessages.streaming_init_warning(e)
+
 
 def save_results_to_json(
     output: str,
@@ -208,7 +211,8 @@ def save_results_to_json(
 
         RunMessages.results_saved(output)
     except Exception as e:
-        RunMessages.save_results_error(output, str(e))
+        RunMessages.save_results_error(output, e)
+
 
 def get_video_path_for_test(video_dir: Path, test_name: str) -> Optional[Path]:
     """Get the video path for a given test name."""
@@ -220,6 +224,27 @@ def get_video_path_for_test(video_dir: Path, test_name: str) -> Optional[Path]:
     video_path = video_dir / video_filename
 
     return video_path if video_path.exists() else None
+
+
+def create_results_table(results: List[NamedTestResult]) -> Table:
+    """Create a formatted table with test results."""
+    table = Table(title="Test Results")
+    table.add_column("Name", justify="left")
+    table.add_column("Result", justify="left")
+    table.add_column("Reason", justify="left")
+    table.add_column("Time (s)", justify="right")
+
+    for result in results:
+        table.add_row(
+            result.name,
+            result.result,
+            result.reason,
+            f"{result.time:.2f}" if hasattr(result, "time") else "N/A",
+            style=Style(color="green" if result.result == "pass" else "red"),
+        )
+
+    return table
+
 
 async def handle_step_request(
     step_request: WebSocketStepRequestMessage,
@@ -247,6 +272,7 @@ async def handle_step_request(
         ).model_dump()
     )
 
+
 def handle_complete_message(
     complete_message: WebSocketCompleteMessage, test: Test, elapsed_time: float
 ) -> NamedTestResult:
@@ -259,6 +285,7 @@ def handle_complete_message(
     )
     result.time = elapsed_time  # Add time attribute
     return result
+
 
 async def execute_test(test: Test, config: Config, **kwargs) -> NamedTestResult:
     """Execute a single test using WebSocket and MCP clients."""
@@ -315,7 +342,7 @@ async def execute_test(test: Test, config: Config, **kwargs) -> NamedTestResult:
         ]
         if kwargs.get("headless"):
             mcp_args.append("--headless")
-
+        # ================================
         await mcp_client.init_client(mcp_command, mcp_args)
 
         # Send initial test data with config
@@ -368,7 +395,7 @@ async def _execute_test_loop(
         try:
             message = await ws_client.receive(timeout=300)
         except asyncio.TimeoutError:
-            console.print("[red]Timeout: No response from Bugster Agent[/red]")
+            RunMessages.error("Timeout: No response from Bugster Agent")
             raise typer.Exit(1)
 
         if message.get("action") == "step_request":
@@ -512,6 +539,7 @@ def rename_video(video_dir: Path, test_name: str) -> None:
                 video_file.rename(new_path)
                 break
 
+
 async def execute_single_test(
     test: Test,
     config: Config,
@@ -618,7 +646,6 @@ async def test_command(
         # Load configuration and test files
         config = load_config()
         max_tests = get_test_limit_from_config()
-
         if base_url:
             # Override the base URL in the config
             # Used for CI/CD pipelines
@@ -628,21 +655,18 @@ async def test_command(
 
         if only_affected:
             test_files = DetectAffectedSpecsService().run()
-            if test_files:
-                console.print(RunMessages.create_affected_tests_table(test_files))
-                console.print()
         else:
             test_files = load_test_files(path)
 
         if not test_files:
             RunMessages.no_tests_found()
             return
-
+        
         original_count = count_total_tests(test_files)
         limited_test_files, folder_distribution = apply_test_limit(test_files, max_tests)
         selected_count = count_total_tests(limited_test_files)
         # Print test limit information if limiting was applied
-        if max_tests is not None:
+        if int(original_count) > int(max_tests):
             console.print(RunMessages.create_test_limit_panel(
                 original_count=original_count,
                 selected_count=selected_count,
@@ -652,8 +676,6 @@ async def test_command(
 
         # Use the limited test files for execution
         test_files = limited_test_files
-
-        results = []
         run_id = run_id or str(uuid.uuid4())
 
         # Initialize streaming service if requested
@@ -667,14 +689,12 @@ async def test_command(
         all_tests = []
         for test_file in test_files:
             if not silent:
-                console.print(f"\n[blue]Loading tests from {test_file['file']}[/blue]")
+                RunMessages.running_test_file(test_file['file'])
 
             # Handle both single test object and list of test objects
             content = test_file["content"]
             if not isinstance(content, list):
-                console.print(
-                    f"[red]Error: Invalid test file format in {test_file['file']}[/red]"
-                )
+                RunMessages.invalid_test_file_format(test_file['file'])
                 continue
 
             for test_data in content:
@@ -682,7 +702,7 @@ async def test_command(
                 all_tests.append((test, test_file["file"]))
 
         if not all_tests:
-            console.print("[yellow]No tests found[/yellow]")
+            RunMessages.no_tests_found()
             return
 
         # Determine max concurrent tests (default to 3 for safety)
@@ -690,9 +710,7 @@ async def test_command(
         semaphore = asyncio.Semaphore(max_concurrent)
 
         if not silent:
-            console.print(
-                f"\n[blue]Running {len(all_tests)} tests with max {max_concurrent} concurrent[/blue]"
-            )
+            RunMessages.running_test_status(f"{len(all_tests)} tests", f"max {max_concurrent} concurrent")
 
         # Create thread pool executor for background operations
         with ThreadPoolExecutor(max_workers=5) as executor:
@@ -722,7 +740,7 @@ async def test_command(
 
             # Execute all tests concurrently
             if not silent:
-                console.print(f"[blue]Executing tests...[/blue]")
+                RunMessages.running_test_status("Executing tests...")
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -731,9 +749,7 @@ async def test_command(
             for i, result in enumerate(results):
                 if isinstance(result, Exception):
                     test_name = all_tests[i][0].name
-                    console.print(
-                        f"[red]Test {test_name} failed with exception: {str(result)}[/red]"
-                    )
+                    RunMessages.error(f"Test {test_name} failed with exception: {str(result)}")
                     # Create a failed result for the exception
                     failed_result = NamedTestResult(
                         name=test_name,
@@ -750,10 +766,14 @@ async def test_command(
                 RunMessages.updating_final_status()
 
         # Display results table
-        console.print(create_results_table(final_results))
+        RunMessages.create_results_table(final_results)
+
+        # Display results panel
+        console.print(RunMessages.create_results_panel(final_results))
 
         # Display total time
-        RunMessages.total_execution_time(time.time() - total_start_time)
+        total_time = time.time() - total_start_time
+        RunMessages.total_execution_time(total_time)
 
         # Update final run status if streaming
         finalize_streaming_run(stream_service, api_run_id, final_results, total_time)
@@ -770,5 +790,5 @@ async def test_command(
         raise
 
     except Exception as e:
-        RunMessages.error(str(e))
-        raise typer.Exit(1) 
+        RunMessages.error(e)
+        raise typer.Exit(1)

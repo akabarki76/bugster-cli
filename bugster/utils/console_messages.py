@@ -435,7 +435,8 @@ class RunMessages:
                 style=Style(color=BugsterColors.SUCCESS if result.result == "pass" else BugsterColors.ERROR),
             )
 
-        return table 
+        return table
+
     @staticmethod
     def create_affected_tests_table(test_files):
         """Create a panel showing tests affected by recent changes."""
@@ -482,5 +483,33 @@ class RunMessages:
             panel_content,
             title="⚠️  Test Limit Applied",
             border_style=BugsterColors.WARNING,
+            padding=(1, 2)
+        )
+
+    @staticmethod
+    def create_results_panel(results):
+        """Create a panel with a table of all test results."""
+        table = Table(
+            show_header=True,
+            header_style=BugsterColors.INFO
+        )
+        table.add_column("Name", justify="left", style=BugsterColors.TEXT_PRIMARY)
+        table.add_column("Result", justify="left", style=BugsterColors.TEXT_PRIMARY)
+        table.add_column("Reason", justify="left", style=BugsterColors.TEXT_PRIMARY)
+        table.add_column("Time (s)", justify="right", style=BugsterColors.TEXT_PRIMARY)
+
+        for result in results:
+            table.add_row(
+                result.name,
+                result.result,
+                result.reason,
+                f"{result.time:.2f}" if hasattr(result, "time") else "N/A",
+                style=Style(color=BugsterColors.SUCCESS if result.result == "pass" else BugsterColors.ERROR),
+            )
+
+        return Panel(
+            table,
+            title="🧪 Test Results Summary",
+            border_style=BugsterColors.PRIMARY,
             padding=(1, 2)
         )

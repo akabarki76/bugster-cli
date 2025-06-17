@@ -72,7 +72,7 @@ def inject_configuration(settings_file_path: str, environment: str) -> None:
         with open(settings_path, 'w', encoding='utf-8') as f:
             f.write(content)
         
-        print(f"✅ Successfully injected configuration for {environment} environment")
+        print(f"Successfully injected configuration for {environment} environment")
         print(f"   Replaced placeholders: {', '.join(replacements_made)}")
         print(f"   File: {settings_file_path}")
         
@@ -100,9 +100,9 @@ def main():
     
     args = parser.parse_args()
     
-    print(f"🔧 Injecting configuration for {args.environment} environment...")
+    print(f"Injecting configuration for {args.environment} environment...")
     inject_configuration(args.settings_file, args.environment)
-    print("✅ Configuration injection completed successfully")
+    print("Configuration injection completed successfully")
 
 
 if __name__ == "__main__":

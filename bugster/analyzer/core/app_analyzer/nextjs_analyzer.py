@@ -104,7 +104,6 @@ class NextjsAnalyzer:
             tree_node = get_tree_structure(source_dir=self.framework_info["dir_path"])
             self.set_file_infos(node=tree_node)
             os.makedirs(self.cache_framework_dir, exist_ok=True)
-            tree_json_path = os.path.join(self.cache_framework_dir, "tree.json")
 
             def node_to_dict(node):
                 result = {
@@ -134,11 +133,6 @@ class NextjsAnalyzer:
                     "node": node_to_dict(tree_node),
                 },
             }
-
-            with open(tree_json_path, "w") as f:
-                json.dump(tree_output, f, indent=2)
-
-            logger.info("Tree structure saved: {}", {"path": tree_json_path})
         except Exception as error:
             logger.error("Failed to build tree structure: {}", error)
             raise error

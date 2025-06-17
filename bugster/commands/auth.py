@@ -3,8 +3,8 @@ Login command implementation for Bugster CLI.
 """
 
 from rich.console import Console
-from rich.prompt import Prompt
-from bugster.analytics import track_command
+from rich.prompt import Prompt, Confirm
+from bugster.analytics import track_command, BugsterAnalytics
 from bugster.utils.user_config import save_api_key
 from bugster.utils.console_messages import AuthMessages
 import webbrowser
@@ -67,6 +67,24 @@ def auth_command():
     except Exception as e:
         AuthMessages.auth_error(e)
         raise
+
+    # Analytics opt-in/opt-out prompt (only if not already opted out)
+    if not BugsterAnalytics.is_opted_out():
+        analytics_panel = AuthMessages.create_analytics_panel()
+        console.print(analytics_panel)
+        console.print()
+        
+        enable_analytics = Confirm.ask(
+            f"🤔 Would you like to help improve Bugster by sharing anonymous usage analytics?", 
+            default=True
+        )
+        
+        if not enable_analytics:
+            BugsterAnalytics.create_opt_out_file()
+            AuthMessages.analytics_disabled()
+        else:
+            AuthMessages.analytics_enabled()
+        console.print()
 
 def validate_api_key(api_key: str) -> bool:
     """Validate API key by making a test request"""

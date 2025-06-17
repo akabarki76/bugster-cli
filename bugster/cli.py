@@ -1,6 +1,7 @@
 """Command-line interface for Bugster."""
 
 import asyncio
+import atexit
 import sys
 from typing import Optional
 
@@ -10,6 +11,7 @@ from rich.console import Console
 from loguru import logger
 
 from bugster import __version__
+from bugster.analytics import get_analytics
 from bugster.utils.console_messages import CLIMessages
 
 app = typer.Typer(
@@ -100,6 +102,8 @@ def main_callback(
     global _debug_enabled
     _debug_enabled = debug
     configure_logging(debug)
+    analytics = get_analytics()
+    atexit.register(analytics.flush)
 
 
 @app.command()

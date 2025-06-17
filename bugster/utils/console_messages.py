@@ -228,6 +228,38 @@ class AuthMessages:
         """Show authentication error message."""
         console.print(f"❌ [{BugsterColors.ERROR}]Error saving API key: {str(error)}[/{BugsterColors.ERROR}]")
 
+    @staticmethod
+    def create_analytics_panel():
+        """Create and return the analytics opt-in panel."""
+        return Panel(
+            f"[bold][{BugsterColors.TEXT_PRIMARY}]📊 Help Improve Bugster[/{BugsterColors.TEXT_PRIMARY}][/bold]\n\n"
+            f"Bugster collects anonymous usage analytics to help improve the CLI.\n\n"
+            f"[bold][{BugsterColors.SUCCESS}]✅ What we collect:[/{BugsterColors.SUCCESS}][/bold]\n"
+            f"• Command usage patterns\n"
+            f"• Error types and frequencies\n" 
+            f"• Performance metrics\n"
+            f"• Platform and environment info\n\n"
+            f"[bold][{BugsterColors.ERROR}]❌ What we DON'T collect:[/{BugsterColors.ERROR}][/bold]\n"
+            f"• Your code or file contents\n"
+            f"• Personal information\n"
+            f"• API keys or secrets\n"
+            f"• File paths or names\n\n"
+            f"[{BugsterColors.TEXT_DIM}]You can opt-out anytime by setting BUGSTER_ANALYTICS_DISABLED=true[/{BugsterColors.TEXT_DIM}]",
+            title="🛡️ Privacy & Analytics",
+            border_style=BugsterColors.INFO,
+            padding=(1, 2)
+        )
+    
+    @staticmethod
+    def analytics_enabled():
+        """Show analytics enabled message."""
+        console.print(f"✅ [{BugsterColors.SUCCESS}]Thank you! Analytics enabled to help improve Bugster.[/{BugsterColors.SUCCESS}]")
+    
+    @staticmethod
+    def analytics_disabled():
+        """Show analytics disabled message."""
+        console.print(f"✅ [{BugsterColors.INFO}]Analytics disabled. You can change this anytime.[/{BugsterColors.INFO}]")
+
 class CLIMessages:
     """Messages for the CLI commands."""
     

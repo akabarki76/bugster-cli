@@ -13,6 +13,7 @@ from rich.console import Console
 from rich.style import Style
 from rich.table import Table
 
+from bugster.analytics import track_command
 from bugster.clients.mcp_client import MCPStdioClient
 from bugster.clients.ws_client import WebSocketClient
 from bugster.commands.middleware import require_api_key
@@ -627,6 +628,7 @@ async def execute_single_test_with_semaphore(
 
 
 @require_api_key
+@track_command("run")
 async def test_command(
     test_path: Optional[str] = None,
     headless: Optional[bool] = False,
@@ -641,6 +643,7 @@ async def test_command(
 ) -> None:
     """Run Bugster tests."""
     total_start_time = time.time()
+
 
     try:
         # Load configuration and test files
@@ -782,7 +785,6 @@ async def test_command(
         if output:
             save_results_to_json(output, config, run_id, final_results, total_time)
 
-        # Exit with non-zero status if any test failed
         if any(result.result == "fail" for result in final_results):
             raise typer.Exit(1)
 

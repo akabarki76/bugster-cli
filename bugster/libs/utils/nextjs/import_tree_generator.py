@@ -406,7 +406,7 @@ def generate_import_tree() -> Dict:
 
 
 def generate_and_save_import_tree() -> Dict:
-    """Generate the import tree for the project."""
+    """Generate and save locally the import tree for the project."""
     project_info = get_project_info()
     frameworks = project_info.get("data", {}).get("frameworks", [])
 

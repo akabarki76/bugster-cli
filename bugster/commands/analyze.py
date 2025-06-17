@@ -7,6 +7,7 @@ from bugster.analyzer.utils.analysis_tracker import (
     analysis_tracker,
     has_analysis_completed,
 )
+from bugster.analytics import track_command
 from bugster.commands.middleware import require_api_key
 from bugster.constants import TESTS_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
@@ -15,20 +16,22 @@ console = Console()
 
 
 @require_api_key
+@track_command("generate")
 def analyze_command(options: dict = {}):
     """Run Bugster CLI analysis command."""
-    if has_analysis_completed():
-        console.print(
-            "🔒 The codebase has already been analyzed and cannot be run again"
-        )
-        return
-
+    force = options.get("force", False)
+    
     try:
+        if has_analysis_completed() and not force:
+            console.print(
+                "🔒 The codebase has already been analyzed and cannot be run again"
+            )
+            return
         with analysis_tracker():
             console.print("🔍 Running codebase analysis...")
 
             with Status(" Analyzing codebase...", spinner="dots") as status:
-                analyze_codebase(options=options)
+                analyze_codebase(options=options) 
                 status.stop()
                 console.print("✅ Analysis completed!")
 

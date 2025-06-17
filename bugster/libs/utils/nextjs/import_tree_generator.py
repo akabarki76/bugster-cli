@@ -343,6 +343,7 @@ class ImportTreeGenerator:
                         skip in relative_path
                         for skip in [
                             "api/",
+                            "layout",
                             "_middleware",
                             ".config",
                             "_document",

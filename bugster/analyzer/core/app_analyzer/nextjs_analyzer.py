@@ -96,16 +96,6 @@ class NextjsAnalyzer:
             },
         }
 
-        with open(os.path.join(self.cache_framework_dir, "paths.json"), "w") as f:
-            json.dump(paths_output, f, indent=2)
-
-        logger.info(
-            "Paths saved: {}",
-            {
-                "path": os.path.join(self.cache_framework_dir, "paths.json"),
-            },
-        )
-
     def set_tree_structure(self) -> None:
         """Set the tree structure for the NextJs analyzer."""
         logger.info("Building tree structure for Next.js analyzer...")
@@ -321,7 +311,6 @@ class NextjsAnalyzer:
                                     self.framework_info["dir_path"],
                                     file.relative_file_path,
                                 ),
-                                "r",
                                 encoding="utf-8",
                             ) as f:
                                 file.content = f.read()

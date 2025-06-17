@@ -2,7 +2,11 @@
 Privacy-first analytics for Bugster CLI using PostHog.
 
 This module provides anonymous usage analytics to help improve the CLI experience.
-Users can opt-out by setting BUGSTER_ANALYTICS_DISABLED=true or creating ~/.bugster_no_analytics
+
+Users can opt-out in several ways:
+1. During 'bugster init' setup (recommended)
+2. Set environment variable: BUGSTER_ANALYTICS_DISABLED=true
+3. Create opt-out file: touch ~/.bugster_no_analytics
 """
 
 import hashlib
@@ -29,7 +33,7 @@ def get_posthog_config():
     return {
         "api_key": libs_settings.posthog_api_key,
         "host": libs_settings.posthog_host,
-        "disabled": libs_settings.posthog_disabled,
+        "disabled": not libs_settings.posthog_enabled,
     }
 
 
@@ -93,7 +97,7 @@ class BugsterAnalytics:
             posthog.api_key = api_key
             posthog.host = host
             posthog.sync_mode = True  # Ensure events are sent before CLI exits
-            posthog.debug = libs_settings.posthog_debug  # Use dedicated PostHog debug setting
+            posthog.debug = libs_settings.debug  # Use general debug setting
             
             self._client = posthog
             logger.debug(f"PostHog configured for {libs_settings.environment} environment")
@@ -198,7 +202,7 @@ class BugsterAnalytics:
     def create_opt_out_file(cls):
         """Create opt-out file to disable analytics."""
         try:
-            OPT_OUT_FILE.touch()
+            OPT_OUT_FILE.touch(exist_ok=True)
             return True
         except Exception:
             return False

@@ -1,9 +1,13 @@
 import json
+import os
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 from loguru import logger
+
+from bugster.analyzer.core.framework_detector.main import get_project_info
+from bugster.constants import BUGSTER_DIR
 
 
 class ImportTreeGenerator:
@@ -401,22 +405,22 @@ def generate_import_tree() -> Dict:
     return ImportTreeGenerator().generate_tree()
 
 
-# def generate_and_save_import_tree() -> Dict:
-#     """Generate the import tree for the project."""
-#     project_info = get_project_info()
-#     frameworks = project_info.get("data", {}).get("frameworks", [])
+def generate_and_save_import_tree() -> Dict:
+    """Generate the import tree for the project."""
+    project_info = get_project_info()
+    frameworks = project_info.get("data", {}).get("frameworks", [])
 
-#     if not frameworks:
-#         raise ValueError("No frameworks detected in project")
+    if not frameworks:
+        raise ValueError("No frameworks detected in project")
 
-#     framework_id = frameworks[0].get("id")
+    framework_id = frameworks[0].get("id")
 
-#     if not framework_id:
-#         raise ValueError("Framework ID not found")
+    if not framework_id:
+        raise ValueError("Framework ID not found")
 
-#     cache_framework_dir = os.path.join(BUGSTER_DIR, framework_id)
-#     output_file = os.path.join(cache_framework_dir, "import_tree.json")
-#     generator = ImportTreeGenerator()
-#     tree = generator.generate_tree()
-#     generator.save_to_json(tree=tree, filename=output_file)
-#     return tree
+    cache_framework_dir = os.path.join(BUGSTER_DIR, framework_id)
+    output_file = os.path.join(cache_framework_dir, "import_tree.json")
+    generator = ImportTreeGenerator()
+    tree = generator.generate_tree()
+    generator.save_to_json(tree=tree, filename=output_file)
+    return tree

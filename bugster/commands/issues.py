@@ -81,7 +81,7 @@ def issues_command(
                 issues = response["issues"]
                 total_issues = len(issues)
                 
-                # Si hay más de 10 issues, guardarlos directamente
+                # If more than 10 issues, save them directly
                 if total_issues > 10:
                     issues_dir = Path(BUGSTER_DIR) / "issues"
                     issues_dir.mkdir(parents=True, exist_ok=True)
@@ -90,7 +90,7 @@ def issues_command(
                     console.print(f"[green]Found {total_issues} issues. All saved to {issues_dir}[/green]")
                     return
                 
-                # Si son 10 o menos, mostrar en tabla
+                # If there are 10 or fewer, display in a table
                 table = Table(title=f"Issues from Last Week (Total: {total_issues})")
                 table.add_column("Test Name", style="cyan")
                 table.add_column("Created At", style="green")
@@ -113,7 +113,7 @@ def issues_command(
                 
                 console.print(table)
                 
-                # Si se pidió guardar, guardar también
+                # If save was requested, save as well
                 if save:
                     for issue in issues:
                         filepath = save_issue_to_file(issue, project_id)
@@ -210,7 +210,7 @@ def issues_history_command(
             issues = response["issues"]
             total_issues = len(issues)
             
-            # Si hay más de 10 issues, guardarlos directamente
+            # If more than 10 issues, save them directly
             if total_issues > 10:
                 issues_dir = Path(BUGSTER_DIR) / "issues"
                 issues_dir.mkdir(parents=True, exist_ok=True)
@@ -219,7 +219,7 @@ def issues_history_command(
                 console.print(f"[green]Found {total_issues} issues. All saved to {issues_dir}[/green]")
                 return
             
-            # Si son 10 o menos, mostrar en tabla
+            # If there are 10 or fewer, display in a table
             table = Table(title=f"Issues from Last Week (Total: {total_issues})")
             table.add_column("Test Name", style="cyan")
             table.add_column("Created At", style="green")
@@ -242,7 +242,7 @@ def issues_history_command(
             
             console.print(table)
             
-            # Si se pidió guardar, guardar también
+            # If save was requested, save as well
             if save:
                 for issue in issues:
                     filepath = save_issue_to_file(issue, project_id)

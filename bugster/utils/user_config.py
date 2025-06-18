@@ -57,29 +57,3 @@ def save_api_key(api_key: str) -> None:
     config = load_user_config()
     config["apiKey"] = api_key
     save_user_config(config)
-
-
-def get_org_id() -> Optional[str]:
-    """Get organization ID from config file."""
-    config = load_user_config()
-    return config.get("orgId")
-
-
-def save_org_id(org_id: str) -> None:
-    """Save organization ID to config file."""
-    config = load_user_config()
-    config["orgId"] = org_id
-    save_user_config(config)
-
-
-def get_user_id() -> Optional[str]:
-    """Get user ID from config file."""
-    config = load_user_config()
-    return config.get("userId")
-
-
-def save_user_id(user_id: str) -> None:
-    """Save user ID to config file."""
-    config = load_user_config()
-    config["userId"] = user_id
-    save_user_config(config)

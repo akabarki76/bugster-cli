@@ -1,3 +1,4 @@
+# bugster/libs/settings.py
 from enum import Enum
 
 from pydantic import Field
@@ -24,13 +25,15 @@ class LibsSettings(BaseSettings):
     posthog_host: str = Field(default="https://us.i.posthog.com")
     posthog_enabled: bool = Field(default=True)
 
+
+
     # Configuraciones específicas por ambiente
     debug: bool = Field(default=False)
     log_level: str = Field(default="INFO")
 
     def __init__(self, **kwargs):
-        """Initialize settings."""
         super().__init__(**kwargs)
+
         # Auto-configurar según el ambiente
         if self.environment == Environment.LOCAL:
             self.debug = True

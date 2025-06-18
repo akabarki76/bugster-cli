@@ -199,23 +199,6 @@ def init_command():
     console.print()
     console.print(summary_table)
 
-<<<<<<< HEAD
-    # Show results
-    console.print(f"[green]Configuration created at {CONFIG_PATH}")
-    console.print(f"[green]Example test created at {EXAMPLE_TEST_FILE}")
-
-    # Show credentials table only if custom credentials were added
-    if len(credentials) > 1 or (len(credentials) == 1 and credentials[0] != create_credential_entry()):
-        table = Table(title="Configured Credentials")
-        table.add_column("ID", style="cyan")
-        table.add_column("Username", style="green")
-        table.add_column("Password", style="yellow")
-
-        for cred in credentials:
-            table.add_row(cred["id"], cred["username"], cred["password"])
-
-        console.print(table)
-=======
     # Show credentials if custom ones were added
     if len(credentials) > 1 or (len(credentials) == 1 and credentials[0]["id"] != "admin"):
         creds_table = InitMessages.create_credentials_table(credentials)
@@ -227,4 +210,3 @@ def init_command():
     console.print()
     console.print(success_panel)
     console.print()
->>>>>>> origin/main

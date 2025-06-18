@@ -1,36 +1,3 @@
-# bugster/libs/settings.py
-<<<<<<< HEAD
-from pydantic import BaseModel
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from bugster.libs.enums import Environment
-
-
-class LibsSettings(BaseModel):
-    """Pydantic settings for the `libs` module."""
-    
-    # HARDCODED FOR TESTING
-    environment: Environment = Environment.LOCAL
-    
-    # URLs por ambiente
-    _api_urls: dict = {
-        Environment.LOCAL: "http://localhost:8000",
-        Environment.DEVELOPMENT: "https://dev.bugster.api",
-        Environment.PRODUCTION: "https://api.bugster.app"
-    }
-    
-    # WebSocket URLs por ambiente
-    _ws_urls: dict = {
-        Environment.LOCAL: "ws://localhost:8765",
-        Environment.DEVELOPMENT: "wss://websocket.bugster.app/prod/",
-        Environment.PRODUCTION: "wss://websocket.bugster.app/prod/"
-    }
-
-    # Configuraciones específicas por ambiente
-    debug: bool = False
-    log_level: str = "INFO"
-    bugster_api_url: str = ""
-    
-=======
 from enum import Enum
 
 from pydantic import Field
@@ -57,23 +24,13 @@ class LibsSettings(BaseSettings):
     posthog_host: str = Field(default="https://us.i.posthog.com")
     posthog_enabled: bool = Field(default=True)
 
-
-
     # Configuraciones específicas por ambiente
     debug: bool = Field(default=False)
     log_level: str = Field(default="INFO")
 
->>>>>>> origin/main
     def __init__(self, **kwargs):
         """Initialize settings."""
         super().__init__(**kwargs)
-<<<<<<< HEAD
-        self.environment = kwargs.get("environment", Environment.LOCAL)
-        self.bugster_api_url = self._get_api_url()
-        
-=======
-
->>>>>>> origin/main
         # Auto-configurar según el ambiente
         if self.environment == Environment.LOCAL:
             self.debug = True
@@ -84,15 +41,6 @@ class LibsSettings(BaseSettings):
         else:  # PRODUCTION
             self.debug = False
             self.log_level = "WARNING"
-
-    def _get_api_url(self) -> str:
-        """Return the API URL based on the environment."""
-        return self._api_urls[self.environment]
-    
-    @property
-    def websocket_url(self) -> str:
-        """Return the WebSocket URL based on the environment."""
-        return self._ws_urls[self.environment]
 
     model_config = SettingsConfigDict(
         env_file=".env", 

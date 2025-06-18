@@ -33,6 +33,16 @@ def save_issue_to_file(issue_data: dict, project_id: str):
     
     return filepath
 
+def save_issues_batch(issues, project_id):
+    """Save all issues in a single file inside a timestamped directory."""
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    issues_dir = Path(BUGSTER_DIR) / f"issues_{timestamp}"
+    issues_dir.mkdir(parents=True, exist_ok=True)
+    issues_file = issues_dir / f"{project_id}.json"
+    with open(issues_file, 'w') as f:
+        json.dump(issues, f, indent=2, default=str)
+    return issues_file
+
 @require_api_key
 def issues_command(
     history: bool = typer.Option(
@@ -83,14 +93,7 @@ def issues_command(
                 
                 # If more than 10 issues, save them directly
                 if total_issues > 10:
-                    # Create a timestamped directory for this batch
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    issues_dir = Path(BUGSTER_DIR) / f"issues_{timestamp}"
-                    issues_dir.mkdir(parents=True, exist_ok=True)
-                    # Save all issues in a single file named by project_id
-                    issues_file = issues_dir / f"{project_id}.json"
-                    with open(issues_file, 'w') as f:
-                        json.dump(issues, f, indent=2, default=str)
+                    issues_file = save_issues_batch(issues, project_id)
                     console.print(f"[green]Found {total_issues} issues. All saved to {issues_file}[/green]")
                     return
                 
@@ -119,13 +122,7 @@ def issues_command(
                 
                 # If save was requested, save as well
                 if save:
-                    # Save all issues in a single file named by project_id in a timestamped directory
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    issues_dir = Path(BUGSTER_DIR) / f"issues_{timestamp}"
-                    issues_dir.mkdir(parents=True, exist_ok=True)
-                    issues_file = issues_dir / f"{project_id}.json"
-                    with open(issues_file, 'w') as f:
-                        json.dump(issues, f, indent=2, default=str)
+                    issues_file = save_issues_batch(issues, project_id)
                     console.print(f"[green]Issues also saved to {issues_file}[/green]")
                 
             else:
@@ -221,14 +218,7 @@ def issues_history_command(
             
             # If more than 10 issues, save them directly
             if total_issues > 10:
-                # Create a timestamped directory for this batch
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                issues_dir = Path(BUGSTER_DIR) / f"issues_{timestamp}"
-                issues_dir.mkdir(parents=True, exist_ok=True)
-                # Save all issues in a single file named by project_id
-                issues_file = issues_dir / f"{project_id}.json"
-                with open(issues_file, 'w') as f:
-                    json.dump(issues, f, indent=2, default=str)
+                issues_file = save_issues_batch(issues, project_id)
                 console.print(f"[green]Found {total_issues} issues. All saved to {issues_file}[/green]")
                 return
             
@@ -257,13 +247,7 @@ def issues_history_command(
             
             # If save was requested, save as well
             if save:
-                # Save all issues in a single file named by project_id in a timestamped directory
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                issues_dir = Path(BUGSTER_DIR) / f"issues_{timestamp}"
-                issues_dir.mkdir(parents=True, exist_ok=True)
-                issues_file = issues_dir / f"{project_id}.json"
-                with open(issues_file, 'w') as f:
-                    json.dump(issues, f, indent=2, default=str)
+                issues_file = save_issues_batch(issues, project_id)
                 console.print(f"[green]Issues also saved to {issues_file}[/green]")
             
     except Exception as e:

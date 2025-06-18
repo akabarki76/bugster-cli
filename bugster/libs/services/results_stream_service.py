@@ -40,18 +40,14 @@ class ResultsStreamService:
     def create_run(self, run_data: dict) -> dict:
         """Create a new test run."""
         project_id = self._get_project_id()
-        try:
-            response = requests.post(
-                f"{self.base_url}/api/v1/runs",
-                headers={"X-API-Key": self.api_key},
-                json={**run_data, "project_id": project_id},
-                timeout=10
-            )
-            response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            logger.error(f"Error creating test run: {str(e)}")
-            raise
+        response = requests.post(
+            f"{self.base_url}/api/v1/runs",
+            headers={"X-API-Key": self.api_key},
+            json={**run_data, "project_id": project_id},
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
 
     def update_run(self, run_id: str, run_data: dict) -> dict:
         """Update an existing test run."""
@@ -76,19 +72,16 @@ class ResultsStreamService:
     def upload_video(self, video_path: Path) -> str:
         """Upload a video file using presigned URL and return the final video URL."""
         if not video_path.exists():
-            # Consider logging this for debugging purposes
             return ""
 
         if not video_path.is_file():
             raise ValueError(f"Path is not a file: {video_path}")
 
-        # Check file size to avoid uploading extremely large files
         max_size = 100 * 1024 * 1024  # 100MB limit
         file_size = video_path.stat().st_size
         if file_size > max_size:
             raise ValueError(f"Video file too large: {file_size} bytes")
 
-        # Detect content type based on file extension
         content_type_map = {
             ".mp4": "video/mp4",
             ".webm": "video/webm",
@@ -99,38 +92,33 @@ class ResultsStreamService:
         file_extension = video_path.suffix.lower()
         content_type = content_type_map.get(file_extension, "video/mp4")
 
-        try:
-            # Step 1: Get presigned URL
-            presigned_response = requests.post(
-                f"{self.base_url}/api/v1/videos/presigned-url",
-                headers={"X-API-Key": self.api_key, "Content-Type": "application/json"},
-                json={"filename": video_path.name, "content_type": content_type},
+        # Step 1: Get presigned URL
+        presigned_response = requests.post(
+            f"{self.base_url}/api/v1/videos/presigned-url",
+            headers={"X-API-Key": self.api_key, "Content-Type": "application/json"},
+            json={"filename": video_path.name, "content_type": content_type},
+        )
+        presigned_response.raise_for_status()
+        presigned_data = presigned_response.json()
+
+        required_keys = ["upload_url", "headers", "final_url"]
+        missing_keys = [key for key in required_keys if key not in presigned_data]
+        if missing_keys:
+            raise RuntimeError(
+                f"Invalid presigned URL response: missing keys {missing_keys}"
             )
-            presigned_response.raise_for_status()
-            presigned_data = presigned_response.json()
 
-            # Validate required keys in presigned URL response
-            required_keys = ["upload_url", "headers", "final_url"]
-            missing_keys = [key for key in required_keys if key not in presigned_data]
-            if missing_keys:
-                raise RuntimeError(
-                    f"Invalid presigned URL response: missing keys {missing_keys}"
-                )
+        # Step 2: Upload video directly to S3 using presigned URL
+        with open(video_path, "rb") as video_file:
+            upload_response = requests.put(
+                presigned_data["upload_url"],
+                headers=presigned_data["headers"],
+                data=video_file,
+            )
+            upload_response.raise_for_status()
 
-            # Step 2: Upload video directly to S3 using presigned URL
-            with open(video_path, "rb") as video_file:
-                upload_response = requests.put(
-                    presigned_data["upload_url"],
-                    headers=presigned_data["headers"],
-                    data=video_file,
-                )
-                upload_response.raise_for_status()
-
-            # Step 3: Return the final URL where video will be accessible
-            return presigned_data["final_url"]
-
-        except (OSError, IOError) as e:
-            raise RuntimeError(f"Failed to read video file {video_path}: {e}") from e
+        # Step 3: Return the final URL where video will be accessible
+        return presigned_data["final_url"]
 
     def update_test_case_with_video(
         self, run_id: str, test_case_id: str, video_url: str

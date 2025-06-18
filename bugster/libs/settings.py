@@ -1,40 +1,38 @@
-# bugster/libs/settings.py
-from pydantic import BaseModel
+from enum import Enum
+
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from bugster.libs.enums import Environment
 
 
-class LibsSettings(BaseModel):
+class Environment(str, Enum):
+    LOCAL = "localhost"
+    DEVELOPMENT = "development"
+    PRODUCTION = "production"
+
+
+class LibsSettings(BaseSettings):
     """Pydantic settings for the `libs` module."""
-    
-    # HARDCODED FOR TESTING
-    environment: Environment = Environment.LOCAL
-    
-    # URLs por ambiente
-    _api_urls: dict = {
-        Environment.LOCAL: "http://localhost:8000",
-        Environment.DEVELOPMENT: "https://dev.bugster.api",
-        Environment.PRODUCTION: "https://api.bugster.app"
-    }
-    
-    # WebSocket URLs por ambiente
-    _ws_urls: dict = {
-        Environment.LOCAL: "ws://localhost:8765",
-        Environment.DEVELOPMENT: "wss://websocket.bugster.app/prod/",
-        Environment.PRODUCTION: "wss://websocket.bugster.app/prod/"
-    }
+
+    environment: Environment = Field(default=Environment.PRODUCTION)
+
+    # API Configuration
+    bugster_api_url: str = Field(default="api_url_placeholder")
+    websocket_url: str = Field(default="websocket_url_placeholder")
+
+    # PostHog Analytics Configuration
+    posthog_api_key: str = Field(default="phc_api_key_placeholder")
+    posthog_host: str = Field(default="https://us.i.posthog.com")
+    posthog_enabled: bool = Field(default=True)
+
+
 
     # Configuraciones específicas por ambiente
-    debug: bool = False
-    log_level: str = "INFO"
-    bugster_api_url: str = ""
-    
+    debug: bool = Field(default=False)
+    log_level: str = Field(default="INFO")
+
     def __init__(self, **kwargs):
         """Initialize settings."""
         super().__init__(**kwargs)
-        self.environment = kwargs.get("environment", Environment.LOCAL)
-        self.bugster_api_url = self._get_api_url()
-        
         # Auto-configurar según el ambiente
         if self.environment == Environment.LOCAL:
             self.debug = True
@@ -57,7 +55,8 @@ class LibsSettings(BaseModel):
 
     model_config = SettingsConfigDict(
         env_file=".env", 
-        extra="ignore",
+        env_file_encoding="utf-8",
+        extra="ignore", 
         env_prefix="BUGSTER_"
     )
 

@@ -30,6 +30,11 @@ show_help() {
     cat << EOF
 Bugster CLI Installer
 
+This installer will automatically install:
+- Python 3.10+ (installs Python 3.12 if needed)
+- Node.js 18+ (installs Node.js 18 if needed)
+- Bugster CLI
+
 Usage: 
     ./install.sh [options]
     curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.sh | bash -s -- [options]
@@ -89,12 +94,28 @@ find_best_python() {
     for py_cmd in python3.12 python3.11 python3.10 python3 python; do
         if command -v "$py_cmd" &>/dev/null; then
             version=$($py_cmd --version 2>&1 | grep -oE '[0-9]+\.[0-9]+')
-            if [[ $(echo "$version >= 3.10" | bc -l) -eq 1 ]]; then
+            # Parse major and minor version numbers
+            major=$(echo "$version" | cut -d. -f1)
+            minor=$(echo "$version" | cut -d. -f2)
+            # Check if version >= 3.10
+            if [[ $major -gt 3 ]] || [[ $major -eq 3 && $minor -ge 10 ]]; then
                 echo "$py_cmd"
                 return 0
             fi
         fi
     done
+    return 1
+}
+
+# Function to check Node.js version
+check_node_version() {
+    if command -v node &>/dev/null; then
+        local node_version=$(node --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        local major_version=$(echo "$node_version" | cut -d. -f1)
+        if [[ "$major_version" -ge 18 ]]; then
+            return 0
+        fi
+    fi
     return 1
 }
 
@@ -190,10 +211,9 @@ install_python_macos() {
     # Verify Python installation
     if command -v python3.12 &>/dev/null; then
         print_success "✅ Python 3.12 installed successfully!"
-        return 0
     else
         print_error "❌ Python 3.12 installation failed"
-        return 1
+        exit 1
     fi
 }
 
@@ -207,7 +227,7 @@ install_python_linux() {
     # Detect package manager and prepare installation command
     if command -v apt-get &>/dev/null; then
         pkg_manager="apt"
-        install_cmd="sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python3.12 python3.12-venv python3.12-distutils"
+        install_cmd="sudo apt-get update && sudo apt-get install -y software-properties-common && sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get install -y python3.12 python3.12-venv python3.12-distutils"
     elif command -v dnf &>/dev/null; then
         pkg_manager="dnf"
         install_cmd="sudo dnf install -y python3.12 python3.12-pip"
@@ -222,7 +242,7 @@ install_python_linux() {
         install_cmd="sudo zypper install -y python312 python312-pip"
     else
         print_error "❌ Unsupported package manager. Please install Python 3.12 manually."
-        return 1
+        exit 1
     fi
     
     print_step "Using $pkg_manager to install Python 3.12..."
@@ -261,10 +281,92 @@ install_python_linux() {
     # Verify Python installation
     if command -v python3.12 &>/dev/null; then
         print_success "✅ Python 3.12 installed successfully!"
-        return 0
     else
         print_error "❌ Python 3.12 installation failed"
-        return 1
+        exit 1
+    fi
+}
+
+# Function to install Node.js on macOS
+install_node_macos() {
+    print_step "Installing Node.js 18 on macOS..."
+    
+    # Check if Homebrew is installed
+    if ! command -v brew &>/dev/null; then
+        print_step "Installing Homebrew first..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        
+        # Add Homebrew to PATH temporarily
+        local arch_type=$(uname -m)
+        if [[ "$arch_type" == "arm64" ]]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        else
+            eval "$(/usr/local/bin/brew shellenv)"
+        fi
+    fi
+    
+    print_step "Installing Node.js 18 via Homebrew..."
+    brew install node@18
+    
+    # Link Node.js 18
+    brew link --force node@18
+    
+    # Verify Node.js installation
+    if command -v node &>/dev/null && check_node_version; then
+        print_success "✅ Node.js 18 installed successfully!"
+    else
+        print_error "❌ Node.js 18 installation failed"
+        exit 1
+    fi
+}
+
+# Function to install Node.js on Linux
+install_node_linux() {
+    print_step "Installing Node.js 18 on Linux..."
+    
+    local install_cmd=""
+    local pkg_manager=""
+    
+    # Detect package manager and prepare installation command
+    if command -v apt-get &>/dev/null; then
+        pkg_manager="apt"
+        print_step "Setting up NodeSource repository for Debian/Ubuntu..."
+        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+        install_cmd="sudo apt-get install -y nodejs"
+    elif command -v dnf &>/dev/null; then
+        pkg_manager="dnf"
+        print_step "Setting up NodeSource repository for RHEL/Fedora..."
+        curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+        install_cmd="sudo dnf install -y nodejs npm"
+    elif command -v yum &>/dev/null; then
+        pkg_manager="yum"
+        print_step "Setting up NodeSource repository for CentOS/RHEL..."
+        curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+        install_cmd="sudo yum install -y nodejs npm"
+    elif command -v pacman &>/dev/null; then
+        pkg_manager="pacman"
+        print_step "Installing Node.js via pacman (Arch Linux)..."
+        install_cmd="sudo pacman -Sy --noconfirm nodejs npm"
+    elif command -v zypper &>/dev/null; then
+        pkg_manager="zypper"
+        print_step "Installing Node.js via zypper (openSUSE)..."
+        install_cmd="sudo zypper install -y nodejs18 npm18"
+    else
+        print_error "❌ Unsupported package manager. Please install Node.js 18 manually."
+        print_warning "Visit https://nodejs.org/en/download/ for manual installation instructions."
+        exit 1
+    fi
+    
+    print_step "Using $pkg_manager to install Node.js 18..."
+    eval "$install_cmd"
+    
+    # Verify Node.js installation
+    if command -v node &>/dev/null && check_node_version; then
+        print_success "✅ Node.js 18 installed successfully!"
+    else
+        print_error "❌ Node.js 18 installation failed"
+        print_warning "Please install Node.js 18 manually from https://nodejs.org/"
+        exit 1
     fi
 }
 
@@ -279,6 +381,38 @@ check_python_version() {
     fi
     return 1
 }
+
+# Check for Node.js version and install if needed
+print_step "Checking Node.js installation..."
+if check_node_version; then
+    node_version=$(node --version)
+    print_success "✅ Node.js $node_version is installed and meets requirements"
+else
+    if command -v node &>/dev/null; then
+        node_version=$(node --version)
+        print_error "❌ Node.js 18 or higher is required (found $node_version)"
+    else
+        print_error "❌ Node.js is not installed"
+    fi
+    
+    if [[ "$AUTO_YES" == "true" ]]; then
+        choice="y"
+    else
+        print_warning "Would you like to install Node.js 18? (y/n)"
+        read -r choice
+    fi
+    
+    if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+        if [[ "$OS" == "macOS" ]]; then
+            install_node_macos
+        else
+            install_node_linux
+        fi
+    else
+        print_error "Please install Node.js 18 or higher manually and try again."
+        exit 1
+    fi
+fi
 
 # Find best available Python version
 best_python=$(find_best_python)
@@ -325,18 +459,21 @@ else
     fi
 fi
 
+print_step "Installing Playwright..."
+npx -y @playwright/mcp@latest --version
+npx -y playwright@1.53.0 install --with-deps chrome
+
 # Download and run the Python installer script with version argument
 print_step "Downloading the Bugster CLI installer..."
 
-# Get the full path to Python 3.12
-if [[ "$OS" == "macOS" ]]; then
-    PYTHON_PATH="/opt/homebrew/opt/python@3.12/bin/python3.12"
-    if [[ ! -f "$PYTHON_PATH" ]]; then
-        PYTHON_PATH="/usr/local/opt/python@3.12/bin/python3.12"
-    fi
-else
-    PYTHON_PATH="/usr/bin/python3.12"
+# Find the best available Python executable
+PYTHON_PATH=$(find_best_python)
+if [[ -z "$PYTHON_PATH" ]]; then
+    print_error "❌ No suitable Python version found. Please install Python 3.10 or higher."
+    exit 1
 fi
+
+print_step "Using Python: $PYTHON_PATH"
 
 if [[ "$VERSION" == "latest" ]]; then
     curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | "$PYTHON_PATH"

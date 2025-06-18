@@ -244,6 +244,20 @@ def sync(
     sync_command(branch, pull, push, clean_remote, dry_run, prefer)
 
 
+@app.command(help=CLIMessages.get_upgrade_help())
+def upgrade(
+    yes: bool = typer.Option(
+        False,
+        "--yes",
+        "-y",
+        help="Automatically confirm the upgrade.",
+    ),
+):
+    """Upgrade Bugster CLI to the latest version."""
+    from bugster.commands.upgrade import upgrade_command
+
+    upgrade_command(yes=yes)
+    
 @app.command()
 def issues(
     history: bool = typer.Option(

@@ -83,11 +83,15 @@ def issues_command(
                 
                 # If more than 10 issues, save them directly
                 if total_issues > 10:
-                    issues_dir = Path(BUGSTER_DIR) / "issues"
+                    # Create a timestamped directory for this batch
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    issues_dir = Path(BUGSTER_DIR) / f"issues_{timestamp}"
                     issues_dir.mkdir(parents=True, exist_ok=True)
-                    for issue in issues:
-                        filepath = save_issue_to_file(issue, project_id)
-                    console.print(f"[green]Found {total_issues} issues. All saved to {issues_dir}[/green]")
+                    # Save all issues in a single file named by project_id
+                    issues_file = issues_dir / f"{project_id}.json"
+                    with open(issues_file, 'w') as f:
+                        json.dump(issues, f, indent=2, default=str)
+                    console.print(f"[green]Found {total_issues} issues. All saved to {issues_file}[/green]")
                     return
                 
                 # If there are 10 or fewer, display in a table
@@ -115,9 +119,14 @@ def issues_command(
                 
                 # If save was requested, save as well
                 if save:
-                    for issue in issues:
-                        filepath = save_issue_to_file(issue, project_id)
-                    console.print(f"[green]Issues also saved to {Path(BUGSTER_DIR) / 'issues'}[/green]")
+                    # Save all issues in a single file named by project_id in a timestamped directory
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    issues_dir = Path(BUGSTER_DIR) / f"issues_{timestamp}"
+                    issues_dir.mkdir(parents=True, exist_ok=True)
+                    issues_file = issues_dir / f"{project_id}.json"
+                    with open(issues_file, 'w') as f:
+                        json.dump(issues, f, indent=2, default=str)
+                    console.print(f"[green]Issues also saved to {issues_file}[/green]")
                 
             else:
                 # Get latest issue
@@ -212,11 +221,15 @@ def issues_history_command(
             
             # If more than 10 issues, save them directly
             if total_issues > 10:
-                issues_dir = Path(BUGSTER_DIR) / "issues"
+                # Create a timestamped directory for this batch
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                issues_dir = Path(BUGSTER_DIR) / f"issues_{timestamp}"
                 issues_dir.mkdir(parents=True, exist_ok=True)
-                for issue in issues:
-                    filepath = save_issue_to_file(issue, project_id)
-                console.print(f"[green]Found {total_issues} issues. All saved to {issues_dir}[/green]")
+                # Save all issues in a single file named by project_id
+                issues_file = issues_dir / f"{project_id}.json"
+                with open(issues_file, 'w') as f:
+                    json.dump(issues, f, indent=2, default=str)
+                console.print(f"[green]Found {total_issues} issues. All saved to {issues_file}[/green]")
                 return
             
             # If there are 10 or fewer, display in a table
@@ -244,9 +257,14 @@ def issues_history_command(
             
             # If save was requested, save as well
             if save:
-                for issue in issues:
-                    filepath = save_issue_to_file(issue, project_id)
-                console.print(f"[green]Issues also saved to {Path(BUGSTER_DIR) / 'issues'}[/green]")
+                # Save all issues in a single file named by project_id in a timestamped directory
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                issues_dir = Path(BUGSTER_DIR) / f"issues_{timestamp}"
+                issues_dir.mkdir(parents=True, exist_ok=True)
+                issues_file = issues_dir / f"{project_id}.json"
+                with open(issues_file, 'w') as f:
+                    json.dump(issues, f, indent=2, default=str)
+                console.print(f"[green]Issues also saved to {issues_file}[/green]")
             
     except Exception as e:
         console.print(f"[red]Error: {str(e)}[/red]")

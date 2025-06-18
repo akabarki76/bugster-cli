@@ -340,6 +340,11 @@ class CLIMessages:
     Keep your test cases in sync across team members and environments.
     Handles conflicts intelligently based on modification timestamps."""
 
+    @staticmethod
+    def get_upgrade_help():
+        """Get the help message for the upgrade command."""
+        return "Upgrade Bugster CLI to the latest version."
+
 class RunMessages:
     """Messages for the test command."""
     

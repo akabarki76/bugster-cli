@@ -181,6 +181,31 @@ def sync(
     sync_command(branch, pull, push, clean_remote, dry_run, prefer)
 
 
+@app.command()
+def issues(
+    history: bool = typer.Option(
+        False,
+        "--history",
+        help="Get issues from the last week. If more than 10 issues are found, they will be saved to .bugster/issues directory"
+    ),
+    save: bool = typer.Option(
+        False,
+        "--save",
+        "-s",
+        help="Save issues to .bugster/issues directory"
+    ),
+    project_id: Optional[str] = typer.Option(
+        None,
+        "--project-id",
+        "-p",
+        help="Project ID (defaults to the one from config.yaml)"
+    )
+):
+    """[bold red]Get[/bold red] issues from your Bugster project."""
+    from bugster.commands.issues import issues_command
+    issues_command(history=history, save=save, project_id=project_id)
+
+
 def main():
     app()
 

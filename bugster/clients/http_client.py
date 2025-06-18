@@ -53,35 +53,27 @@ class HTTPClient:
         """Make a DELETE request."""
         return self._make_request("DELETE", endpoint, **kwargs)
 
-    def _make_request(self, method: str, endpoint: str, **kwargs) -> requests.Response:
-        """Make an HTTP request."""
+    def _make_request(self, method: str, endpoint: str, **kwargs) -> Optional[dict]:
+        """Make an HTTP request and handle common errors."""
         url = f"{self.base_url}{endpoint}"
-        response = None
-        data = None
-
-        if "timeout" not in kwargs:
-            kwargs["timeout"] = self.timeout
-
         try:
-            logger.info("Making {} request to {}", method, url)
             response = self.session.request(method, url, **kwargs)
-            logger.info("Response status code: {}", response.status_code)
-            response.raise_for_status()
-            data = response.json()
-            logger.info("Received data: {}", data)
-            return data
-        except requests.exceptions.HTTPError as err:
-            msg = f"HTTP error for {method} {url}: {err}"
-
-            if hasattr(err, "response") and hasattr(err.response, "text"):
-                msg += f" - {err.response.text}"
-
-            logger.error(msg)
-            raise BugsterHTTPError(msg) from err
-        except Exception as err:
-            msg = f"Error making {method} request to {url}: {err}"
-            logger.error(msg)
-            raise BugsterHTTPError(msg) from err
+            
+            # If it's a 404 from the issues endpoint, don't log it as an error
+            if response.status_code == 404 and "/issues" in endpoint:
+                return None
+                
+            if not response.ok:
+                logger.error(f"HTTP error for {method} {url}: {response.status_code} {response.reason} - {response.text}")
+                response.raise_for_status()
+            
+            return response.json() if response.content else None
+            
+        except requests.exceptions.RequestException as e:
+            if isinstance(e, requests.exceptions.HTTPError) and e.response.status_code == 404 and "/issues" in endpoint:
+                return None
+            logger.error(f"Request failed: {str(e)}")
+            raise
 
     def set_auth_header(self, token: str, auth_type: str = "Bearer"):
         """Set authentication header for all requests."""

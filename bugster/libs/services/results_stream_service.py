@@ -40,13 +40,18 @@ class ResultsStreamService:
     def create_run(self, run_data: dict) -> dict:
         """Create a new test run."""
         project_id = self._get_project_id()
-        response = requests.post(
-            f"{self.base_url}/api/v1/runs",
-            headers={"X-API-Key": self.api_key},
-            json={**run_data, "project_id": project_id},
-        )
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/v1/runs",
+                headers={"X-API-Key": self.api_key},
+                json={**run_data, "project_id": project_id},
+                timeout=10
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logger.error(f"Error creating test run: {str(e)}")
+            raise
 
     def update_run(self, run_id: str, run_data: dict) -> dict:
         """Update an existing test run."""

@@ -15,7 +15,7 @@ setup(
     version=version,
     packages=find_packages(),
     install_requires=[
-        "aiohappyeyeballs==2.6.1",
+        "aiohappyeyeballs==2.4.4",
         "aiohttp==3.11.18",
         "aiosignal==1.3.2",
         "altgraph==0.17.4",

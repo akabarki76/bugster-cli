@@ -185,6 +185,11 @@ class TestCasesService:
                         f" Status: {response_status} • Elapsed: {elapsed_time:.0f}s"
                     )
 
+            status.stop()
+            console.print(f"   Status: timeout • Elapsed: {elapsed_time:.0f}s")
+            console.print()
+            console.print("❌ Test generation timeout")
+
         if not test_cases:
             raise BugsterError("Test cases not found")
 

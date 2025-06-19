@@ -1,10 +1,13 @@
 import os
+import time
 from collections import OrderedDict
 from random import randint
 from typing import Any
 
 import yaml
 from loguru import logger
+from rich.console import Console
+from rich.status import Status
 
 from bugster.analyzer.core.framework_detector import get_project_info
 from bugster.clients.http_client import BugsterHTTPClient
@@ -13,6 +16,8 @@ from bugster.libs.utils.enums import BugsterApiPath
 from bugster.libs.utils.errors import BugsterError
 from bugster.libs.utils.files import get_specs_paths
 from bugster.libs.utils.nextjs.extract_page_folder import extract_page_folder
+
+console = Console()
 
 
 def _ordered_dict_representer(dumper: yaml.Dumper, data: OrderedDict):
@@ -121,10 +126,68 @@ class TestCasesService:
         logger.info("Saved test case to {}", file_path)
         return file_path
 
+    def _get_job_status(self, job_id: str) -> str:
+        """Get the status of a job."""
+        with BugsterHTTPClient() as client:
+            return client.get(
+                endpoint=BugsterApiPath.TEST_CASES_JOB.value.format(job_id=job_id)
+            )
+
     def generate_test_cases(self):
         """Generate test cases for the given codebase analysis."""
         self._set_analysis_json_path()
-        test_cases = self._post_analysis_json()
+        result = self._post_analysis_json()
+        console.print()
+        console.print("🧪 Generating test cases...")
+        console.print(f"   Job submitted (ID: {result['job_id']})")
+        console.print()
+        test_cases = []
+        start_time = time.time()
+        timeout_seconds = 3 * 60  # 3 minutes
+        poll_interval = 30  # 30 seconds
+        poll_count = 0
+        poll_end_time = start_time + timeout_seconds
+        console.print("⏳ Processing...")
+
+        with Status("   ", spinner="dots") as status:
+            while time.time() < poll_end_time:
+                if poll_count > 0:
+                    next_poll_time = start_time + (poll_count * poll_interval)
+                    wait_time = max(0, next_poll_time - time.time())
+
+                    if wait_time > 0:
+                        time.sleep(wait_time)
+
+                poll_count += 1
+                response = self._get_job_status(job_id=result["job_id"])
+                elapsed_time = time.time() - start_time
+                response_status = response["status"]
+
+                if response_status == "completed":
+                    test_cases = response["result"]
+                    status.stop()
+                    console.print(
+                        f"   Status: {response_status} • Elapsed: {elapsed_time:.0f}s"
+                    )
+                    console.print()
+                    console.print("✅ Test generation complete")
+                    break
+                elif response_status == "failed":
+                    status.stop()
+                    console.print(
+                        f"   Status: {response_status} • Elapsed: {elapsed_time:.0f}s"
+                    )
+                    console.print()
+                    console.print("❌ Test generation failed")
+                    break
+                else:
+                    status.update(
+                        f" Status: {response_status} • Elapsed: {elapsed_time:.0f}s"
+                    )
+
+        if not test_cases:
+            raise BugsterError("Test cases not found")
+
         logger.info("Saving test cases as YAML files...")
 
         for test_case in test_cases:

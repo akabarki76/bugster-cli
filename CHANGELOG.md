@@ -8,12 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `bugster issues` command to get failed runs with debugging context from recent executions
-- `bugster upgrade` command to update CLI to the latest version directly from the command line
 - Enhanced specs generation capacity up to 20 specs per page for comprehensive coverage
 
 ### Changed
 - Improved specs generation algorithm for better coverage and more realistic test scenarios
+
+
+## [0.3.6] - 2025-06-19
+
+### Added
+- `bugster issues` command to get failed runs with debugging context from recent executions
+- `bugster upgrade` command to update CLI to the latest version directly from the command line
+
+### Changed
+- Improved specs generation algorithm for better coverage and more realistic test scenarios
+
+### Fixed
+- Small bug of the console message during `bugster init`
 
 ## [0.3.0] - 2025-06-13
 
@@ -65,7 +76,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project configuration system with YAML-based config files
 - Core specs format and parsing capabilities
 
-[Unreleased]: https://github.com/Bugsterapp/bugster-cli/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Bugsterapp/bugster-cli/compare/v0.3.6...HEAD
+[0.3.6]: https://github.com/Bugsterapp/bugster-cli/compare/v0.3.0...v0.3.6
 [0.3.0]: https://github.com/Bugsterapp/bugster-cli/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Bugsterapp/bugster-cli/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Bugsterapp/bugster-cli/releases/tag/v0.1.0

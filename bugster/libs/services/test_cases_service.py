@@ -133,22 +133,19 @@ class TestCasesService:
                 endpoint=BugsterApiPath.TEST_CASES_JOB.value.format(job_id=job_id)
             )
 
-    def generate_test_cases(self):
-        """Generate test cases for the given codebase analysis."""
-        self._set_analysis_json_path()
-        result = self._post_analysis_json()
+    def _polling_test_cases(self, result):
+        """Polling test cases."""
         console.print()
         console.print("🧪 Generating test cases...")
         console.print(f"   Job submitted (ID: {result['job_id']})")
         console.print()
-        test_cases = []
         start_time = time.time()
         timeout_seconds = 3 * 60  # 3 minutes
-        poll_interval = 30  # 30 seconds
+        poll_interval = 20  # 20 seconds
         poll_end_time = start_time + timeout_seconds
         console.print("⏳ Processing...")
 
-        with Status("   ", spinner="dots") as status:
+        with Status(" Status: pending • Elapsed: 0s", spinner="dots") as status:
             while time.time() < poll_end_time:
                 time.sleep(poll_interval)
                 response = self._get_job_status(job_id=result["job_id"])
@@ -156,14 +153,13 @@ class TestCasesService:
                 response_status = response["status"]
 
                 if response_status == "completed":
-                    test_cases = response["result"]
                     status.stop()
                     console.print(
                         f"   Status: {response_status} • Elapsed: {elapsed_time:.0f}s"
                     )
                     console.print()
                     console.print("✅ Test generation complete")
-                    break
+                    return response["result"]
                 elif response_status == "failed":
                     status.stop()
                     console.print(
@@ -171,7 +167,7 @@ class TestCasesService:
                     )
                     console.print()
                     console.print("❌ Test generation failed")
-                    break
+                    return None
                 else:
                     status.update(
                         f" Status: {response_status} • Elapsed: {elapsed_time:.0f}s"
@@ -181,6 +177,13 @@ class TestCasesService:
             console.print(f"   Status: timeout • Elapsed: {elapsed_time:.0f}s")
             console.print()
             console.print("❌ Test generation timeout")
+            return None
+
+    def generate_test_cases(self):
+        """Generate test cases for the given codebase analysis."""
+        self._set_analysis_json_path()
+        result = self._post_analysis_json()
+        test_cases = self._polling_test_cases(result=result)
 
         if not test_cases:
             raise BugsterError("Test cases not found")

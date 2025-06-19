@@ -145,20 +145,12 @@ class TestCasesService:
         start_time = time.time()
         timeout_seconds = 3 * 60  # 3 minutes
         poll_interval = 30  # 30 seconds
-        poll_count = 0
         poll_end_time = start_time + timeout_seconds
         console.print("⏳ Processing...")
 
         with Status("   ", spinner="dots") as status:
             while time.time() < poll_end_time:
-                if poll_count > 0:
-                    next_poll_time = start_time + (poll_count * poll_interval)
-                    wait_time = max(0, next_poll_time - time.time())
-
-                    if wait_time > 0:
-                        time.sleep(wait_time)
-
-                poll_count += 1
+                time.sleep(poll_interval)
                 response = self._get_job_status(job_id=result["job_id"])
                 elapsed_time = time.time() - start_time
                 response_status = response["status"]

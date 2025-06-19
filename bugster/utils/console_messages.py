@@ -107,7 +107,7 @@ class InitMessages:
         console.print(f"\n🎉 [{BugsterColors.SUCCESS}]Project Initialized Successfully![/{BugsterColors.SUCCESS}]")
 
     @staticmethod
-    def create_project_summary_table(project_name, project_id, base_url, config_path, creds_count):
+    def create_project_summary_table(project_name, project_id, base_url, config_path):
         """Create and return project summary table."""
         table = Table(
             title="📋 Project Summary",
@@ -121,7 +121,6 @@ class InitMessages:
         table.add_row("Project ID", project_id)
         table.add_row("Base URL", base_url)
         table.add_row("Config Location", str(config_path))
-        table.add_row("Credentials", f"{creds_count} configured")
         
         return table
 

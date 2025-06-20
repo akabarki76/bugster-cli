@@ -25,8 +25,6 @@ class LibsSettings(BaseSettings):
     posthog_host: str = Field(default="https://us.i.posthog.com")
     posthog_enabled: bool = Field(default=True)
 
-
-
     # Configuraciones específicas por ambiente
     debug: bool = Field(default=False)
     log_level: str = Field(default="INFO")
@@ -41,7 +39,7 @@ class LibsSettings(BaseSettings):
             if self.bugster_api_url == "api_url_placeholder":
                 self.bugster_api_url = "http://localhost:8000"
             if self.websocket_url == "websocket_url_placeholder":
-                self.websocket_url = "ws://localhost:8000/ws"
+                self.websocket_url = "ws://localhost:8765"
         elif self.environment == Environment.DEVELOPMENT:
             self.debug = True
             self.log_level = "INFO"
@@ -50,10 +48,10 @@ class LibsSettings(BaseSettings):
             self.log_level = "WARNING"
 
     model_config = SettingsConfigDict(
-        env_file=".env", 
+        env_file=".env",
         env_file_encoding="utf-8",
-        extra="ignore", 
-        env_prefix="BUGSTER_"
+        extra="ignore",
+        env_prefix="BUGSTER_",
     )
 
 

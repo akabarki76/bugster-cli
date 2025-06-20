@@ -182,33 +182,12 @@ def _analyze_codebase(
     """Analyze your codebase and generate test specs."""
     from bugster.commands.analyze import analyze_command
 
-    analyze_command(options={"show_logs": show_logs, "force": force})
-
-
-def _generate_tests(
-    show_logs: bool = typer.Option(
-        False,
-        "--show-logs",
-        help="Show detailed logs during analysis",
-    ),
-    force: bool = typer.Option(
-        False,
-        "-f",
-        "--force",
-        help="Force analysis even if the codebase has already been analyzed",
-    ),
-):
-    """Analyze your codebase and generate test specs."""
-    from bugster.commands.analyze import analyze_command
-
-    analyze_command(
-        options={"show_logs": show_logs, "force": force}, use_new_endpoints=True
-    )
+    analyze_command(options={"show_logs": show_logs, "force": force}, use_new_endpoints=True)
 
 
 # Register the same function with two different command names
 app.command(name="analyze", help=CLIMessages.get_analyze_help())(_analyze_codebase)
-app.command(name="generate", help=CLIMessages.get_analyze_help())(_generate_tests)
+app.command(name="generate", help=CLIMessages.get_analyze_help())(_analyze_codebase)
 
 
 @app.command(help=CLIMessages.get_update_help())

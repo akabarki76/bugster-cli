@@ -69,3 +69,9 @@ class GitCommand(list, Enum):
     ]
     DIFF_CACHED = ["git", "diff", "--cached", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
     RESET = ["git", "reset", "--quiet"]
+
+
+class Environment(str, Enum):
+    LOCAL = "localhost"
+    DEVELOPMENT = "development"
+    PRODUCTION = "production"

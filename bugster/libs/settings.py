@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Environment(str, Enum):
     LOCAL = "localhost"
+    LOCAL_ALT = "local"
     DEVELOPMENT = "development"
     PRODUCTION = "production"
 

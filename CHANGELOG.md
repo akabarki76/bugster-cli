@@ -5,7 +5,7 @@ All notable changes to Bugster CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.8] - 2025-06-23
+## [0.3.9] - 2025-06-23
 
 ### Added
 - Added `vercel-bypass-automation` support: you can now use the secret within Bugster config while keeping your branch protected
@@ -82,8 +82,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core specs format and parsing capabilities
 
 
-[Unreleased]: https://github.com/Bugsterapp/bugster-cli/compare/v0.3.8...HEAD
-[0.3.8]: https://github.com/Bugsterapp/bugster-cli/compare/v0.3.7...v0.3.8
+[Unreleased]: https://github.com/Bugsterapp/bugster-cli/compare/v0.3.9...HEAD
+[0.3.9]: https://github.com/Bugsterapp/bugster-cli/compare/v0.3.7...v0.3.9
 [0.3.7]: https://github.com/Bugsterapp/bugster-cli/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/Bugsterapp/bugster-cli/compare/v0.3.0...v0.3.6
 [0.3.0]: https://github.com/Bugsterapp/bugster-cli/compare/v0.2.0...v0.3.0

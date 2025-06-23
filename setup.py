@@ -3,7 +3,7 @@ import re
 from setuptools import find_packages, setup
 
 # Read version from bugster/__init__.py
-with open("bugster/__init__.py") as f:
+with open("bugster/__init__.py", encoding="utf-8") as f:
     version_match = re.search(r'__version__ = ["\']([^"\']*)["\']', f.read())
     if version_match:
         version = version_match.group(1)
@@ -78,7 +78,7 @@ setup(
     },
     author="Bugster Team",
     description="A CLI tool for managing test cases",
-    long_description=open("README.md").read(),
+    long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     keywords="testing, cli, automation",
     python_requires=">=3.10",

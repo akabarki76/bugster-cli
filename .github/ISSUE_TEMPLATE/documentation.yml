@@ -1,0 +1,83 @@
+name: 📖 Documentation Issue
+description: Report an issue with documentation or suggest documentation improvements
+title: "[Docs]: "
+labels: ["documentation", "needs-review"]
+assignees: ["@Naquiao"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve our documentation! Whether it's a typo, unclear instructions, or missing content, we appreciate your feedback.
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation is this about?
+      options:
+        - README.md
+        - CLI Help Text (--help output)
+        - Command Documentation
+        - Installation Guide
+        - Configuration Reference
+        - API Documentation
+        - Troubleshooting Guide
+        - Examples/Tutorials
+        - Changelog
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: What kind of documentation issue is this?
+      options:
+        - Typo/Grammar Error
+        - Incorrect Information
+        - Unclear Instructions
+        - Missing Information
+        - Outdated Content
+        - Broken Links
+        - Formatting Issues
+        - New Documentation Needed
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Where is the documentation issue located?
+      placeholder: "URL, file path, or section name"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-content
+    attributes:
+      label: Current Content
+      description: Copy the current text that has the issue (if applicable)
+      placeholder: "Current text that needs to be changed..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: suggested-content
+    attributes:
+      label: Suggested Improvement
+      description: How should the content be changed or what should be added?
+      placeholder: "Suggested text or improvement..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Why is this change needed? What confusion does it resolve?
+      placeholder: "This would help users understand..."
+    validations:
+      required: false

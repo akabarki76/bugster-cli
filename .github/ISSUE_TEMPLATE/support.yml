@@ -1,0 +1,121 @@
+name: 🤝 General Support
+description: Get help with using Bugster CLI or ask questions
+title: "[Support]: "
+labels: ["question", "support"]
+assignees: ["@Naquiao"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Need help using Bugster CLI? We're here to assist! Please provide details about what you're trying to accomplish.
+        
+        **Note**: For urgent issues or real-time help, consider joining our [Discord community](https://discord.gg/bugster).
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify these items before asking for support
+      options:
+        - label: I have checked the documentation at https://docs.bugster.dev
+          required: true
+        - label: I have searched existing issues for similar questions
+          required: true
+
+  - type: dropdown
+    id: support-category
+    attributes:
+      label: Support Category
+      description: What area do you need help with?
+      options:
+        - Installation/Setup
+        - Getting Started
+        - Project Configuration
+        - Test Generation
+        - Test Execution
+        - Team Collaboration/Sync
+        - CI/CD Integration
+        - Framework-specific Questions
+        - Performance Issues
+        - Best Practices
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question/Issue Description
+      description: Describe what you're trying to do and what problems you're encountering
+      placeholder: "I'm trying to... but I'm having trouble with..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-tried
+    attributes:
+      label: What Have You Tried?
+      description: List the steps you've already attempted to solve this issue
+      placeholder: |
+        1. I tried...
+        2. I also attempted...
+        3. I looked at...
+    validations:
+      required: false
+
+  - type: input
+    id: bugster-version
+    attributes:
+      label: Bugster CLI Version
+      description: Run `bugster --version` to get this information
+      placeholder: v0.3.7
+    validations:
+      required: true
+
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating System
+      description: Which operating system are you using?
+      options:
+        - Windows
+        - macOS (Intel)
+        - macOS (Apple Silicon)
+        - Linux (Ubuntu/Debian)
+        - Linux (RHEL/CentOS/Fedora)
+        - Linux (Arch)
+        - Linux (Other)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: project-details
+    attributes:
+      label: Project Details
+      description: Information about your project setup (if relevant)
+      placeholder: |
+        - Framework: Next.js 14.0.0
+        - Project size: Small/Medium/Large
+        - Team size: Solo/Small team/Large team
+        - Special requirements: ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected-outcome
+    attributes:
+      label: Expected Outcome
+      description: What are you trying to achieve? What would success look like?
+      placeholder: "I want to be able to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other information that might be helpful
+      placeholder: "Error messages, screenshots, related configuration..."
+    validations:
+      required: false

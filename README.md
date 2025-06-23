@@ -2,6 +2,7 @@
 
 ![release version](https://img.shields.io/github/v/release/Bugsterapp/bugster-cli)
 ![build status](https://img.shields.io/github/workflow/status/Bugsterapp/bugster-cli/CI)
+
 🐛 **Bugster Agent - Simple Browser testing**
 
 Bugster CLI generate comprehensive test specs for your web applications and keep them synchronized across your team. Minimal setup.

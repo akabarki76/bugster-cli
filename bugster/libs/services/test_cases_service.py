@@ -57,25 +57,6 @@ class TestCasesService:
         )
         self.analysis_json_path = os.path.join(cache_framework_dir, "analysis.json")
 
-    def _post_analysis_json(self) -> list[dict[Any, str]]:
-        """Post the `analysis.json` file to the API and receive the test cases."""
-        logger.info("Posting analysis.json file to the API...")
-        if not self.analysis_json_path:
-            raise BugsterError("Analysis JSON path is not set")
-
-        if not os.path.exists(self.analysis_json_path):
-            raise BugsterError(
-                "Analysis JSON file not found, execute bugster analyze first"
-            )
-
-        with open(self.analysis_json_path, "rb") as file:
-            files = {"file": ("analysis.json", file, "application/json")}
-
-            with BugsterHTTPClient() as client:
-                return client.post(
-                    endpoint=BugsterApiPath.TEST_CASES.value, files=files
-                )
-
     def _init_generation(self) -> list[dict[Any, str]]:
         """Post the `analysis.json` file to the API and receive the test cases."""
         logger.info("Posting analysis.json file to the API...")
@@ -149,13 +130,6 @@ class TestCasesService:
         logger.info("Saved test case to {}", file_path)
         return file_path
 
-    def _get_job_status(self, job_id: str) -> str:
-        """Get the status of a job."""
-        with BugsterHTTPClient() as client:
-            return client.get(
-                endpoint=BugsterApiPath.TEST_CASES_JOB.value.format(job_id=job_id)
-            )
-
     def _check_results(self, job_id: str) -> str:
         """Get the status of a job."""
         with BugsterHTTPClient() as client:
@@ -167,7 +141,7 @@ class TestCasesService:
                 params={"job_id": job_id},
             )
 
-    def _polling_test_cases(self, result, use_new_endpoints: bool = False):
+    def _polling_test_cases(self, result):
         """Polling test cases."""
         console.print()
         console.print("🧪 Generating test cases...")
@@ -182,11 +156,7 @@ class TestCasesService:
             console.print("⏳ Processing...")
             while time.time() < poll_end_time:
                 time.sleep(poll_interval)
-                if use_new_endpoints:
-                    response = self._check_results(job_id=result["job_id"])
-                else:
-                    response = self._get_job_status(job_id=result["job_id"])
-
+                response = self._check_results(job_id=result["job_id"])
                 elapsed_time = time.time() - start_time
                 response_status = response["status"]
 
@@ -217,16 +187,11 @@ class TestCasesService:
             console.print("❌ Test generation timeout")
             return None
 
-    def generate_test_cases(self, use_new_endpoints: bool = False):
+    def generate_test_cases(self):
         """Generate test cases for the given codebase analysis."""
         self._set_analysis_json_path()
-        if use_new_endpoints:
-            result = self._init_generation()
-        else:
-            result = self._post_analysis_json()
-        test_cases = self._polling_test_cases(
-            result=result, use_new_endpoints=use_new_endpoints
-        )
+        result = self._init_generation()
+        test_cases = self._polling_test_cases(result=result)
 
         if not test_cases:
             raise BugsterError("Test cases not found")

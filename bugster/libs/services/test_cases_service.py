@@ -16,6 +16,7 @@ from bugster.libs.utils.enums import BugsterApiPath
 from bugster.libs.utils.errors import BugsterError
 from bugster.libs.utils.files import get_specs_paths
 from bugster.libs.utils.nextjs.extract_page_folder import extract_page_folder
+from bugster.utils.user_config import get_api_key
 
 console = Console()
 
@@ -56,7 +57,7 @@ class TestCasesService:
         )
         self.analysis_json_path = os.path.join(cache_framework_dir, "analysis.json")
 
-    def _post_analysis_json(self) -> list[dict[Any, str]]:
+    def _init_generation(self) -> list[dict[Any, str]]:
         """Post the `analysis.json` file to the API and receive the test cases."""
         logger.info("Posting analysis.json file to the API...")
         if not self.analysis_json_path:
@@ -67,12 +68,15 @@ class TestCasesService:
                 "Analysis JSON file not found, execute bugster analyze first"
             )
 
-        with open(self.analysis_json_path, "rb") as file:
-            files = {"file": ("analysis.json", file, "application/json")}
+        with open(self.analysis_json_path, "r") as file:
+            analysis_data = yaml.safe_load(file)
 
             with BugsterHTTPClient() as client:
+                api_key = get_api_key()
+                if api_key:
+                    client.set_headers({"x-api-key": api_key})
                 return client.post(
-                    endpoint=BugsterApiPath.TEST_CASES.value, files=files
+                    endpoint=BugsterApiPath.GENERATE_INIT.value, json=analysis_data
                 )
 
     def _save_test_case_as_yaml(self, test_case: dict[Any, str]):
@@ -126,11 +130,15 @@ class TestCasesService:
         logger.info("Saved test case to {}", file_path)
         return file_path
 
-    def _get_job_status(self, job_id: str) -> str:
+    def _check_results(self, job_id: str) -> str:
         """Get the status of a job."""
         with BugsterHTTPClient() as client:
+            api_key = get_api_key()
+            if api_key:
+                client.set_headers({"x-api-key": api_key})
             return client.get(
-                endpoint=BugsterApiPath.TEST_CASES_JOB.value.format(job_id=job_id)
+                endpoint=BugsterApiPath.GENERATE_CHECK_RESULTS.value,
+                params={"job_id": job_id},
             )
 
     def _polling_test_cases(self, result):
@@ -140,15 +148,15 @@ class TestCasesService:
         console.print(f"   Job submitted (ID: {result['job_id']})")
         console.print()
         start_time = time.time()
-        timeout_seconds = 3 * 60  # 3 minutes
-        poll_interval = 20  # 20 seconds
+        timeout_seconds = 3 * 60
+        poll_interval = 5
         poll_end_time = start_time + timeout_seconds
-        console.print("⏳ Processing...")
 
-        with Status(" Status: pending • Elapsed: 0s", spinner="dots") as status:
+        with Status("Generating tests...", spinner="dots") as status:
+            console.print("⏳ Processing...")
             while time.time() < poll_end_time:
                 time.sleep(poll_interval)
-                response = self._get_job_status(job_id=result["job_id"])
+                response = self._check_results(job_id=result["job_id"])
                 elapsed_time = time.time() - start_time
                 response_status = response["status"]
 
@@ -159,7 +167,7 @@ class TestCasesService:
                     )
                     console.print()
                     console.print("✅ Test generation complete")
-                    return response["result"]
+                    return response.get("test_cases") or response.get("result")
                 elif response_status == "failed":
                     status.stop()
                     console.print(
@@ -182,7 +190,7 @@ class TestCasesService:
     def generate_test_cases(self):
         """Generate test cases for the given codebase analysis."""
         self._set_analysis_json_path()
-        result = self._post_analysis_json()
+        result = self._init_generation()
         test_cases = self._polling_test_cases(result=result)
 
         if not test_cases:

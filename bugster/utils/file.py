@@ -100,44 +100,81 @@ def get_mcp_config_path(mcp_config: dict, version: str) -> str:
 def load_always_run_tests(config: Config) -> List[dict]:
     """Load test files that should always be executed based on config preferences."""
     if not config.preferences or not config.preferences.always_run:
+        console.print("[dim]No always-run tests configured[/dim]")
         return []
     
+    console.print(f"[dim]Loading always-run tests: {config.preferences.always_run}[/dim]")
     always_run_tests = []
+    
+    # Check if we exceed the limit of 3
+    total_configured = len(config.preferences.always_run)
+    if total_configured > 3:
+        ignored_tests = config.preferences.always_run[3:]
+        console.print(f"[yellow]Warning: Always-run limit exceeded. Only first 3 tests will be executed. Ignoring: {ignored_tests}[/yellow]")
+    
     # Limit to 3 tests maximum
     limited_paths = config.preferences.always_run[:3]
     
     for test_path in limited_paths:
-        full_test_path = TESTS_DIR / test_path
+        # Remove 'tests/' prefix if present to avoid path duplication
+        clean_path = test_path.replace('tests/', '', 1) if test_path.startswith('tests/') else test_path
         
-        if not full_test_path.exists():
+        # Try multiple path variations to find the file
+        possible_paths = []
+        
+        # If path already has extension, try both .yaml and .yml
+        if clean_path.endswith('.yaml'):
+            possible_paths = [
+                TESTS_DIR / clean_path,
+                TESTS_DIR / clean_path.replace('.yaml', '.yml')
+            ]
+        elif clean_path.endswith('.yml'):
+            possible_paths = [
+                TESTS_DIR / clean_path,
+                TESTS_DIR / clean_path.replace('.yml', '.yaml')
+            ]
+        else:
+            # No extension specified, try both
+            possible_paths = [
+                TESTS_DIR / f"{clean_path}.yaml",
+                TESTS_DIR / f"{clean_path}.yml"
+            ]
+        
+        test_found = False
+        for full_test_path in possible_paths:
+            console.print(f"[dim]Checking always-run test: {full_test_path}[/dim]")
+            
+            if not full_test_path.exists():
+                continue
+                
+            try:
+                test_cases = load_spec(full_test_path)
+                content = []
+                for test_case in test_cases:
+                    test_data = test_case.data
+                    test_data["metadata"] = {
+                        "id": test_case.metadata.id,
+                        "last_modified": test_case.metadata.last_modified,
+                    }
+                    content.append(test_data)
+                
+                always_run_tests.append({
+                    "file": full_test_path, 
+                    "content": content,
+                    "always_run": True
+                })
+                console.print(f"[green]✓ Loaded always-run test: {test_path}[/green]")
+                test_found = True
+                break
+                
+            except Exception as e:
+                console.print(f"[yellow]Warning: Failed to load always-run test {test_path}: {e}[/yellow]")
+                continue
+        
+        if not test_found:
             console.print(f"[yellow]Warning: Always-run test not found: {test_path}[/yellow]")
-            continue
-            
-        # Support both .yaml and .yml extensions
-        if full_test_path.suffix not in [".yaml", ".yml"]:
-            console.print(f"[yellow]Warning: Always-run test is not a YAML file: {test_path}[/yellow]")
-            continue
-            
-        try:
-            test_cases = load_spec(full_test_path)
-            content = []
-            for test_case in test_cases:
-                test_data = test_case.data
-                test_data["metadata"] = {
-                    "id": test_case.metadata.id,
-                    "last_modified": test_case.metadata.last_modified,
-                }
-                content.append(test_data)
-            
-            always_run_tests.append({
-                "file": full_test_path, 
-                "content": content,
-                "always_run": True
-            })
-            
-        except Exception as e:
-            console.print(f"[yellow]Warning: Failed to load always-run test {test_path}: {e}[/yellow]")
     
+    console.print(f"[dim]Total always-run tests loaded: {len(always_run_tests)}[/dim]")
     return always_run_tests
 
 

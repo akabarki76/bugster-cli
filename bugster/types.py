@@ -23,10 +23,17 @@ class Credential(BaseModel):
 
 
 class TestPreferences(BaseModel):
-    always_run: Optional[List[str]] = Field(
+    tests: Optional[dict] = Field(
         default=None,
-        description="List of test file paths that should always be executed, regardless of changes"
+        description="Test execution preferences"
     )
+
+    @property
+    def always_run(self) -> Optional[List[str]]:
+        """Get always_run tests from the tests configuration."""
+        if self.tests and "always_run" in self.tests:
+            return self.tests["always_run"]
+        return None
 
 
 class Config(BaseModel):

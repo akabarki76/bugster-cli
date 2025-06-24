@@ -36,7 +36,13 @@ from bugster.types import (
     WebSocketStepResultMessage,
 )
 from bugster.utils.console_messages import RunMessages
-from bugster.utils.file import get_mcp_config_path, load_config, load_test_files
+from bugster.utils.file import (
+    get_mcp_config_path, 
+    load_config, 
+    load_test_files, 
+    load_always_run_tests, 
+    merge_always_run_with_affected_tests
+)
 
 console = Console()
 # Color palette for parallel test execution
@@ -699,16 +705,25 @@ async def test_command(
 
         path = Path(test_path) if test_path else None
 
+        # Load always-run tests from config
+        always_run_tests = load_always_run_tests(config)
+
         if only_affected:
             try:
-                test_files = DetectAffectedSpecsService().run()
+                affected_tests = DetectAffectedSpecsService().run()
+                # Merge affected tests with always-run tests
+                test_files = merge_always_run_with_affected_tests(affected_tests, always_run_tests)
             except Exception as e:
                 RunMessages.error(
                     f"Failed to detect affected specs: {e}. \nRunning all tests..."
                 )
                 test_files = load_test_files(path)
+                # Still merge with always-run tests
+                test_files = merge_always_run_with_affected_tests(test_files, always_run_tests)
         else:
             test_files = load_test_files(path)
+            # Merge all tests with always-run tests
+            test_files = merge_always_run_with_affected_tests(test_files, always_run_tests)
 
         if not test_files:
             RunMessages.no_tests_found()

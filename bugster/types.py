@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal, Optional, List
 
 from pydantic import BaseModel, Field
 
@@ -22,6 +22,13 @@ class Credential(BaseModel):
     password: str
 
 
+class TestPreferences(BaseModel):
+    always_run: Optional[List[str]] = Field(
+        default=None,
+        description="List of test file paths that should always be executed, regardless of changes"
+    )
+
+
 class Config(BaseModel):
     base_url: str
     credentials: list[Credential]
@@ -29,6 +36,10 @@ class Config(BaseModel):
     project_name: str
     x_vercel_protection_bypass: Optional[str] = Field(
         None, alias="x-vercel-protection-bypass"
+    )
+    preferences: Optional[TestPreferences] = Field(
+        default=None,
+        description="Test execution preferences and configurations"
     )
 
 

@@ -122,8 +122,8 @@ def _run_tests(
     silent: Optional[bool] = typer.Option(
         False, "--silent", "-s", help="Run in silent mode (less verbose output)"
     ),
-    stream_results: Optional[bool] = typer.Option(
-        False, "--stream-results", help="Stream test results as they complete"
+    stream_results: bool = typer.Option(
+        True, "--stream-results/--no-stream-results", help="Stream test results. Enabled by default"
     ),
     output: Optional[str] = typer.Option(
         None, "--output", help="Save test results to JSON file"

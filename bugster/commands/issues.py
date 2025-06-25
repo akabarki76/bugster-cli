@@ -145,7 +145,7 @@ def issues_command(
                 issue = response
                 
                 # Display issue
-                table = Table(title=f"Latest Issue for Project {project_id} - All Test Cases")
+                table = Table(title=f"Latest Issue for Project {project_id}")
                 table.add_column("Test Name", style="cyan")
                 table.add_column("Created At", style="green")
                 table.add_column("Status", style="yellow")

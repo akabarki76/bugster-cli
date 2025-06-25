@@ -1,0 +1,165 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior in Bugster CLI
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees: ["@Naquiao"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us investigate.
+        
+        Before submitting, please check if there's already an existing issue for your bug.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify these items before submitting
+      options:
+        - label: I have searched existing issues to ensure this bug hasn't been reported before
+          required: true
+        - label: I have tried the latest version of Bugster CLI
+          required: true
+        - label: I have read the documentation
+          required: true
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: Describe what happened and what you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the bug
+      placeholder: |
+        1. Run command `bugster init`
+        2. Configure project with...
+        3. Execute `bugster run`
+        4. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What should have happened instead?
+      placeholder: Describe the expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened
+    validations:
+      required: true
+
+  - type: input
+    id: bugster-version
+    attributes:
+      label: Bugster CLI Version
+      description: Run `bugster --version` to get this information
+      placeholder: v0.3.7
+    validations:
+      required: true
+
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating System
+      description: Which operating system are you using?
+      options:
+        - Windows
+        - macOS (Intel)
+        - macOS (Apple Silicon)
+        - Linux (Ubuntu/Debian)
+        - Linux (RHEL/CentOS/Fedora)
+        - Linux (Arch)
+        - Linux (Other)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js Version
+      description: Run `node --version` to get this information
+      placeholder: v18.17.0
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python Version
+      description: Run `python --version` to get this information
+      placeholder: Python 3.12.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation-method
+    attributes:
+      label: Installation Method
+      description: How did you install Bugster CLI?
+      options:
+        - Automated installer (install.sh/install.bat)
+        - Manual download from releases
+        - Built from source
+        - Package manager (homebrew, etc.)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: project-info
+    attributes:
+      label: Project Information
+      description: Information about your project setup
+      placeholder: |
+        - Framework: Next.js 14.0.0
+        - Router type: App Router / Pages Router
+        - TypeScript: Yes/No
+        - Package manager: npm/yarn/pnpm
+    validations:
+      required: false
+
+  - type: textarea
+    id: error-logs
+    attributes:
+      label: Error Logs/Output
+      description: Please include any relevant error messages or command output
+      placeholder: Paste error messages, stack traces, or command output here
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: config-file
+    attributes:
+      label: Configuration File
+      description: If relevant, share your `.bugster/config.yaml` file (remove sensitive information)
+      placeholder: Paste your config.yaml content here
+      render: yaml
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here
+      placeholder: Screenshots, related issues, workarounds you've tried, etc.
+    validations:
+      required: false

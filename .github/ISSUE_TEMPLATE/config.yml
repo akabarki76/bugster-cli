@@ -1,0 +1,11 @@
+bank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://docs.bugster.dev
+    about: Check our documentation for common questions and guides
+  - name: 💬 Discord Community
+    url: https://discord.gg/bugster
+    about: Join our Discord community for real-time support and discussions
+  - name: 🌐 Dashboard Support
+    url: https://gui.bugster.dev/support
+    about: For dashboard-related issues, use the built-in support system

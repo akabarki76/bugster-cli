@@ -1,0 +1,124 @@
+name: ✨ Feature Request
+description: Suggest a new feature or improvement for Bugster CLI
+title: "[Feature]: "
+labels: ["enhancement", "needs-discussion"]
+assignees: ["@Naquiao"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please provide as much detail as possible to help us understand your request.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify these items before submitting
+      options:
+        - label: I have searched existing issues to ensure this feature hasn't been requested before
+          required: true
+        - label: I have checked the documentation to confirm this feature doesn't already exist
+          required: true
+
+  - type: textarea
+    id: feature-summary
+    attributes:
+      label: Feature Summary
+      description: A brief, clear summary of the feature you'd like to see
+      placeholder: "Add support for..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: Problem Description
+      description: What problem does this feature solve? What pain point are you experiencing?
+      placeholder: "I'm always frustrated when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see implemented
+      placeholder: "I would like to see..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternative-solutions
+    attributes:
+      label: Alternative Solutions
+      description: Describe any alternative solutions or features you've considered
+      placeholder: "I've also considered..."
+    validations:
+      required: false
+
+  - type: dropdown
+    id: feature-category
+    attributes:
+      label: Feature Category
+      description: Which area of Bugster CLI does this feature relate to?
+      options:
+        - CLI Commands (new command or command enhancement)
+        - Test Generation (AI test case generation improvements)
+        - Test Execution (test running and browser automation)
+        - Project Configuration (init, config management)
+        - Sync & Collaboration (team sync features)
+        - Framework Support (new framework or framework improvements)
+        - Developer Experience (UX, error messages, logging)
+        - Performance (speed, memory usage, optimization)
+        - Integration (CI/CD, external tools)
+        - Documentation (help text, guides)
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would improve my workflow
+        - High - Significantly impacts my productivity
+        - Critical - Blocking my ability to use Bugster effectively
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Provide specific examples of how this feature would be used
+      placeholder: |
+        Example scenarios:
+        1. When working on a large team...
+        2. During CI/CD pipeline execution...
+        3. When testing complex user flows...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What would constitute a successful implementation of this feature?
+      placeholder: |
+        - [ ] Feature should support...
+        - [ ] Users should be able to...
+        - [ ] Error handling should...
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or examples about the feature request
+      placeholder: Links to similar features in other tools, mockups, etc.
+    validations:
+      required: false

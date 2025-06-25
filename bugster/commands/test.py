@@ -332,7 +332,7 @@ async def execute_test(test: Test, config: Config, **kwargs) -> NamedTestResult:
         )
 
         # ================================
-        # TODO: We should inject the config, command, args and env vars from the web socket
+        # TODO: We should inject the config, command, args and env vars from the web socket  # noqa: E501
         mcp_config = {
             "browser": {
                 "contextOptions": {
@@ -409,7 +409,7 @@ async def _execute_test_loop(
             message = await ws_client.receive(timeout=300)
         except asyncio.TimeoutError:
             RunMessages.error("Timeout: No response from Bugster Agent")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from None
 
         if message.get("action") == "step_request":
             step_request = WebSocketStepRequestMessage(**message)
@@ -446,11 +446,11 @@ async def _execute_test_loop(
             if last_step_request and timeout_retry_count < max_retries:
                 timeout_retry_count += 1
                 logger.warning(
-                    f"Timeout occurred, retrying step ({timeout_retry_count}/{max_retries}): {last_step_request.message}"
+                    f"Timeout occurred, retrying step ({timeout_retry_count}/{max_retries}): {last_step_request.message}"  # noqa: E501
                 )
                 print_parallel_safe(
                     test.name,
-                    f"Retrying ({timeout_retry_count}/{max_retries}): {last_step_request.message}",
+                    f"Retrying ({timeout_retry_count}/{max_retries}): {last_step_request.message}",  # noqa: E501
                     "warning",
                     max_concurrent,
                     verbose,
@@ -469,7 +469,7 @@ async def _execute_test_loop(
                 )
             else:
                 logger.error(
-                    f"Max retries ({max_retries}) exceeded for step: {last_step_request.message if last_step_request else 'Unknown step'}"
+                    f"Max retries ({max_retries}) exceeded for step: {last_step_request.message if last_step_request else 'Unknown step'}"  # noqa: E501
                 )
                 print_parallel_safe(
                     test.name,
@@ -485,12 +485,12 @@ async def _execute_test_loop(
             if last_step_request and unknown_retry_count < max_retries:
                 unknown_retry_count += 1
                 logger.warning(
-                    f"Unknown message received, waiting 30s and retrying step ({unknown_retry_count}/{max_retries}): {last_step_request.message}"
+                    f"Unknown message received, waiting 30s and retrying step ({unknown_retry_count}/{max_retries}): {last_step_request.message}"  # noqa: E501
                 )
                 logger.debug(f"Unknown message content: {message}")
                 print_parallel_safe(
                     test.name,
-                    f"Waiting 30s, then retrying ({unknown_retry_count}/{max_retries}): {last_step_request.message}",
+                    f"Waiting 30s, then retrying ({unknown_retry_count}/{max_retries}): {last_step_request.message}",  # noqa: E501
                     "warning",
                     max_concurrent,
                     verbose,
@@ -502,7 +502,7 @@ async def _execute_test_loop(
 
                 print_parallel_safe(
                     test.name,
-                    f"Retrying ({unknown_retry_count}/{max_retries}): {last_step_request.message}",
+                    f"Retrying ({unknown_retry_count}/{max_retries}): {last_step_request.message}",  # noqa: E501
                     "info",
                     max_concurrent,
                     verbose,
@@ -521,7 +521,7 @@ async def _execute_test_loop(
                 )
             else:
                 logger.error(
-                    f"Max retries ({max_retries}) exceeded for unknown message. Last step: {last_step_request.message if last_step_request else 'Unknown step'}"
+                    f"Max retries ({max_retries}) exceeded for unknown message. Last step: {last_step_request.message if last_step_request else 'Unknown step'}"  # noqa: E501
                 )
                 logger.error(f"Final unknown message: {message}")
                 print_parallel_safe(
@@ -640,7 +640,7 @@ async def execute_single_test_with_semaphore(
 
 
 def apply_vercel_protection_bypass(config: Config) -> Config:
-    """Apply x-vercel-protection-bypass query parameter to base_url if present in config."""
+    """Apply x-vercel-protection-bypass query parameter to base_url if present in config."""  # noqa: E501
     if not config.x_vercel_protection_bypass:
         return config
 
@@ -813,7 +813,7 @@ async def test_command(
         with ThreadPoolExecutor(max_workers=5) as executor:
             # Create tasks for all tests
             tasks = []
-            for test, source_file in all_tests:
+            for test, _source_file in all_tests:
                 test_executor_kwargs = {
                     "headless": headless,
                     "silent": silent,
@@ -868,7 +868,7 @@ async def test_command(
         RunMessages.create_results_table(final_results)
 
         # Display results panel
-        console.print(RunMessages.create_results_panel(final_results))
+        RunMessages.create_results_panel(final_results)
 
         # Display total time
         total_time = time.time() - total_start_time
@@ -889,4 +889,4 @@ async def test_command(
 
     except Exception as e:
         RunMessages.error(e)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None

@@ -342,7 +342,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <div align="center">
-  <p>Built with ❤️ by the Bugster Team</p>
+  <p>Built with ❤️ by Bugster</p>
   <p>
     <a href="https://gui.bugster.dev">Dashboard</a> •
     <a href="https://docs.bugster.dev">Documentation</a> •

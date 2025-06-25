@@ -97,7 +97,6 @@ class BugsterAnalytics:
             posthog.api_key = api_key
             posthog.host = host
             posthog.sync_mode = True  # Ensure events are sent before CLI exits
-            posthog.debug = libs_settings.debug  # Use general debug setting
             
             self._client = posthog
             logger.debug(f"PostHog configured for {libs_settings.environment} environment")

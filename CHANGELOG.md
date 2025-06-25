@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added `--stream-results` as the default behaviour for `bugster run`
+
 ## [0.3.11] - 2025-06-25
 
 ### Added

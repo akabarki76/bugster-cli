@@ -17,6 +17,7 @@ from bugster.clients.mcp_client import MCPStdioClient
 from bugster.clients.ws_client import WebSocketClient
 from bugster.commands.middleware import require_api_key
 from bugster.commands.sync import get_current_branch
+from bugster.commands.test import apply_vercel_protection_bypass
 from bugster.libs.services.destructive_service import DestructiveService
 from bugster.libs.services.destructive_stream_service import DestructiveStreamService
 from bugster.types import (
@@ -541,6 +542,9 @@ async def destructive_command(
         config = load_config()
         if base_url:
             config.base_url = base_url
+
+        # Apply Vercel protection bypass query parameter if present
+        config = apply_vercel_protection_bypass(config)
 
         # Initialize destructive service
         destructive_service = DestructiveService()

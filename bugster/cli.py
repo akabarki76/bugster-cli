@@ -294,6 +294,9 @@ def destructive(
         None, help="Maximum number of concurrent agents (default: 3)"
     ),
     verbose: bool = typer.Option(False, help="Show detailed agent execution logs"),
+    run_id: Optional[str] = typer.Option(
+        None, "--run-id", help="Run ID to associate with the destructive test run"
+    ),
 ):
     """Run destructive agents to find potential bugs in changed pages."""
     from bugster.commands.destructive import destructive_command
@@ -306,6 +309,7 @@ def destructive(
             base_url,
             max_concurrent,
             verbose,
+            run_id,
         )
     )
 

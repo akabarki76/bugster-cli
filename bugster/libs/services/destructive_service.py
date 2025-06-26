@@ -4,7 +4,8 @@ from loguru import logger
 from rich.console import Console
 
 from bugster.clients.http_client import BugsterHTTPClient
-from bugster.libs.utils.enums import BugsterApiPath, GitCommand
+from bugster.libs.mixins import format_diff_branch_head_command
+from bugster.libs.utils.enums import BugsterApiPath
 from bugster.libs.utils.git import get_diff_changes_per_page
 from bugster.libs.utils.nextjs.import_tree_generator import generate_import_tree
 
@@ -47,7 +48,8 @@ class DestructiveService:
     def _get_diff_changes_per_page(self) -> dict[str, list[str]]:
         """Get the diff changes per page using git changes."""
         return get_diff_changes_per_page(
-            import_tree=self.import_tree, git_command=GitCommand.DIFF_CHANGES
+            import_tree=self.import_tree,
+            git_command=format_diff_branch_head_command(),
         )
 
     def get_page_agents_assignments(self) -> list[PageAgent]:

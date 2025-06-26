@@ -201,6 +201,8 @@ async def execute_destructive_agent(
         await mcp_client.init_client(mcp_command, mcp_args)
 
         # Send initial destructive agent data with config
+        # TODO: The init message response is taking too long to come back,
+        # we should add a timeout and retry mechanism
         await ws_client.send(
             WebSocketInitDestructiveMessage(
                 page=page,
@@ -529,6 +531,7 @@ async def destructive_command(
     base_url: Optional[str] = None,
     max_concurrent: Optional[int] = None,
     verbose: Optional[bool] = False,
+    run_id: Optional[str] = None,
 ) -> None:
     """Run destructive agents to find potential bugs in changed pages."""
     total_start_time = time.time()
@@ -568,7 +571,7 @@ async def destructive_command(
         # Determine max concurrent agents (default to 3 for safety)
         max_concurrent = max_concurrent or 3
         semaphore = asyncio.Semaphore(max_concurrent)
-        run_id = str(uuid.uuid4())
+        run_id = run_id or str(uuid.uuid4())
 
         # Initialize streaming service if requested
         stream_service, api_run_id = None, None

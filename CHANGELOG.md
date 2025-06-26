@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The `--page` flag in `bugster generate` now accepts relative or absolute file paths instead of page folder names. This provides more flexibility and control over which pages are analyzed.
+- Added validation for the `--page` flag to ensure that provided paths exist, are files, and have valid JavaScript/TypeScript extensions (`.js`, `.jsx`, `.ts`, `.tsx`).
 
 ## [0.3.15] - 2025-06-26
 

@@ -59,7 +59,7 @@ setup(
         "smmap==5.0.2",
         "sniffio==1.3.1",
         "sse-starlette==2.3.5",
-        "starlette==0.46.2",
+        "starlette==0.47.1",
         "typer==0.15.4",
         "types-requests==2.32.0.20250515",
         "typing-inspection==0.4.1",

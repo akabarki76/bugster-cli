@@ -122,8 +122,8 @@ def _run_tests(
     silent: Optional[bool] = typer.Option(
         False, "--silent", "-s", help="Run in silent mode (less verbose output)"
     ),
-    stream_results: Optional[bool] = typer.Option(
-        False, "--stream-results", help="Stream test results as they complete"
+    stream_results: bool = typer.Option(
+        True, "--stream-results/--no-stream-results", help="Stream test results. Enabled by default"
     ),
     output: Optional[str] = typer.Option(
         None, "--output", help="Save test results to JSON file"
@@ -138,7 +138,7 @@ def _run_tests(
         None, "--only-affected", help="Only run tests for affected files or directories"
     ),
     max_concurrent: Optional[int] = typer.Option(
-        None, "--max-concurrent", help="Maximum number of concurrent tests"
+        5, "--max-concurrent", help="Maximum number of concurrent tests"
     ),
     verbose: Optional[bool] = typer.Option(False, "--verbose", help="Verbose output"),
 ):
@@ -178,11 +178,25 @@ def _analyze_codebase(
         "--force",
         help="Force analysis even if the codebase has already been analyzed",
     ),
+    page: Optional[str] = typer.Option(
+        None,
+        "--page",
+        help="Generate specs only for specific pages (comma-separated). Example: --page=settings,auth,flows",
+    ),
+    count: Optional[int] = typer.Option(
+        None,
+        "--count",
+        help="Number of test specs to generate per page",
+        min=1,
+        max=30,
+    ),
 ):
     """Analyze your codebase and generate test specs."""
     from bugster.commands.analyze import analyze_command
-
-    analyze_command(options={"show_logs": show_logs, "force": force})
+    page_filter = None
+    if page:
+        page_filter = [p.strip() for p in page.split(",") if p.strip()]
+    analyze_command(options={"show_logs": show_logs, "force": force, "page_filter": page_filter, "count": count})
 
 
 # Register the same function with two different command names

@@ -680,7 +680,7 @@ async def test_command(
     test_path: Optional[str] = None,
     headless: Optional[bool] = False,
     silent: Optional[bool] = False,
-    stream_results: Optional[bool] = False,
+    stream_results: bool = True,
     output: Optional[str] = None,
     run_id: Optional[str] = None,
     base_url: Optional[str] = None,

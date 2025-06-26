@@ -2,7 +2,7 @@ import os
 import time
 from collections import OrderedDict
 from random import randint
-from typing import Any
+from typing import Any, List, Optional
 
 import yaml
 from loguru import logger
@@ -57,7 +57,7 @@ class TestCasesService:
         )
         self.analysis_json_path = os.path.join(cache_framework_dir, "analysis.json")
 
-    def _init_generation(self) -> list[dict[Any, str]]:
+    def _init_generation(self, page_filter: Optional[List[str]] = None, count: Optional[int] = None) -> list[dict[Any, str]]:
         """Post the `analysis.json` file to the API and receive the test cases."""
         logger.info("Posting analysis.json file to the API...")
         if not self.analysis_json_path:
@@ -67,16 +67,21 @@ class TestCasesService:
             raise BugsterError(
                 "Analysis JSON file not found, execute bugster analyze first"
             )
-
+        data = {}
+        if page_filter:
+            data["page_filter"] = ",".join(page_filter)
+        if count is not None:
+            data["count"] = count
         with open(self.analysis_json_path, "r") as file:
             analysis_data = yaml.safe_load(file)
-
+            payload = {"json": analysis_data, "data": data}
             with BugsterHTTPClient() as client:
                 api_key = get_api_key()
                 if api_key:
                     client.set_headers({"x-api-key": api_key})
                 return client.post(
-                    endpoint=BugsterApiPath.GENERATE_INIT.value, json=analysis_data
+                    endpoint=BugsterApiPath.GENERATE_INIT.value,
+                    json=payload,
                 )
 
     def _save_test_case_as_yaml(self, test_case: dict[Any, str]):
@@ -187,10 +192,10 @@ class TestCasesService:
             console.print("❌ Test generation timeout")
             return None
 
-    def generate_test_cases(self):
+    def generate_test_cases(self, page_filter: list[str] = None, count: Optional[int] = None):
         """Generate test cases for the given codebase analysis."""
         self._set_analysis_json_path()
-        result = self._init_generation()
+        result = self._init_generation(page_filter=page_filter, count=count)
         test_cases = self._polling_test_cases(result=result)
 
         if not test_cases:

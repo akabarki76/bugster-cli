@@ -74,13 +74,14 @@ class TestCasesService:
             data["count"] = count
         with open(self.analysis_json_path, "r") as file:
             analysis_data = yaml.safe_load(file)
-
+            payload = {"json": analysis_data, "data": data}
             with BugsterHTTPClient() as client:
                 api_key = get_api_key()
                 if api_key:
                     client.set_headers({"x-api-key": api_key})
                 return client.post(
-                    endpoint=BugsterApiPath.GENERATE_INIT.value, json=analysis_data, data=data
+                    endpoint=BugsterApiPath.GENERATE_INIT.value,
+                    json=payload,
                 )
 
     def _save_test_case_as_yaml(self, test_case: dict[Any, str]):

@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added `--stream-results` as the default behaviour for `bugster run`
 - Added `--max-concurrent = 5` as the default behaviour for `bugster run`
+- Added `--page` for command `bugster generate` for spec generation of a specific page or set of pages.
+- Added `--count` option for `bugster generate` to control the number of test specs generated per page (min: 1, max: 30)
+
+## [0.3.12] - 2025-06-26
+
+### Added
+- Added `bugster destructive`, our new agent for raising bugs.
 
 ## [0.3.11] - 2025-06-25
 

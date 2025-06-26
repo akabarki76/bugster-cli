@@ -42,7 +42,7 @@ setup(
         "packaging==24.0",
         "pathspec==0.12.1",
         "posthog==5.0.0",
-        "pydantic==2.11.4",
+        "pydantic==2.11.7",
         "pydantic-settings==2.9.1",
         "pydantic_core==2.35.2",
         "Pygments==2.19.1",

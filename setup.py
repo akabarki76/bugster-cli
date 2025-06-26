@@ -44,7 +44,7 @@ setup(
         "posthog==5.0.0",
         "pydantic==2.11.4",
         "pydantic-settings==2.9.1",
-        "pydantic_core==2.33.2",
+        "pydantic_core==2.35.2",
         "Pygments==2.19.1",
         "pyinstaller-hooks-contrib==2025.4",
         "python-dotenv==1.1.0",

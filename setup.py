@@ -62,7 +62,7 @@ setup(
         "starlette==0.46.2",
         "typer==0.15.4",
         "types-requests==2.32.0.20250515",
-        "typing-inspection==0.4.0",
+        "typing-inspection==0.4.1",
         "typing_extensions==4.13.2",
         "urllib3==2.5.0",
         "uvicorn==0.34.2",

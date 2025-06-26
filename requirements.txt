@@ -49,7 +49,7 @@ typer==0.15.4
 types-requests==2.32.0.20250515
 typing-inspection==0.4.0
 typing_extensions==4.13.2
-urllib3==2.4.0
+urllib3==2.5.0
 uvicorn==0.34.2
 websockets==15.0.1
 yarl==1.20.0

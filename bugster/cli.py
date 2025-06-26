@@ -138,7 +138,7 @@ def _run_tests(
         None, "--only-affected", help="Only run tests for affected files or directories"
     ),
     max_concurrent: Optional[int] = typer.Option(
-        None, "--max-concurrent", help="Maximum number of concurrent tests"
+        5, "--max-concurrent", help="Maximum number of concurrent tests"
     ),
     verbose: Optional[bool] = typer.Option(False, "--verbose", help="Verbose output"),
 ):

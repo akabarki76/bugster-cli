@@ -52,7 +52,7 @@ setup(
         "PyYAML==6.0.2",
         "referencing==0.36.2",
         "regex==2024.11.6",
-        "requests==2.32.3",
+        "requests==2.32.4",
         "rich==14.0.0",
         "rpds-py==0.25.1",
         "shellingham==1.5.4",

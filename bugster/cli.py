@@ -181,7 +181,7 @@ def _analyze_codebase(
     page: Optional[str] = typer.Option(
         None,
         "--page",
-        help="Generate specs only for specific pages (comma-separated). Example: --page=settings,auth,flows",
+        help="Generate specs only for specific page files (comma-separated relative file paths). Example: --page 'pages/settings.tsx','pages/auth.tsx'",
     ),
     count: Optional[int] = typer.Option(
         None,
@@ -193,9 +193,42 @@ def _analyze_codebase(
 ):
     """Analyze your codebase and generate test specs."""
     from bugster.commands.analyze import analyze_command
+    from pathlib import Path
+    
     page_filter = None
     if page:
-        page_filter = [p.strip() for p in page.split(",") if p.strip()]
+        page_paths = [p.strip() for p in page.split(",") if p.strip()]
+        validated_paths = []
+        project_root = Path.cwd()
+
+        for path_str in page_paths:
+            file_path = Path(path_str)
+
+            if file_path.is_absolute():
+                try:
+                    # Convert absolute path to relative if it's within the project.
+                    file_path = file_path.relative_to(project_root)
+                    print(f"Absolute path converted to relative: {file_path}")
+                except ValueError:
+                    # Path is not within the project directory.
+                    raise typer.BadParameter(
+                        f"Absolute path '{path_str}' is outside the project directory."
+                    )
+
+            # Validate each path exists
+            if not file_path.exists():
+                raise typer.BadParameter(f"File not found: {file_path}")
+            if not file_path.is_file():
+                raise typer.BadParameter(f"Path is not a file: {file_path}")
+            if file_path.suffix not in [".js", ".jsx", ".ts", ".tsx"]:
+                raise typer.BadParameter(
+                    f"Invalid file type: {file_path}. Must be a JavaScript/TypeScript file."
+                )
+            
+            validated_paths.append(str(file_path))
+
+        page_filter = validated_paths
+        
     analyze_command(options={"show_logs": show_logs, "force": force, "page_filter": page_filter, "count": count})
 
 

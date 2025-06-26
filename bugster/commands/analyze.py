@@ -40,7 +40,10 @@ def analyze_command(options: dict = {}):
             TestCasesService().generate_test_cases(page_filter=page_filter, count=count)
             console.print()
             if page_filter:
-                console.print(f"📁 Test specs generated only for pages: {', '.join(page_filter)} in directory:")
+                console.print(f"📁 Test specs generated only for files:")
+                for file_path in page_filter:
+                    console.print(f"   {file_path}")
+                console.print(f"\nSpecs saved to:")
                 console.print(f"   {os.path.relpath(TESTS_DIR, WORKING_DIR)}")
             else:
                 console.print("📁 Test specs saved to:")

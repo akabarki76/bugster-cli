@@ -187,6 +187,8 @@ def _analyze_codebase(
         None,
         "--count",
         help="Number of test specs to generate per page",
+        min=1,
+        max=30,
     ),
 ):
     """Analyze your codebase and generate test specs."""

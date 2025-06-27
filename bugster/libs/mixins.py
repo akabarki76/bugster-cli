@@ -93,7 +93,7 @@ class DetectAffectedSpecsMixin:
 class UpdateMixin:
     """Update mixin."""
 
-    def _update_spec(self, spec, diff_changes_per_page, page, context):
+    def _update_spec(self, spec, diff_changes_per_page, page, context, updated_specs):
         """Update a spec."""
         spec_data = spec["data"]
         spec_path = spec["path"]
@@ -110,7 +110,7 @@ class UpdateMixin:
             )
             status.stop()
             console.print(f"✓ [green]{spec_path}[/green] updated")
-            updated_specs += 1
+            return updated_specs + 1
 
     def update(self, *args, **kwargs):
         """Update existing specs."""
@@ -132,18 +132,20 @@ class UpdateMixin:
 
                 if isinstance(specs_by_page, list):
                     for spec in specs_by_page:
-                        self._update_spec(
+                        updated_specs = self._update_spec(
                             spec=spec,
                             diff_changes_per_page=diff_changes_per_page,
                             page=page,
                             context=llm_context,
+                            updated_specs=updated_specs,
                         )
                 else:
-                    self._update_spec(
+                    updated_specs = self._update_spec(
                         spec=specs_by_page,
                         diff_changes_per_page=diff_changes_per_page,
                         page=page,
                         context=llm_context,
+                        updated_specs=updated_specs,
                     )
             else:
                 text = Text("✗ Page ")
@@ -215,6 +217,16 @@ class SuggestMixin:
 class DeleteMixin:
     """Delete mixin."""
 
+    def _delete_spec(self, deleted_specs, spec_path):
+        """Delete a spec."""
+        with Status(
+            f"[yellow]Deleting: {spec_path}[/yellow]", spinner="dots"
+        ) as status:
+            self.test_cases_service.delete_spec_by_spec_path(spec_path=spec_path)
+            status.stop()
+            console.print(f"✓ [green]{spec_path}[/green] deleted")
+            return deleted_specs + 1
+
     def delete(self, *args, **kwargs):
         """Delete existing specs."""
         file_paths = self.mapped_changes["deleted"]
@@ -230,18 +242,17 @@ class DeleteMixin:
 
         for page in deleted_pages:
             if page in specs_pages:
-                spec = specs_pages[page]
-                spec_path = spec["path"]
+                specs_by_page = specs_pages[page]
 
-                with Status(
-                    f"[yellow]Deleting: {spec_path}[/yellow]", spinner="dots"
-                ) as status:
-                    self.test_cases_service.delete_spec_by_spec_path(
-                        spec_path=spec_path
+                if isinstance(specs_by_page, list):
+                    for spec in specs_by_page:
+                        deleted_specs = self._delete_spec(
+                            deleted_specs=deleted_specs, spec_path=spec["path"]
+                        )
+                else:
+                    deleted_specs = self._delete_spec(
+                        deleted_specs=deleted_specs, spec_path=specs_by_page["path"]
                     )
-                    status.stop()
-                    console.print(f"✓ [green]{spec_path}[/green] deleted")
-                    deleted_specs += 1
             else:
                 text = Text("✗ Page ")
                 text.append(page, style="red")

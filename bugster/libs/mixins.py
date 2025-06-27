@@ -181,7 +181,6 @@ class SuggestMixin:
             import_tree=self.import_tree, git_command=GitCommand.DIFF_HEAD
         )
         suggested_specs = []
-
         affected_pages = diff_changes_per_page.keys()
         specs_pages = get_specs_pages()
 

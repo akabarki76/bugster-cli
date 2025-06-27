@@ -196,7 +196,6 @@ class SuggestMixin:
             if isinstance(specs_by_page, list):
                 for spec in specs_by_page:
                     self._suggest_spec(
-                        spec=spec,
                         diff_changes_per_page=diff_changes_per_page,
                         page=page,
                         suggested_specs=suggested_specs,
@@ -204,7 +203,6 @@ class SuggestMixin:
                     )
             else:
                 self._suggest_spec(
-                    spec=specs_by_page,
                     diff_changes_per_page=diff_changes_per_page,
                     page=page,
                     suggested_specs=suggested_specs,

@@ -529,7 +529,14 @@ def main():
         if choice in ["y", "yes"]:
             print_step("Resetting terminal...")
             import signal
-            os.kill(os.getppid(), signal.SIGKILL)
+            system = platform.system()
+            if system == "Windows":
+                # On Windows, just exit gracefully
+                print_warning("Please restart your command prompt manually.")
+                sys.exit(0)
+            else:
+                # On Unix systems, kill the parent process
+                os.kill(os.getppid(), signal.SIGKILL)
         else:
             print_warning("Please restart your terminal manually or run:")
             shell = os.environ.get("SHELL", "/bin/bash")

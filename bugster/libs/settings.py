@@ -17,8 +17,8 @@ class LibsSettings(BaseSettings):
     environment: Environment = Field(default=Environment.PRODUCTION)
 
     # API Configuration
-    bugster_api_url: str = Field(default="https://api.bugster.app")
-    websocket_url: str = Field(default="wss://websocket.bugster.app/production/")
+    bugster_api_url: str = Field(default="api_url_placeholder")
+    websocket_url: str = Field(default="websocket_url_placeholder")
 
     # PostHog Analytics Configuration
     posthog_api_key: str = Field(default="phc_api_key_placeholder")

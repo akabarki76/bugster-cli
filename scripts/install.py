@@ -468,8 +468,10 @@ def main():
         path_added = False
         path_added = add_to_path(install_dir)
 
-        # Test installation
-        if not test_installation(installed_path, version):
+        # Test installation, but skip if we're in an upgrade
+        if os.environ.get("BUGSTER_UPGRADE_IN_PROGRESS"):
+            print_step("Skipping installation test during upgrade process.")
+        elif not test_installation(installed_path, version):
             sys.exit(1)
 
         # Print installation success message

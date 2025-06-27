@@ -474,8 +474,6 @@ def main():
 
         # Print installation success message
         print_success("\n🎉 Bugster CLI has been installed successfully!")
-        print("\nTo start using Bugster CLI, restart terminal and run:")
-        print("  bugster --help")
         
         # Check if we're in an interactive environment
         import sys

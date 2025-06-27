@@ -193,21 +193,18 @@ class SuggestMixin:
                 specs_by_page = specs_pages[page]
                 llm_context = format_tests_for_llm(existing_specs=specs_by_page)
 
-            if isinstance(specs_by_page, list):
-                for spec in specs_by_page:
-                    self._suggest_spec(
-                        diff_changes_per_page=diff_changes_per_page,
-                        page=page,
-                        suggested_specs=suggested_specs,
-                        context=llm_context,
-                    )
-            else:
-                self._suggest_spec(
-                    diff_changes_per_page=diff_changes_per_page,
-                    page=page,
-                    suggested_specs=suggested_specs,
-                    context=llm_context,
-                )
+            params = {
+                "diff_changes_per_page": diff_changes_per_page,
+                "page": page,
+                "suggested_specs": suggested_specs,
+            }
+
+            if llm_context:
+                params["context"] = llm_context
+
+            self._suggest_spec(
+                **params,
+            )
 
         if len(suggested_specs) > 0:
             for spec in suggested_specs:

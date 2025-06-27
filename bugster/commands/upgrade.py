@@ -52,7 +52,7 @@ def upgrade_command(yes: bool = False):
         if yes or typer.confirm("Do you want to upgrade?", default=True):
             console.print("Upgrading Bugster CLI...", style="yellow")
             try:
-                install_command = f"curl -sSL {INSTALL_SCRIPT_URL} | bash -s -- -y"
+                install_command = f"BUGSTER_UPGRADE_IN_PROGRESS=1 curl -sSL {INSTALL_SCRIPT_URL} | bash -s -- -y"
                 # We use -y to auto-confirm any prompts from the install script
                 process = subprocess.run(
                     install_command,

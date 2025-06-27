@@ -432,7 +432,11 @@ install_node_linux() {
         print_success "✅ Node.js 18 installed successfully!"
     else
         print_error "❌ Node.js 18 installation failed"
-        print_warning "Please install Node.js 18 manually from https://nodejs.org/"
+        print_error "❌ Node.js installation skipped. The following commands will NOT work:"
+        echo -e "${RED}  • bugster test / bugster run${NC} - Execute tests"
+        echo -e "${RED}  • bugster destructive${NC} - Run destructive agents"
+        echo -e "\n${YELLOW}These commands require browser automation via Playwright.${NC}"
+        echo -e "${YELLOW}You can install Node.js 18+ manually later if needed.${NC}"
         exit 1
     fi
 }
@@ -477,8 +481,11 @@ else
             install_node_linux
         fi
     else
-        print_warning "Node.js installation skipped. Some advanced features may not work."
-        print_warning "You can install Node.js 18+ manually later if needed."
+        print_error "❌ Node.js installation skipped. The following commands will NOT work:"
+        echo -e "${RED}  • bugster test / bugster run${NC} - Execute tests"
+        echo -e "${RED}  • bugster destructive${NC} - Run destructive agents"
+        echo -e "\n${YELLOW}These commands require browser automation via Playwright.${NC}"
+        echo -e "${YELLOW}You can install Node.js 18+ manually later if needed.${NC}"
     fi
 fi
 

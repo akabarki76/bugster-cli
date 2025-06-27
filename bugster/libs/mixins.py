@@ -46,6 +46,31 @@ def format_diff_branch_head_command():
     )
 
 
+def format_tests_for_llm(existing_specs: list[dict] | dict):
+    """Format a list of specs for LLM context to prevent duplication.
+
+    :param existing_specs: Dict or list of dicts with the spec data.
+    :return: Formatted context string for LLM.
+    """
+    if isinstance(existing_specs, list):
+        context_lines = []
+
+        for i, spec in enumerate(existing_specs, 1):
+            name = spec["data"]["name"]
+            task = spec["data"]["task"]
+            steps = " -> ".join(spec["data"]["steps"])
+            context_lines.append(
+                f"{i}. Test: {name}. Task: {task.lower()}. Steps: {steps}"
+            )
+
+        return "\n".join(context_lines)
+    else:
+        name = existing_specs["data"]["name"]
+        task = existing_specs["data"]["task"]
+        steps = " -> ".join(existing_specs["data"]["steps"])
+        return f"Test: {name}. Task: {task.lower()}. Steps: {steps}"
+
+
 class DetectAffectedSpecsMixin:
     """Detect affected specs mixin."""
 
@@ -68,6 +93,25 @@ class DetectAffectedSpecsMixin:
 class UpdateMixin:
     """Update mixin."""
 
+    def _update_spec(self, spec, diff_changes_per_page, page, context):
+        """Update a spec."""
+        spec_data = spec["data"]
+        spec_path = spec["path"]
+
+        with Status(
+            f"[yellow]Updating: {spec_path}[/yellow]", spinner="dots"
+        ) as status:
+            diff = "\n==========\n".join(diff_changes_per_page[page])
+            self.test_cases_service.update_spec_by_diff(
+                spec_data=spec_data,
+                diff_changes=diff,
+                spec_path=spec_path,
+                context=context,
+            )
+            status.stop()
+            console.print(f"✓ [green]{spec_path}[/green] updated")
+            updated_specs += 1
+
     def update(self, *args, **kwargs):
         """Update existing specs."""
         file_paths = self.mapped_changes["modified"]
@@ -83,20 +127,24 @@ class UpdateMixin:
 
         for page in affected_pages:
             if page in specs_pages:
-                spec = specs_pages[page]
-                spec_data = spec["data"]
-                spec_path = spec["path"]
+                specs_by_page = specs_pages[page]
+                llm_context = format_tests_for_llm(existing_specs=specs_by_page)
 
-                with Status(
-                    f"[yellow]Updating: {spec_path}[/yellow]", spinner="dots"
-                ) as status:
-                    diff = "\n==========\n".join(diff_changes_per_page[page])
-                    self.test_cases_service.update_spec_by_diff(
-                        spec_data=spec_data, diff_changes=diff, spec_path=spec_path
+                if isinstance(specs_by_page, list):
+                    for spec in specs_by_page:
+                        self._update_spec(
+                            spec=spec,
+                            diff_changes_per_page=diff_changes_per_page,
+                            page=page,
+                            context=llm_context,
+                        )
+                else:
+                    self._update_spec(
+                        spec=specs_by_page,
+                        diff_changes_per_page=diff_changes_per_page,
+                        page=page,
+                        context=llm_context,
                     )
-                    status.stop()
-                    console.print(f"✓ [green]{spec_path}[/green] updated")
-                    updated_specs += 1
             else:
                 text = Text("✗ Page ")
                 text.append(page, style="red")
@@ -112,6 +160,19 @@ class UpdateMixin:
 class SuggestMixin:
     """Suggest mixin."""
 
+    def _suggest_spec(self, page, diff_changes_per_page, context, suggested_specs):
+        """Suggest a spec."""
+        with Status(
+            f"[yellow]Suggesting new spec for {page}[/yellow]", spinner="dots"
+        ) as status:
+            diff = "\n==========\n".join(diff_changes_per_page[page])
+            self.test_cases_service.suggest_spec_by_diff(
+                page_path=page, diff_changes=diff
+            )
+            status.stop()
+            console.print(f"✓ [green]{page}[/green] suggested")
+            suggested_specs.append(page)
+
     def suggest(self, *args, **kwargs):
         """Suggest new specs."""
         file_paths = self.mapped_changes["new"]
@@ -121,17 +182,31 @@ class SuggestMixin:
         )
         suggested_specs = []
 
-        for page in diff_changes_per_page.keys():
-            with Status(
-                f"[yellow]Suggesting new spec for {page}[/yellow]", spinner="dots"
-            ) as status:
-                diff = "\n==========\n".join(diff_changes_per_page[page])
-                self.test_cases_service.suggest_spec_by_diff(
-                    page_path=page, diff_changes=diff
-                )
-                status.stop()
-                console.print(f"✓ [green]{page}[/green] suggested")
-                suggested_specs.append(page)
+        affected_pages = diff_changes_per_page.keys()
+        specs_pages = get_specs_pages()
+
+        for page in affected_pages:
+            if page in specs_pages:
+                specs_by_page = specs_pages[page]
+                llm_context = format_tests_for_llm(existing_specs=specs_by_page)
+
+                if isinstance(specs_by_page, list):
+                    for spec in specs_by_page:
+                        self._suggest_spec(
+                            spec=spec,
+                            diff_changes_per_page=diff_changes_per_page,
+                            page=page,
+                            suggested_specs=suggested_specs,
+                            context=llm_context,
+                        )
+                else:
+                    self._suggest_spec(
+                        spec=specs_by_page,
+                        diff_changes_per_page=diff_changes_per_page,
+                        page=page,
+                        suggested_specs=suggested_specs,
+                        context=llm_context,
+                    )
 
         if len(suggested_specs) > 0:
             for spec in suggested_specs:

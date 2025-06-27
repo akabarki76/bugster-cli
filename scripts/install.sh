@@ -184,13 +184,14 @@ install_python_macos() {
     
     # Try to install the highest available Python version
     print_step "Installing Python via Homebrew..."
-    if brew install python@3.12 2>/dev/null; then
-        python_version="3.12"
-    elif brew install python@3.11 2>/dev/null; then
-        python_version="3.11"
-    elif brew install python@3.10 2>/dev/null; then
-        python_version="3.10"
-    else
+    for version in {20..10}; do
+        if brew install "python@3.${version}" 2>/dev/null; then
+            python_version="3.${version}"
+            break
+        fi
+    done
+    
+    if [[ -z "$python_version" ]]; then
         print_error "❌ Failed to install Python 3.10 or higher"
         exit 1
     fi
@@ -245,38 +246,43 @@ install_python_linux() {
     # Detect package manager and prepare installation command
     if command -v apt-get &>/dev/null; then
         pkg_manager="apt"
-        # Try Python 3.12 first, then 3.11, then 3.10
-        if sudo apt-get update && sudo apt-get install -y software-properties-common && sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get install -y python3.12 python3.12-venv python3.12-distutils 2>/dev/null; then
-            python_version="3.12"
-        elif sudo apt-get install -y python3.11 python3.11-venv python3.11-distutils 2>/dev/null; then
-            python_version="3.11"
-        elif sudo apt-get install -y python3.10 python3.10-venv python3.10-distutils 2>/dev/null; then
-            python_version="3.10"
-        else
+        # Try Python versions from 3.20 down to 3.10
+        for version in {20..10}; do
+            if sudo apt-get update && sudo apt-get install -y software-properties-common && sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get install -y "python3.${version}" "python3.${version}-venv" "python3.${version}-distutils" 2>/dev/null; then
+                python_version="3.${version}"
+                break
+            fi
+        done
+        
+        if [[ -z "$python_version" ]]; then
             print_error "❌ Failed to install Python 3.10 or higher"
             exit 1
         fi
     elif command -v dnf &>/dev/null; then
         pkg_manager="dnf"
-        if sudo dnf install -y python3.12 python3.12-pip 2>/dev/null; then
-            python_version="3.12"
-        elif sudo dnf install -y python3.11 python3.11-pip 2>/dev/null; then
-            python_version="3.11"
-        elif sudo dnf install -y python3.10 python3.10-pip 2>/dev/null; then
-            python_version="3.10"
-        else
+        # Try Python versions from 3.20 down to 3.10
+        for version in {20..10}; do
+            if sudo dnf install -y "python3.${version}" "python3.${version}-pip" 2>/dev/null; then
+                python_version="3.${version}"
+                break
+            fi
+        done
+        
+        if [[ -z "$python_version" ]]; then
             print_error "❌ Failed to install Python 3.10 or higher"
             exit 1
         fi
     elif command -v yum &>/dev/null; then
         pkg_manager="yum"
-        if sudo yum install -y epel-release && sudo yum install -y python3.12 2>/dev/null; then
-            python_version="3.12"
-        elif sudo yum install -y epel-release && sudo yum install -y python3.11 2>/dev/null; then
-            python_version="3.11"
-        elif sudo yum install -y epel-release && sudo yum install -y python3.10 2>/dev/null; then
-            python_version="3.10"
-        else
+        # Try Python versions from 3.20 down to 3.10
+        for version in {20..10}; do
+            if sudo yum install -y epel-release && sudo yum install -y "python3.${version}" 2>/dev/null; then
+                python_version="3.${version}"
+                break
+            fi
+        done
+        
+        if [[ -z "$python_version" ]]; then
             print_error "❌ Failed to install Python 3.10 or higher"
             exit 1
         fi
@@ -290,13 +296,15 @@ install_python_linux() {
         fi
     elif command -v zypper &>/dev/null; then
         pkg_manager="zypper"
-        if sudo zypper install -y python312 python312-pip 2>/dev/null; then
-            python_version="3.12"
-        elif sudo zypper install -y python311 python311-pip 2>/dev/null; then
-            python_version="3.11"
-        elif sudo zypper install -y python310 python310-pip 2>/dev/null; then
-            python_version="3.10"
-        else
+        # Try Python versions from 3.20 down to 3.10
+        for version in {20..10}; do
+            if sudo zypper install -y "python3${version}" "python3${version}-pip" 2>/dev/null; then
+                python_version="3.${version}"
+                break
+            fi
+        done
+        
+        if [[ -z "$python_version" ]]; then
             print_error "❌ Failed to install Python 3.10 or higher"
             exit 1
         fi

@@ -446,11 +446,6 @@ class CLIMessages:
       [{BugsterColors.PRIMARY}]bugster destructive --headless[/{BugsterColors.PRIMARY}]         - Run without browser UI
       [{BugsterColors.PRIMARY}]bugster destructive --max-concurrent 5[/{BugsterColors.PRIMARY}] - Run up to 5 agents in parallel"""
 
-    @staticmethod
-    def get_upgrade_help():
-        """Get the help message for the upgrade command."""
-        return "Upgrade Bugster CLI to the latest version."
-
 
 class RunMessages:
     """Messages for the test command."""

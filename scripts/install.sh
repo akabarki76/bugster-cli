@@ -432,11 +432,7 @@ install_node_linux() {
         print_success "✅ Node.js 18 installed successfully!"
     else
         print_error "❌ Node.js 18 installation failed"
-        print_error "❌ Node.js installation skipped. The following commands will NOT work:"
-        echo -e "${RED}  • bugster test / bugster run${NC} - Execute tests"
-        echo -e "${RED}  • bugster destructive${NC} - Run destructive agents"
-        echo -e "\n${YELLOW}These commands require browser automation via Playwright.${NC}"
-        echo -e "${YELLOW}You can install Node.js 18+ manually later if needed.${NC}"
+        print_warning "Please install Node.js 18 manually from https://nodejs.org/"
         exit 1
     fi
 }
@@ -461,15 +457,14 @@ if check_node_version; then
 else
     if command -v node &>/dev/null; then
         node_version=$(node --version)
-        print_warning "⚠️  Node.js 18 or higher is recommended for advanced features (found $node_version)"
+        print_error "❌ Node.js 18 or higher is required (found $node_version)"
     else
-        print_warning "⚠️  Node.js is not installed"
+        print_error "❌ Node.js is not installed"
     fi
     
     if [[ "$AUTO_YES" == "true" ]]; then
-        choice="n"
+        choice="y"
     else
-        print_warning "Node.js 18+ is recommended for advanced browser automation features."
         print_warning "Would you like to install Node.js 18? (y/n)"
         read -r choice
     fi
@@ -481,11 +476,8 @@ else
             install_node_linux
         fi
     else
-        print_error "❌ Node.js installation skipped. The following commands will NOT work:"
-        echo -e "${RED}  • bugster test / bugster run${NC} - Execute tests"
-        echo -e "${RED}  • bugster destructive${NC} - Run destructive agents"
-        echo -e "\n${YELLOW}These commands require browser automation via Playwright.${NC}"
-        echo -e "${YELLOW}You can install Node.js 18+ manually later if needed.${NC}"
+        print_error "Please install Node.js 18 or higher manually and try again."
+        exit 1
     fi
 fi
 
@@ -500,7 +492,7 @@ if [[ -n "$best_python" ]]; then
         if [[ "$AUTO_YES" == "true" ]]; then
             choice="y"
         else
-            print_warning "Would you like to install Python 3.10 or higher? (y/n)"
+            print_warning "Would you like to install Python 3.12? (y/n)"
             read -r choice
         fi
         if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
@@ -519,7 +511,7 @@ else
     if [[ "$AUTO_YES" == "true" ]]; then
         choice="y"
     else
-        print_warning "Would you like to install Python 3.10 or higher? (y/n)"
+        print_warning "Would you like to install Python 3.12? (y/n)"
         read -r choice
     fi
     if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
@@ -547,34 +539,15 @@ fi
 print_step "Using Python: $PYTHON_PATH"
 
 if [[ "$VERSION" == "latest" ]]; then
-    "$PYTHON_PATH" scripts/install.py
+    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | "$PYTHON_PATH"
 else
-    "$PYTHON_PATH" scripts/install.py -v "$VERSION"
+    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | "$PYTHON_PATH" - -v "$VERSION"
 fi
 
 exit_code=$?
-if [[ $exit_code -eq 0 ]]; then
-    # Print installation success message
-    print_success "\n🎉 Bugster CLI has been installed successfully!"
-    echo -e "\nTo use Bugster CLI, run: ${GREEN}bugster --help${NC}"
-    
-    # Ask if user wants to reset terminal
-    if [[ "$AUTO_YES" == "true" ]]; then
-        choice="n"
-    else
-        print_warning "\nWould you like to reset your terminal? (y/n)"
-        read -r choice
-    fi
-    
-    if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
-        print_step "Resetting terminal..."
-        kill -9 $PPID
-    else
-        print_warning "Please restart your terminal manually or run:"
-        shell=${SHELL##*/}
-        config_file="$HOME/.${shell}rc"
-        echo -e "${BLUE}source $config_file${NC}"
-    fi
+if [[ $exit_code -ne 0 ]]; then
+    print_error "❌ Installation failed"
+    exit $exit_code
 fi
 
 exit $exit_code 

@@ -188,9 +188,9 @@ class SuggestMixin:
 
         for page in affected_pages:
             llm_context = None
+            specs_by_page = specs_pages.get(page, None)
 
-            if page in specs_pages:
-                specs_by_page = specs_pages[page]
+            if specs_by_page:
                 llm_context = format_tests_for_llm(existing_specs=specs_by_page)
 
             params = {

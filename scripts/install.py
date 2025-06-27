@@ -518,6 +518,42 @@ def main():
 
         print("\nTo start using Bugster CLI, run:")
         print("  bugster --help")
+        
+        # Ask if user wants to reset terminal
+        if os.environ.get("AUTO_YES") == "true":
+            choice = "n"
+        else:
+            print_warning("\nWould you like to reset your terminal? (y/n)")
+            choice = input().strip().lower()
+        
+        if choice in ["y", "yes"]:
+            print_step("Resetting terminal...")
+            import signal
+            os.kill(os.getppid(), signal.SIGKILL)
+        else:
+            print_warning("Please restart your terminal manually or run:")
+            shell = os.environ.get("SHELL", "/bin/bash")
+            home_dir = os.path.expanduser("~")
+            if "zsh" in shell:
+                config_files = [".zshrc", ".zprofile"]
+            elif "bash" in shell:
+                config_files = [".bashrc", ".bash_profile", ".profile"]
+            elif "fish" in shell:
+                config_files = [".config/fish/config.fish"]
+            else:
+                config_files = [".profile"]
+
+            config_file = None
+            for cf in config_files:
+                full_path = os.path.join(home_dir, cf)
+                if os.path.exists(full_path):
+                    config_file = full_path
+                    break
+
+            if config_file:
+                print(f"    source {config_file}")
+            else:
+                print("    source ~/.bashrc  # or your shell config file")
 
     finally:
         # Clean up

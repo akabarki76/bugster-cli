@@ -129,16 +129,23 @@ update_shell_config() {
     # Create backup
     cp "$config_file" "${config_file}.bak"
     
+    # Find the best Python version to use
+    local best_python=$(find_best_python)
+    local python_cmd="python3"
+    if [[ -n "$best_python" ]]; then
+        python_cmd="$best_python"
+    fi
+    
     # Add Python configuration
     cat << EOF >> "$config_file"
 
 # Bugster CLI Python configuration
 if [ -d "$python_path" ]; then
     export PATH="$python_path:\$PATH"
-    alias python="python3.12"
-    alias python3="python3.12"
-    alias pip="python3.12 -m pip"
-    alias pip3="python3.12 -m pip"
+    alias python="$python_cmd"
+    alias python3="$python_cmd"
+    alias pip="$python_cmd -m pip"
+    alias pip3="$python_cmd -m pip"
 fi
 EOF
     
@@ -156,7 +163,7 @@ EOF
 }
 
 install_python_macos() {
-    print_step "Installing Python 3.12 on macOS..."
+    print_step "Installing Python on macOS..."
     
     # Detect architecture
     local arch_type
@@ -175,15 +182,25 @@ install_python_macos() {
         fi
     fi
     
-    print_step "Installing Python 3.12 via Homebrew..."
-    brew install python@3.12
+    # Try to install the highest available Python version
+    print_step "Installing Python via Homebrew..."
+    if brew install python@3.12 2>/dev/null; then
+        python_version="3.12"
+    elif brew install python@3.11 2>/dev/null; then
+        python_version="3.11"
+    elif brew install python@3.10 2>/dev/null; then
+        python_version="3.10"
+    else
+        print_error "❌ Failed to install Python 3.10 or higher"
+        exit 1
+    fi
     
     # Get Python installation path
     local python_path
     if [[ "$arch_type" == "arm64" ]]; then
-        python_path="/opt/homebrew/opt/python@3.12/bin"
+        python_path="/opt/homebrew/opt/python@${python_version}/bin"
     else
-        python_path="/usr/local/opt/python@3.12/bin"
+        python_path="/usr/local/opt/python@${python_version}/bin"
     fi
     
     # Update shell configuration
@@ -209,51 +226,93 @@ install_python_macos() {
     update_shell_config "$config_file" "$shell_type" "$arch_type" "$python_path"
     
     # Verify Python installation
-    if command -v python3.12 &>/dev/null; then
-        print_success "✅ Python 3.12 installed successfully!"
+    if command -v "python${python_version}" &>/dev/null; then
+        print_success "✅ Python ${python_version} installed successfully!"
     else
-        print_error "❌ Python 3.12 installation failed"
+        print_error "❌ Python ${python_version} installation failed"
         exit 1
     fi
 }
 
 install_python_linux() {
-    print_step "Installing Python 3.12 on Linux..."
+    print_step "Installing Python on Linux..."
     
     local python_path="/usr/local/bin"
     local install_cmd=""
     local pkg_manager=""
+    local python_version=""
     
     # Detect package manager and prepare installation command
     if command -v apt-get &>/dev/null; then
         pkg_manager="apt"
-        install_cmd="sudo apt-get update && sudo apt-get install -y software-properties-common && sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get install -y python3.12 python3.12-venv python3.12-distutils"
+        # Try Python 3.12 first, then 3.11, then 3.10
+        if sudo apt-get update && sudo apt-get install -y software-properties-common && sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get install -y python3.12 python3.12-venv python3.12-distutils 2>/dev/null; then
+            python_version="3.12"
+        elif sudo apt-get install -y python3.11 python3.11-venv python3.11-distutils 2>/dev/null; then
+            python_version="3.11"
+        elif sudo apt-get install -y python3.10 python3.10-venv python3.10-distutils 2>/dev/null; then
+            python_version="3.10"
+        else
+            print_error "❌ Failed to install Python 3.10 or higher"
+            exit 1
+        fi
     elif command -v dnf &>/dev/null; then
         pkg_manager="dnf"
-        install_cmd="sudo dnf install -y python3.12 python3.12-pip"
+        if sudo dnf install -y python3.12 python3.12-pip 2>/dev/null; then
+            python_version="3.12"
+        elif sudo dnf install -y python3.11 python3.11-pip 2>/dev/null; then
+            python_version="3.11"
+        elif sudo dnf install -y python3.10 python3.10-pip 2>/dev/null; then
+            python_version="3.10"
+        else
+            print_error "❌ Failed to install Python 3.10 or higher"
+            exit 1
+        fi
     elif command -v yum &>/dev/null; then
         pkg_manager="yum"
-        install_cmd="sudo yum install -y epel-release && sudo yum install -y python3.12"
+        if sudo yum install -y epel-release && sudo yum install -y python3.12 2>/dev/null; then
+            python_version="3.12"
+        elif sudo yum install -y epel-release && sudo yum install -y python3.11 2>/dev/null; then
+            python_version="3.11"
+        elif sudo yum install -y epel-release && sudo yum install -y python3.10 2>/dev/null; then
+            python_version="3.10"
+        else
+            print_error "❌ Failed to install Python 3.10 or higher"
+            exit 1
+        fi
     elif command -v pacman &>/dev/null; then
         pkg_manager="pacman"
-        install_cmd="sudo pacman -Sy --noconfirm python python-pip"
+        if sudo pacman -Sy --noconfirm python python-pip 2>/dev/null; then
+            python_version="3"
+        else
+            print_error "❌ Failed to install Python"
+            exit 1
+        fi
     elif command -v zypper &>/dev/null; then
         pkg_manager="zypper"
-        install_cmd="sudo zypper install -y python312 python312-pip"
+        if sudo zypper install -y python312 python312-pip 2>/dev/null; then
+            python_version="3.12"
+        elif sudo zypper install -y python311 python311-pip 2>/dev/null; then
+            python_version="3.11"
+        elif sudo zypper install -y python310 python310-pip 2>/dev/null; then
+            python_version="3.10"
+        else
+            print_error "❌ Failed to install Python 3.10 or higher"
+            exit 1
+        fi
     else
-        print_error "❌ Unsupported package manager. Please install Python 3.12 manually."
+        print_error "❌ Unsupported package manager. Please install Python 3.10 or higher manually."
         exit 1
     fi
     
-    print_step "Using $pkg_manager to install Python 3.12..."
-    eval "$install_cmd"
+    print_step "Using $pkg_manager to install Python ${python_version}..."
     
     # Set up alternatives system
     if [[ "$pkg_manager" == "apt" || "$pkg_manager" == "yum" || "$pkg_manager" == "dnf" || "$pkg_manager" == "zypper" ]]; then
-        sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1
-        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
-        sudo update-alternatives --set python /usr/bin/python3.12
-        sudo update-alternatives --set python3 /usr/bin/python3.12
+        sudo update-alternatives --install /usr/bin/python python "/usr/bin/python${python_version}" 1
+        sudo update-alternatives --install /usr/bin/python3 python3 "/usr/bin/python${python_version}" 1
+        sudo update-alternatives --set python "/usr/bin/python${python_version}"
+        sudo update-alternatives --set python3 "/usr/bin/python${python_version}"
     fi
     
     # Update shell configuration
@@ -279,10 +338,10 @@ install_python_linux() {
     update_shell_config "$config_file" "$shell_type" "" "$python_path"
     
     # Verify Python installation
-    if command -v python3.12 &>/dev/null; then
-        print_success "✅ Python 3.12 installed successfully!"
+    if command -v "python${python_version}" &>/dev/null; then
+        print_success "✅ Python ${python_version} installed successfully!"
     else
-        print_error "❌ Python 3.12 installation failed"
+        print_error "❌ Python ${python_version} installation failed"
         exit 1
     fi
 }
@@ -390,14 +449,15 @@ if check_node_version; then
 else
     if command -v node &>/dev/null; then
         node_version=$(node --version)
-        print_error "❌ Node.js 18 or higher is required (found $node_version)"
+        print_warning "⚠️  Node.js 18 or higher is recommended for advanced features (found $node_version)"
     else
-        print_error "❌ Node.js is not installed"
+        print_warning "⚠️  Node.js is not installed"
     fi
     
     if [[ "$AUTO_YES" == "true" ]]; then
-        choice="y"
+        choice="n"
     else
+        print_warning "Node.js 18+ is recommended for advanced browser automation features."
         print_warning "Would you like to install Node.js 18? (y/n)"
         read -r choice
     fi
@@ -409,8 +469,8 @@ else
             install_node_linux
         fi
     else
-        print_error "Please install Node.js 18 or higher manually and try again."
-        exit 1
+        print_warning "Node.js installation skipped. Some advanced features may not work."
+        print_warning "You can install Node.js 18+ manually later if needed."
     fi
 fi
 
@@ -425,7 +485,7 @@ if [[ -n "$best_python" ]]; then
         if [[ "$AUTO_YES" == "true" ]]; then
             choice="y"
         else
-            print_warning "Would you like to install Python 3.12? (y/n)"
+            print_warning "Would you like to install Python 3.10 or higher? (y/n)"
             read -r choice
         fi
         if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
@@ -444,7 +504,7 @@ else
     if [[ "$AUTO_YES" == "true" ]]; then
         choice="y"
     else
-        print_warning "Would you like to install Python 3.12? (y/n)"
+        print_warning "Would you like to install Python 3.10 or higher? (y/n)"
         read -r choice
     fi
     if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
@@ -459,10 +519,6 @@ else
     fi
 fi
 
-print_step "Installing Playwright..."
-npx -y @playwright/mcp@latest --version
-npx -y playwright@1.53.0 install --with-deps chrome
-
 # Download and run the Python installer script with version argument
 print_step "Downloading the Bugster CLI installer..."
 
@@ -476,19 +532,34 @@ fi
 print_step "Using Python: $PYTHON_PATH"
 
 if [[ "$VERSION" == "latest" ]]; then
-    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | "$PYTHON_PATH"
+    "$PYTHON_PATH" scripts/install.py
 else
-    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | "$PYTHON_PATH" - -v "$VERSION"
+    "$PYTHON_PATH" scripts/install.py -v "$VERSION"
 fi
 
 exit_code=$?
 if [[ $exit_code -eq 0 ]]; then
-    # Show shell reload instructions
-    shell=${SHELL##*/}
-    config_file="$HOME/.${shell}rc"
-    print_warning "Please restart your terminal or run:"
-    echo -e "${BLUE}source $config_file${NC}"
+    # Print installation success message
+    print_success "\n🎉 Bugster CLI has been installed successfully!"
     echo -e "\nTo use Bugster CLI, run: ${GREEN}bugster --help${NC}"
+    
+    # Ask if user wants to reset terminal
+    if [[ "$AUTO_YES" == "true" ]]; then
+        choice="n"
+    else
+        print_warning "\nWould you like to reset your terminal? (y/n)"
+        read -r choice
+    fi
+    
+    if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+        print_step "Resetting terminal..."
+        kill -9 $PPID
+    else
+        print_warning "Please restart your terminal manually or run:"
+        shell=${SHELL##*/}
+        config_file="$HOME/.${shell}rc"
+        echo -e "${BLUE}source $config_file${NC}"
+    fi
 fi
 
 exit $exit_code 

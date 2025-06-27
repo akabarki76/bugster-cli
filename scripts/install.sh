@@ -472,9 +472,9 @@ fi
 print_step "Using Python: $PYTHON_PATH"
 
 if [[ "$VERSION" == "latest" ]]; then
-    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | "$PYTHON_PATH"
+    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/vicente/initWarnings/scripts/install.py | "$PYTHON_PATH"
 else
-    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/main/scripts/install.py | "$PYTHON_PATH" - -v "$VERSION"
+    curl -sSL https://raw.githubusercontent.com/Bugsterapp/bugster-cli/vicente/initWarnings/scripts/install.py | "$PYTHON_PATH" - -v "$VERSION"
 fi
 
 exit_code=$?

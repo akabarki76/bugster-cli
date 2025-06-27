@@ -46,7 +46,7 @@ def format_diff_branch_head_command():
     )
 
 
-def format_tests_for_llm(existing_specs: list[dict] | dict):
+def format_tests_for_llm(existing_specs: list[dict] | dict) -> str:
     """Format a list of specs for LLM context to prevent duplication.
 
     :param existing_specs: Dict or list of dicts with the spec data.
@@ -169,7 +169,7 @@ class SuggestMixin:
         ) as status:
             diff = "\n==========\n".join(diff_changes_per_page[page])
             self.test_cases_service.suggest_spec_by_diff(
-                page_path=page, diff_changes=diff
+                page_path=page, diff_changes=diff, context=context
             )
             status.stop()
             console.print(f"✓ [green]{page}[/green] suggested")
@@ -187,27 +187,29 @@ class SuggestMixin:
         specs_pages = get_specs_pages()
 
         for page in affected_pages:
+            llm_context = None
+
             if page in specs_pages:
                 specs_by_page = specs_pages[page]
                 llm_context = format_tests_for_llm(existing_specs=specs_by_page)
 
-                if isinstance(specs_by_page, list):
-                    for spec in specs_by_page:
-                        self._suggest_spec(
-                            spec=spec,
-                            diff_changes_per_page=diff_changes_per_page,
-                            page=page,
-                            suggested_specs=suggested_specs,
-                            context=llm_context,
-                        )
-                else:
+            if isinstance(specs_by_page, list):
+                for spec in specs_by_page:
                     self._suggest_spec(
-                        spec=specs_by_page,
+                        spec=spec,
                         diff_changes_per_page=diff_changes_per_page,
                         page=page,
                         suggested_specs=suggested_specs,
                         context=llm_context,
                     )
+            else:
+                self._suggest_spec(
+                    spec=specs_by_page,
+                    diff_changes_per_page=diff_changes_per_page,
+                    page=page,
+                    suggested_specs=suggested_specs,
+                    context=llm_context,
+                )
 
         if len(suggested_specs) > 0:
             for spec in suggested_specs:

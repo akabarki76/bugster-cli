@@ -258,10 +258,17 @@ class TestCasesService:
             self._update_spec_yaml_file(spec_path=spec_path, spec_data=data)
             return data
 
-    def suggest_spec_by_diff(self, page_path: str, diff_changes: str):
+    def suggest_spec_by_diff(self, page_path: str, diff_changes: str, context: str):
         """Suggest a spec file by page."""
         with BugsterHTTPClient() as client:
-            payload = {"page_path": page_path, "git_diff": diff_changes}
+            payload = {
+                "page_path": page_path,
+                "git_diff": diff_changes,
+            }
+
+            if context:
+                payload["context"] = context
+
             data = client.post(
                 endpoint=BugsterApiPath.TEST_CASES_NEW.value, json=payload
             )

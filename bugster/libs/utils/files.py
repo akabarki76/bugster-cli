@@ -59,12 +59,9 @@ def get_specs_pages(parser: Callable = parse_spec_page) -> dict[str, dict | list
 
             # Handle multiple specs with the same page_path
             if page_path in specs_pages:
-                if isinstance(specs_pages[page_path], list):
-                    specs_pages[page_path].append(parsed_spec)
-                else:
-                    specs_pages[page_path] = [parsed_spec]
+                specs_pages[page_path].append(parsed_spec)
             else:
-                specs_pages[page_path] = parsed_spec
+                specs_pages[page_path] = [parsed_spec]
 
     return specs_pages
 

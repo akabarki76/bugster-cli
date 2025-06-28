@@ -84,7 +84,7 @@ class DetectAffectedSpecsMixin:
 
         for page in diff_changes_per_page.keys():
             if page in specs_pages:
-                affected_specs.append(specs_pages[page])
+                affected_specs.extend(specs_pages[page])
 
         logger.info("Affected specs: {}", affected_specs)
         return affected_specs
@@ -131,7 +131,7 @@ class UpdateMixin:
                 llm_context = format_tests_for_llm(existing_specs=specs_by_page)
 
                 # If an affected page has multiple specs, update each spec
-                if isinstance(specs_by_page, list):
+                if len(specs_by_page) > 1:
                     for spec in specs_by_page:
                         updated_specs = self._update_spec(
                             spec=spec,
@@ -188,14 +188,14 @@ class SuggestMixin:
         specs_pages = get_specs_pages()
 
         for page in affected_pages:
-            specs_by_page = specs_pages.get(page, None)
+            specs_by_page = specs_pages.get(page, [])
             params = {
                 "diff_changes_per_page": diff_changes_per_page,
                 "page": page,
                 "suggested_specs": suggested_specs,
             }
 
-            if specs_by_page:
+            if len(specs_by_page) > 1:
                 params["context"] = format_tests_for_llm(existing_specs=specs_by_page)
 
             self._suggest_spec(
@@ -237,7 +237,7 @@ class DeleteMixin:
             if page in specs_pages:
                 specs_by_page = specs_pages[page]
 
-                if isinstance(specs_by_page, list):
+                if len(specs_by_page) > 1:
                     for spec in specs_by_page:
                         deleted_specs = self._delete_spec(
                             deleted_specs=deleted_specs, spec_path=spec["path"]

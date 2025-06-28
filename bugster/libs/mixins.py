@@ -93,7 +93,9 @@ class DetectAffectedSpecsMixin:
 class UpdateMixin:
     """Update mixin."""
 
-    def _update_spec(self, spec, diff_changes_per_page, page, context, updated_specs):
+    def _update_spec(
+        self, spec, diff_changes_per_page, page, updated_specs, context=None
+    ):
         """Update a spec."""
         spec_data = spec["data"]
         spec_path = spec["path"]
@@ -128,11 +130,16 @@ class UpdateMixin:
         for page in affected_pages:
             if page in specs_pages:
                 specs_by_page = specs_pages[page]
-                llm_context = format_tests_for_llm(existing_specs=specs_by_page)
 
                 # If an affected page has multiple specs, update each spec
                 if len(specs_by_page) > 1:
                     for spec in specs_by_page:
+                        llm_context = format_tests_for_llm(
+                            # Don't include the spec we are updating in the context
+                            existing_specs=[
+                                spec for spec in specs_by_page if spec != spec
+                            ]
+                        )
                         updated_specs = self._update_spec(
                             spec=spec,
                             diff_changes_per_page=diff_changes_per_page,
@@ -145,7 +152,6 @@ class UpdateMixin:
                         spec=specs_by_page,
                         diff_changes_per_page=diff_changes_per_page,
                         page=page,
-                        context=llm_context,
                         updated_specs=updated_specs,
                     )
             else:
@@ -163,7 +169,7 @@ class UpdateMixin:
 class SuggestMixin:
     """Suggest mixin."""
 
-    def _suggest_spec(self, page, diff_changes_per_page, context, suggested_specs):
+    def _suggest_spec(self, page, diff_changes_per_page, suggested_specs, context=None):
         """Suggest a spec."""
         with Status(
             f"[yellow]Suggesting new spec for {page}[/yellow]", spinner="dots"

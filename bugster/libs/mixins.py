@@ -133,15 +133,15 @@ class UpdateMixin:
 
                 # If an affected page has multiple specs, update each spec
                 if len(specs_by_page) > 1:
-                    for spec in specs_by_page:
+                    for current_spec in specs_by_page:
                         llm_context = format_tests_for_llm(
                             # Don't include the spec we are updating in the context
                             existing_specs=[
-                                spec for spec in specs_by_page if spec != spec
+                                spec for spec in specs_by_page if spec != current_spec
                             ]
                         )
                         updated_specs = self._update_spec(
-                            spec=spec,
+                            spec=current_spec,
                             diff_changes_per_page=diff_changes_per_page,
                             page=page,
                             context=llm_context,

@@ -15,6 +15,7 @@ from bugster.constants import BUGSTER_DIR, TESTS_DIR
 from bugster.libs.utils.enums import BugsterApiPath
 from bugster.libs.utils.errors import BugsterError
 from bugster.libs.utils.files import get_specs_pages, get_specs_paths
+from bugster.libs.utils.llm import format_tests_for_llm
 from bugster.libs.utils.nextjs.extract_page_folder import extract_page_folder
 from bugster.utils.user_config import get_api_key
 
@@ -79,15 +80,27 @@ class TestCasesService:
         data = {}
 
         if page_filter:
-            data["page_filter"] = ",".join(page_filter)
+            data["page_filter"] = ",".join(
+                page_filter
+            )  # ",".join(["pages/settings.tsx", "pages/auth.tsx"]) -> 'pages/settings.tsx,pages/auth.tsx'
 
-        def generate_context(page_filter: Optional[list[str]] = None):
-            """Generate context with existing specs."""
-            if page_filter:
-                pass
+        context = ""
 
+        if page_filter:
+            specs_pages = {
+                page_path: specs
+                for page_path, specs in specs_pages.items()
+                if page_path in page_filter
+            }
+        else:
             specs_pages = get_specs_pages()
-            pass
+
+        for _, specs in specs_pages.items():
+            context += format_tests_for_llm(
+                existing_specs=specs, include_page_path=True
+            )
+
+        data["context"] = context
 
         if count is not None:
             data["count"] = count

@@ -11,14 +11,14 @@ def format_tests_for_llm(
     if isinstance(existing_specs, list):
         if include_page_path:
             page_path = existing_specs[0]["data"]["page_path"]
-            context_lines.append(f"Page: {page_path}")
+            context_lines.append(f"\nPage: {page_path}")
 
-        for i, spec in enumerate(existing_specs, 1):
+        for idx, spec in enumerate(existing_specs, 1):
             name = spec["data"]["name"]
             task = spec["data"]["task"]
             steps = " -> ".join(spec["data"]["steps"])
             context_lines.append(
-                f"{i}. Test: {name}. Task: {task.lower()}. Steps: {steps}"
+                f"{idx}. Test: {name}. Task: {task.lower()}. Steps: {steps}"
             )
     elif isinstance(existing_specs, dict):
         if include_page_path:

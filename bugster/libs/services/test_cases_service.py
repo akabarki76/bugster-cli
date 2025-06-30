@@ -267,19 +267,39 @@ class TestCasesService:
             yaml.dump(ordered_spec_data, f, default_flow_style=False, sort_keys=False)
 
     def update_spec_by_diff(
-        self, spec_data: dict[Any, str], diff_changes: str, spec_path: str
+        self,
+        spec_data: dict[Any, str],
+        diff_changes: str,
+        spec_path: str,
+        context: Optional[str] = None,
     ):
         """Update a spec file by diff changes."""
         with BugsterHTTPClient() as client:
-            payload = {"test_case": spec_data, "git_diff": diff_changes}
+            payload = {
+                "test_case": spec_data,
+                "git_diff": diff_changes,
+            }
+
+            if context:
+                payload["context"] = context
+
             data = client.put(endpoint=BugsterApiPath.TEST_CASES.value, json=payload)
             self._update_spec_yaml_file(spec_path=spec_path, spec_data=data)
             return data
 
-    def suggest_spec_by_diff(self, page_path: str, diff_changes: str):
+    def suggest_spec_by_diff(
+        self, page_path: str, diff_changes: str, context: Optional[str] = None
+    ):
         """Suggest a spec file by page."""
         with BugsterHTTPClient() as client:
-            payload = {"page_path": page_path, "git_diff": diff_changes}
+            payload = {
+                "page_path": page_path,
+                "git_diff": diff_changes,
+            }
+
+            if context:
+                payload["context"] = context
+
             data = client.post(
                 endpoint=BugsterApiPath.TEST_CASES_NEW.value, json=payload
             )

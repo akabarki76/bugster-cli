@@ -34,7 +34,7 @@ def parse_spec_page(data, spec_path) -> dict[str, dict]:
     }
 
 
-def get_specs_pages(parser: Callable = parse_spec_page) -> dict[str, dict | list[dict]]:
+def get_specs_pages(parser: Callable = parse_spec_page) -> dict[str, list[dict]]:
     """Get the specs pages."""
     specs_paths = get_specs_paths()
     specs_pages = {}

@@ -93,12 +93,14 @@ class TestCasesService:
         else:
             specs_pages = get_specs_pages()
 
-        for _, specs_by_page in specs_pages.items():
+        for page_path, specs_by_page in specs_pages.items():
+            logger.info("Adding context for page: {}...", page_path)
             context += format_tests_for_llm(
                 existing_specs=specs_by_page, include_page_path=True
             )
 
-        data["context"] = context
+        if context:
+            data["context"] = context
 
         if count is not None:
             data["count"] = count

@@ -52,7 +52,7 @@ def get_api_key() -> Optional[str]:
 
     # Then check config file
     config = load_user_config()
-    logger.info("API key found in config file: {}", config.get("apiKey"))
+    logger.info("API key found in config file")
     return config.get("apiKey")
 
 

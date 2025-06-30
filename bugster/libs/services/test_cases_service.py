@@ -80,9 +80,7 @@ class TestCasesService:
         data = {}
 
         if page_filter:
-            data["page_filter"] = ",".join(
-                page_filter
-            )  # ",".join(["pages/settings.tsx", "pages/auth.tsx"]) -> 'pages/settings.tsx,pages/auth.tsx'
+            data["page_filter"] = ",".join(page_filter)
 
         context = ""
 

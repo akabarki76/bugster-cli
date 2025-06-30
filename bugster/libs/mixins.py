@@ -201,7 +201,8 @@ class SuggestMixin:
                 "suggested_specs": suggested_specs,
             }
 
-            if len(specs_by_page) > 1:
+            # If there are already specs for the page, we need to provide the context to the LLM
+            if len(specs_by_page) >= 1:
                 params["context"] = format_tests_for_llm(existing_specs=specs_by_page)
 
             self._suggest_spec(
@@ -243,14 +244,9 @@ class DeleteMixin:
             if page in specs_pages:
                 specs_by_page = specs_pages[page]
 
-                if len(specs_by_page) > 1:
-                    for spec in specs_by_page:
-                        deleted_specs = self._delete_spec(
-                            deleted_specs=deleted_specs, spec_path=spec["path"]
-                        )
-                else:
+                for spec in specs_by_page:
                     deleted_specs = self._delete_spec(
-                        deleted_specs=deleted_specs, spec_path=specs_by_page["path"]
+                        deleted_specs=deleted_specs, spec_path=spec["path"]
                     )
             else:
                 text = Text("✗ Page ")

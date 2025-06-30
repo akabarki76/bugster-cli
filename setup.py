@@ -32,7 +32,7 @@ setup(
         "h11==0.16.0",
         "httpcore==1.0.9",
         "httpx==0.28.1",
-        "httpx-sse==0.4.0",
+        "httpx-sse==0.4.1",
         "huggingface-hub==0.31.4",
         "idna==3.10",
         "markdown-it-py==3.0.0",

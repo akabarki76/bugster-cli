@@ -24,7 +24,7 @@ setup(
         "attrs==25.3.0",
         "certifi==2025.4.26",
         "charset-normalizer==3.4.2",
-        "click==8.1.8",
+        "click==8.2.1",
         "gitdb==4.0.12",
         "GitPython==3.1.44",
         "loguru==0.7.3",

@@ -93,9 +93,9 @@ class TestCasesService:
         else:
             specs_pages = get_specs_pages()
 
-        for _, specs in specs_pages.items():
+        for _, specs_by_page in specs_pages.items():
             context += format_tests_for_llm(
-                existing_specs=specs, include_page_path=True
+                existing_specs=specs_by_page, include_page_path=True
             )
 
         data["context"] = context

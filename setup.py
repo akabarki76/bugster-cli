@@ -61,7 +61,7 @@ setup(
         "sse-starlette==2.3.5",
         "starlette==0.47.1",
         "typer==0.15.4",
-        "types-requests==2.32.0.20250515",
+        "types-requests==2.32.4.20250611",
         "typing-inspection==0.4.1",
         "typing_extensions==4.13.2",
         "urllib3==2.5.0",

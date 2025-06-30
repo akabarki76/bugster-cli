@@ -95,6 +95,10 @@ class TestCasesService:
 
         for page_path, specs_by_page in specs_pages.items():
             logger.info("Adding context for page: {}...", page_path)
+
+            if context:
+                context += "\n"
+
             context += format_tests_for_llm(
                 existing_specs=specs_by_page, include_page_path=True
             )

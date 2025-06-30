@@ -8,10 +8,10 @@ def format_tests_for_llm(
     """
     context_lines = []
 
-    if isinstance(existing_specs, list):
+    if isinstance(existing_specs, list) and existing_specs:
         if include_page_path:
             page_path = existing_specs[0]["data"]["page_path"]
-            context_lines.append(f"\nPage: {page_path}")
+            context_lines.append(f"Page: {page_path}")
 
         for idx, spec in enumerate(existing_specs, 1):
             name = spec["data"]["name"]

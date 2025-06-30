@@ -3,6 +3,7 @@ import os
 from typing import Callable, Optional
 
 import yaml
+from loguru import logger
 
 from bugster.constants import IGNORE_PATTERNS, TESTS_DIR
 
@@ -41,27 +42,30 @@ def get_specs_pages(parser: Callable = parse_spec_page) -> dict[str, list[dict]]
 
     for spec_path in specs_paths:
         with open(spec_path, encoding="utf-8") as file:
-            data = yaml.safe_load(file)
+            try:
+                data = yaml.safe_load(file)
 
-            if isinstance(data, list):
-                if not data:
-                    raise ValueError(f"Empty list in spec file: {spec_path}")
+                if isinstance(data, list):
+                    if not data:
+                        raise ValueError(f"Empty list in spec file: {spec_path}")
 
-                data = data[0]
-            elif not isinstance(data, dict):
-                raise ValueError(f"Invalid spec file: {spec_path}")
+                    data = data[0]
+                elif not isinstance(data, dict):
+                    raise ValueError(f"Invalid spec file: {spec_path}")
 
-            if "page_path" not in data:
-                raise ValueError(f"Missing 'page_path' in spec file: {spec_path}")
+                if "page_path" not in data:
+                    raise ValueError(f"Missing 'page_path' in spec file: {spec_path}")
 
-            page_path = data["page_path"]
-            parsed_spec = parser(data=data, spec_path=spec_path)
+                page_path = data["page_path"]
+                parsed_spec = parser(data=data, spec_path=spec_path)
 
-            # Handle multiple specs with the same page_path
-            if page_path in specs_pages:
-                specs_pages[page_path].append(parsed_spec)
-            else:
-                specs_pages[page_path] = [parsed_spec]
+                # Handle multiple specs with the same page_path
+                if page_path in specs_pages:
+                    specs_pages[page_path].append(parsed_spec)
+                else:
+                    specs_pages[page_path] = [parsed_spec]
+            except Exception as err:
+                logger.error("Error parsing spec file '{}': {}", spec_path, err)
 
     return specs_pages
 

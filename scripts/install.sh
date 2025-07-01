@@ -460,9 +460,8 @@ else
 fi
 
 print_step "Installing Playwright..."
+CI=true npx -y playwright@1.53.0 install --with-deps chromium > /dev/null 2>&1
 npx -y @playwright/mcp@latest --version
-npx -y playwright@1.53.0 install --with-deps chrome
-
 # Download and run the Python installer script with version argument
 print_step "Downloading the Bugster CLI installer..."
 
@@ -482,13 +481,9 @@ else
 fi
 
 exit_code=$?
-if [[ $exit_code -eq 0 ]]; then
-    # Show shell reload instructions
-    shell=${SHELL##*/}
-    config_file="$HOME/.${shell}rc"
-    print_warning "Please restart your terminal or run:"
-    echo -e "${BLUE}source $config_file${NC}"
-    echo -e "\nTo use Bugster CLI, run: ${GREEN}bugster --help${NC}"
+if [[ $exit_code -ne 0 ]]; then
+    print_error "❌ Installation failed"
+    exit $exit_code
 fi
 
 exit $exit_code 

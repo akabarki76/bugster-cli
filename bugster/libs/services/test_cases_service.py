@@ -103,6 +103,8 @@ class TestCasesService:
                 existing_specs=specs_by_page, include_page_path=True
             )
 
+        logger.info("Resulting context: '{}'", context)
+
         if context:
             data["context"] = context
 

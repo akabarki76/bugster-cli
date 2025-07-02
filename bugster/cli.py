@@ -175,7 +175,7 @@ def _analyze_codebase(
         help="Show detailed logs during analysis",
     ),
     force: bool = typer.Option(
-        False,
+        True,
         "-f",
         "--force",
         help="Force analysis even if the codebase has already been analyzed",

@@ -1,5 +1,6 @@
 """Initialize command implementation."""
 
+import contextlib
 import time
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from bugster.constants import (
     CONFIG_PATH,
     TESTS_DIR,
 )
+from bugster.libs.utils.git import get_git_prefix_path
 from bugster.utils.console_messages import InitMessages
 from bugster.utils.user_config import get_api_key
 
@@ -127,6 +129,9 @@ def init_command():
     # Project setup
     InitMessages.project_setup()
     project_name = Prompt.ask("🏷️  Project name", default=Path.cwd().name)
+    project_path = ""
+    with contextlib.suppress(Exception):
+        project_path = get_git_prefix_path()
 
     # Create project via API
     try:
@@ -135,7 +140,8 @@ def init_command():
             InitMessages.creating_project()
 
             project_data = client.post(
-                "/api/v1/gui/project", json={"name": project_name}
+                "/api/v1/gui/project",
+                json={"name": project_name, "path": project_path},
             )
             project_id = project_data.get("project_id") or project_data.get("id")
 

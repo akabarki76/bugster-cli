@@ -5,6 +5,19 @@ All notable changes to Bugster CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.21]
+
+### Added
+- Initial monorepo support
+  - Works with most monorepo setups including basic Turborepo configurations
+  - Detects changes in individual apps within the monorepo
+  - Note: Currently does not track changes in shared packages (e.g., common components installed via pnpm in each app's node_modules)
+
+### Changed
+- `bugster generate` default settings. You can execute it multiple times, without having to add --force explicitly.
+- Improved test generation intelligence: both `bugster generate` and `bugster update` now analyze existing test specs context to avoid creating duplicate or similar tests
+
+
 ## [0.3.20]
 
 ### Changed

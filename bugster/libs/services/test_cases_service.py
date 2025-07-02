@@ -83,15 +83,13 @@ class TestCasesService:
             data["page_filter"] = ",".join(page_filter)
 
         context = ""
-
+        specs_pages = get_specs_pages()
         if page_filter:
             specs_pages = {
                 page_path: specs
                 for page_path, specs in specs_pages.items()
                 if page_path in page_filter
             }
-        else:
-            specs_pages = get_specs_pages()
 
         for page_path, specs_by_page in specs_pages.items():
             logger.info("Adding context for page: {}...", page_path)

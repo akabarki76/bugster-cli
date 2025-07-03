@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import logging
 import os
 import ssl
 from typing import Any, Optional
@@ -13,9 +12,6 @@ from websockets.asyncio.client import ClientConnection
 from bugster.libs.settings import libs_settings
 from bugster.utils.user_config import get_api_key
 
-# Set up logging
-logger = logging.getLogger(__name__)
-
 
 class WebSocketClient:
     def __init__(self):
@@ -24,9 +20,6 @@ class WebSocketClient:
         self.url = libs_settings.websocket_url
         self.connected = False
 
-        # Log the WebSocket URL being used (using print for visibility)
-        print(f"🔗 WebSocket client initialized with URL: {self.url}")
-
         # Create SSL context that ignores certificate verification
         self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.ssl_context.check_hostname = False
@@ -34,9 +27,6 @@ class WebSocketClient:
 
     async def connect(self):
         """Connect to WebSocket server."""
-        # Log connection attempt (using print for visibility)
-        print(f"🔗 Attempting to connect to WebSocket: {self.url}")
-        
         # Get API key from config
         api_key = get_api_key()
         if not api_key:
@@ -48,8 +38,6 @@ class WebSocketClient:
         additional_headers = {"X-API-Key": api_key}
         if os.getenv("IS_GITHUB_APP"):
             additional_headers["X-GitHub-App"] = "true"
-
-        print(f"[WebSocketClient] Connect headers: {json.dumps(additional_headers)}")
 
         if self.url.startswith("wss"):
             self.ws = await websockets.connect(
@@ -65,7 +53,6 @@ class WebSocketClient:
                 additional_headers=additional_headers,
             )
         self.connected = True
-        print(f"✅ Successfully connected to WebSocket: {self.url}")
 
     async def close(self):
         """Close WebSocket connection."""

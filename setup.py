@@ -37,7 +37,7 @@ setup(
         "idna==3.10",
         "markdown-it-py==3.0.0",
         "MarkupSafe==3.0.2",
-        "mcp==1.9.0",
+        "mcp==1.10.0",
         "mdurl==0.1.2",
         "packaging==25.0",
         "pathspec==0.12.1",

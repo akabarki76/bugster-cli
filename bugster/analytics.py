@@ -1,7 +1,7 @@
 """
-Privacy-first analytics for Bugster CLI using PostHog.
+Analytics for Bugster CLI using PostHog.
 
-This module provides anonymous usage analytics to help improve the CLI experience.
+This module provides usage analytics to help improve the CLI experience.
 
 Users can opt-out in several ways:
 1. During 'bugster init' setup (recommended)
@@ -9,55 +9,82 @@ Users can opt-out in several ways:
 3. Create opt-out file: touch ~/.bugster_no_analytics
 """
 
-import hashlib
 import os
-import platform
-import sys
+import logging
 import time
-import uuid
+import functools
+from typing import Optional
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
 import typer
-from loguru import logger
 
-from bugster import __version__
+from bugster.utils.user_config import get_api_key
+from bugster.utils.file import load_config
 from bugster.libs.settings import libs_settings
+
+logger = logging.getLogger(__name__)
 
 # Privacy and opt-out configuration
 OPT_OUT_ENV_VAR = "BUGSTER_ANALYTICS_DISABLED"
 OPT_OUT_FILE = Path.home() / ".bugster_no_analytics"
 
-# PostHog configuration based on environment
-def get_posthog_config():
-    """Get PostHog configuration based on current environment."""
-    return {
-        "api_key": libs_settings.posthog_api_key,
-        "host": libs_settings.posthog_host,
-        "disabled": not libs_settings.posthog_enabled,
-    }
 
-
-class BugsterAnalytics:
-    """Privacy-first analytics for Bugster CLI."""
-
+class PostHogClient:
+    """Minimal PostHog client for tracking specific business events."""
+    
     def __init__(self):
-        """Initialize analytics client with privacy checks."""
-        self._client = None
-        self._user_id = None
-        self._enabled = False
+        self.api_key = libs_settings.posthog_api_key
+        self.host = libs_settings.posthog_host
+        self.environment = libs_settings.environment.value
         
-        # Check if analytics should be enabled
-        if self._should_disable_analytics():
-            return
+        if not self.api_key or "disabled" in self.api_key:
+            logger.warning("PostHog API key not found. Event tracking will be disabled.")
+            self.enabled = False
+        else:
+            self.enabled = True
+            try:
+                import posthog
+                posthog.api_key = self.api_key
+                posthog.host = self.host
+                posthog.sync_mode = True  # Ensure events are sent before CLI exits
+                posthog.debug = libs_settings.debug
+                self._client = posthog
+                logger.debug(f"PostHog configured for {self.environment} environment")
+            except ImportError:
+                logger.debug("PostHog not available, analytics disabled")
+                self.enabled = False
+            except Exception as e:
+                logger.debug(f"Failed to setup PostHog: {e}")
+                self.enabled = False
+    
+    @staticmethod
+    def extract_organization_id(api_key: str) -> str:
+        """Extracts the organization ID from an API key.
+        
+        Args:
+            api_key: The API key in format bugster_random1orgid_random2
             
-        try:
-            self._setup_posthog()
-            self._user_id = self._generate_anonymous_user_id()
-            self._enabled = True
-            logger.debug("Analytics initialized successfully")
-        except Exception as e:
-            logger.debug(f"Failed to initialize analytics: {e}")
-            self._enabled = False
+        Returns:
+            The organization ID embedded in the API key
+            
+        Raises:
+            ValueError: If the API key format is invalid
+        """
+        if not api_key.startswith("bugster_"):
+            raise ValueError("Invalid API key format: must start with 'bugster_'")
+        
+        # Remove the "bugster_" prefix
+        without_prefix = api_key[8:]  # "bugster_" is 8 characters
+        
+        if len(without_prefix) <= 32:  # Must have at least 32 chars for the two random parts
+            raise ValueError("Invalid API key format: insufficient length")
+        
+        # Extract organization ID by removing first 16 and last 16 characters
+        organization_id = without_prefix[16:-16]
+        if not organization_id:
+            raise ValueError("Invalid API key format: no organization ID found")
+        organization_id = "org_" + organization_id
+        return organization_id
 
     def _should_disable_analytics(self) -> bool:
         """Check if analytics should be disabled based on user preferences."""
@@ -71,126 +98,104 @@ class BugsterAnalytics:
             logger.debug("Analytics disabled via opt-out file")
             return True
             
-        # Check if PostHog config is disabled for this environment
-        config = get_posthog_config()
-        if config.get("disabled", False):
-            logger.debug(f"Analytics disabled for environment: {libs_settings.environment}")
-            return True
-            
-        # Check if API key is disabled
-        api_key = config.get("api_key", "")
-        if not api_key or "disabled" in api_key:
-            logger.debug("Analytics disabled due to missing/disabled API key")
+        # Check if PostHog is disabled
+        if not libs_settings.posthog_enabled:
+            logger.debug(f"Analytics disabled for environment: {self.environment}")
             return True
             
         return False
-
-    def _setup_posthog(self):
-        """Setup PostHog client with environment-specific configuration."""
-        try:
-            import posthog
-            
-            config = get_posthog_config()
-            api_key = config["api_key"]
-            host = config["host"]
-            
-            posthog.api_key = api_key
-            posthog.host = host
-            posthog.sync_mode = True  # Ensure events are sent before CLI exits
-            posthog.debug = libs_settings.debug  # Use general debug setting
-            
-            self._client = posthog
-            logger.debug(f"PostHog configured for {libs_settings.environment} environment")
-            
-        except ImportError:
-            logger.debug("PostHog not available, analytics disabled")
-            raise
-        except Exception as e:
-            logger.debug(f"Failed to setup PostHog: {e}")
-            raise
-
-    def _generate_anonymous_user_id(self) -> str:
-        """Generate a stable anonymous user ID based on system info."""
-        try:
-            # Use system-specific info for stable ID generation
-            system_info = [
-                platform.machine(),
-                platform.system(),
-                platform.node(),
-                str(Path.home()),
-            ]
-            
-            # Create hash of system info
-            system_string = "|".join(system_info)
-            user_hash = hashlib.sha256(system_string.encode()).hexdigest()
-            
-            return f"anon_{user_hash[:16]}"
-            
-        except Exception as e:
-            logger.debug(f"Failed to generate user ID: {e}")
-            return f"anon_{str(uuid.uuid4())[:16]}"
-
-    def _get_base_properties(self) -> Dict[str, Any]:
-        """Get base properties included with all events."""
-        return {
-            "$lib": "bugster-cli",
-            "$lib_version": __version__, 
-            "environment": libs_settings.environment.value,
-            "platform": platform.system(),
-            "platform_version": platform.version(),
-            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-        }
-
-    def _track_event(self, event_name: str, properties: Optional[Dict[str, Any]] = None):
-        """Internal method to track events with error handling."""
-        if not self._enabled or not self._client or not self._user_id:
+    
+    def _track_event(self, event_name: str, user_id: str, properties: dict) -> None:
+        """Internal method to track events with consistent properties."""
+        if not self.enabled or self._should_disable_analytics():
             return
             
         try:
-            event_properties = self._get_base_properties()
-            if properties:
-                event_properties.update(properties)
-                
+            # Add base properties to all events
+            base_properties = {
+                "environment": self.environment,
+                "timestamp": datetime.utcnow().isoformat(),
+                "source": "cli"
+            }
+            
+            # Merge with event-specific properties
+            final_properties = {**base_properties, **properties}
+            
+            # Track the event
             self._client.capture(
-                distinct_id=self._user_id,
+                distinct_id=user_id,
                 event=event_name,
-                properties=event_properties
+                properties=final_properties
             )
-            logger.debug(f"Tracked event: {event_name}")
+            
+            logger.info(f"PostHog event tracked: {event_name} for user {user_id}")
             
         except Exception as e:
-            logger.debug(f"Failed to track event {event_name}: {e}")
-
-    def track_command_executed(
-        self,
-        command_name: str,
-        start_time: float,
-        success: bool,
-        flags: Optional[Dict[str, Any]] = None,
-        error_type: Optional[str] = None,
-        message: Optional[str] = None,
-    ):
-        """Track CLI command execution."""
-        duration = time.time() - start_time
+            logger.error(f"Error tracking PostHog event '{event_name}': {e}")
+    
+    def track_cli_generate(self, organization_id: str, project_id: Optional[str]) -> None:
+        """Track CLI generate event."""
         properties = {
-            "command_name": command_name,
-            "duration": duration,
-            "success": success,
-            "flags_count": len(flags) if flags else 0,
+            "organization_id": organization_id,
         }
         
-        if flags:
-            properties["flags_used"] = list(flags.keys())
-            
-        if error_type and not success:
-            properties["error_type"] = error_type
-        if message:
-            properties["message"] = message
-            
-        self._track_event("command_executed", properties)
+        if project_id:
+            properties["project_id"] = project_id
+        
+        self._track_event(
+            event_name="cli_generate",
+            user_id=organization_id,
+            properties=properties
+        )
+    
+    def track_cli_run(self, organization_id: str, project_id: Optional[str]) -> None:
+        """Track CLI run event."""
+        properties = {
+            "organization_id": organization_id,
+        }
+        
+        if project_id:
+            properties["project_id"] = project_id
+        
+        self._track_event(
+            event_name="cli_run",
+            user_id=organization_id,
+            properties=properties
+        )
+    
+    def track_cli_update(self, organization_id: str, project_id: Optional[str]) -> None:
+        """Track CLI update event."""
+        properties = {
+            "organization_id": organization_id,
+        }
+        
+        if project_id:
+            properties["project_id"] = project_id
+        
+        self._track_event(
+            event_name="cli_update",
+            user_id=organization_id,
+            properties=properties
+        )
+    
+    def track_cli_destructive(self, organization_id: str, project_id: Optional[str]) -> None:
+        """Track CLI destructive event."""
+        properties = {
+            "organization_id": organization_id,
+        }
+        
+        if project_id:
+            properties["project_id"] = project_id
+        
+        self._track_event(
+            event_name="cli_destructive",
+            user_id=organization_id,
+            properties=properties
+        )
+
     def flush(self):
         """Ensure all events are sent before CLI exits."""
-        if self._enabled and self._client:
+        if self.enabled and hasattr(self, '_client'):
             try:
                 if hasattr(self._client, 'flush'):
                     self._client.flush()
@@ -227,20 +232,21 @@ class BugsterAnalytics:
 
 
 # Global analytics instance
-_analytics_instance: Optional[BugsterAnalytics] = None
+_analytics_instance: Optional[PostHogClient] = None
 
 
-def get_analytics() -> BugsterAnalytics:
+def get_analytics() -> PostHogClient:
     """Get or create the global analytics instance."""
     global _analytics_instance
     if _analytics_instance is None:
-        _analytics_instance = BugsterAnalytics()
+        _analytics_instance = PostHogClient()
     return _analytics_instance
 
 
 def track_command(command_name: str):
     """Decorator to track command execution time and success/failure."""
     def decorator(func):
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             start_time = time.time()
             success = True
@@ -258,16 +264,45 @@ def track_command(command_name: str):
                 error_type = type(e).__name__
                 raise
             finally:
-                # Extract relevant flags from kwargs
-                flags = {k: v for k, v in kwargs.items() if v is not None}
+                # Track specific events for generate, run, update, and destructive commands
+                if command_name in ["generate", "run", "update", "destructive"]:
+                    try:
+                        analytics = get_analytics()
+                        
+                        # Get API key and extract organization ID
+                        api_key = get_api_key()
+                        if api_key:
+                            organization_id = analytics.extract_organization_id(api_key)
+                            
+                            # Get project ID from config
+                            project_id = None
+                            try:
+                                config = load_config()
+                                project_id = config.project_id
+                            except Exception as e:
+                                logger.debug(f"Could not load project_id from config: {e}")
+                            
+                            # Track the specific command
+                            if command_name == "generate":
+                                analytics.track_cli_generate(organization_id, project_id)
+                            elif command_name == "run":
+                                analytics.track_cli_run(organization_id, project_id)
+                            elif command_name == "update":
+                                analytics.track_cli_update(organization_id, project_id)
+                            elif command_name == "destructive":
+                                analytics.track_cli_destructive(organization_id, project_id)
+                        
+                    except Exception as e:
+                        logger.debug(f"Failed to track {command_name} command: {e}")
+                
+                # Ensure events are sent
                 analytics = get_analytics()
-                analytics.track_command_executed(
-                    command_name=command_name,
-                    start_time=start_time,
-                    success=success,
-                    flags=flags,
-                    error_type=error_type,
-                )
+                analytics.flush()
                 
         return wrapper
-    return decorator 
+    return decorator
+
+
+# For backward compatibility
+BugsterAnalytics = PostHogClient
+posthog_client = get_analytics() 

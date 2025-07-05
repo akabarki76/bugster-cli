@@ -24,6 +24,7 @@ class GitCommand(list, Enum):
     """  # noqa: E501
 
     CURRENT_BRANCH = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+    GIT_WORKTREE_PREFIX = ["git", "rev-parse", "--show-prefix"]
     DIFF_STATUS_PORCELAIN = [
         "git",
         "status",
@@ -46,6 +47,16 @@ class GitCommand(list, Enum):
         "*.jsx",
     ]
     DIFF_CHANGES = ["git", "diff", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
+    DIFF_CHANGES_ONLY_MODIFIED = [
+        "git",
+        "diff",
+        "--diff-filter=M",
+        "--",
+        "*.tsx",
+        "*.ts",
+        "*.js",
+        "*.jsx",
+    ]
     DIFF_BRANCH_HEAD = [
         "git",
         "diff",
@@ -68,3 +79,30 @@ class GitCommand(list, Enum):
     ]
     DIFF_CACHED = ["git", "diff", "--cached", "--", "*.tsx", "*.ts", "*.js", "*.jsx"]
     RESET = ["git", "reset", "--quiet"]
+    DIFF_AGAINST_DEFAULT_LOCAL = [
+        "bash",
+        "-c",
+        (
+            "git diff "
+            "$(git symbolic-ref --short refs/remotes/origin/HEAD | cut -d'/' -f2) "
+            "-- '*.tsx' '*.ts' '*.js' '*.jsx'"
+        ),
+    ]
+    DIFF_CHANGES_ONLY_MODIFIED_AGAINST_DEFAULT_LOCAL = [
+        "bash",
+        "-c",
+        (
+            "git diff "
+            "$(git symbolic-ref --short refs/remotes/origin/HEAD | cut -d'/' -f2) "
+            "--diff-filter=M -- '*.tsx' '*.ts' '*.js' '*.jsx'"
+        ),
+    ]
+    DIFF_NAME_STATUS_AGAINST_DEFAULT_LOCAL = [
+        "bash",
+        "-c",
+        (
+            "git diff --name-status "
+            "$(git symbolic-ref --short refs/remotes/origin/HEAD | cut -d'/' -f2) "
+            "-- '*.tsx' '*.ts' '*.js' '*.jsx'"
+        ),
+    ]

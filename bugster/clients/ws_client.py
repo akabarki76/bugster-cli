@@ -65,6 +65,13 @@ class WebSocketClient:
         """Send data to WebSocket server."""
         if not self.ws:
             raise RuntimeError("WebSocket not connected")
+        
+        # Add author to message based on environment
+        if os.getenv("IS_GITHUB_APP"):
+            data["author"] = "github_app"
+        else:
+            data["author"] = "user"
+        
         await self.ws.send(json.dumps(data))
 
     async def receive(self, timeout: Optional[float] = None) -> dict[str, Any]:

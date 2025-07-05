@@ -5,8 +5,35 @@ All notable changes to Bugster CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.22]
 
+### Changed
+- New architecture for `bugster destructive` unblocking longer executions.
+
+## [0.3.21]
+
+### Added
+- Initial monorepo support
+  - Works with most monorepo setups including basic Turborepo configurations
+  - Detects changes in individual apps within the monorepo
+  - Note: Currently does not track changes in shared packages (e.g., common components installed via pnpm in each app's node_modules)
+
+### Changed
+- `bugster generate` default settings. You can execute it multiple times, without having to add --force explicitly.
+- Improved test generation intelligence: both `bugster generate` and `bugster update` now analyze existing test specs context to avoid creating duplicate or similar tests
+
+
+## [0.3.20]
+
+### Changed
+- Force chromium installation on install script
+- Remove the question loop on credentials during `bugster init`
+
+## [0.3.19]
+
+### Changed
+- The `--page` flag in `bugster generate` now accepts relative or absolute file paths instead of page folder names. This provides more flexibility and control over which pages are analyzed.
+- Added validation for the `--page` flag to ensure that provided paths exist, are files, and have valid JavaScript/TypeScript extensions (`.js`, `.jsx`, `.ts`, `.tsx`).
 
 ## [0.3.15] - 2025-06-26
 

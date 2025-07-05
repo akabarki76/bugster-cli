@@ -170,6 +170,53 @@ def parse_diff_status(diff_status: str):
     return result
 
 
+def parse_diff_name_status(diff_name_status: str):
+    """Parse git diff --name-status output into categorized file lists.
+
+    Git diff --name-status output format:
+    - M = Modified
+    - A = Added
+    - D = Deleted
+    - R = Renamed (shows as R100 filename1 filename2)
+    - C = Copied (shows as C100 filename1 filename2)
+
+    :param diff_name_status: Raw output from 'git diff --name-status'.
+    :return: Dictionary with 'modified', 'deleted', and 'new' file lists.
+    """
+    result = {"modified": [], "deleted": [], "new": []}
+
+    # Split by newlines and filter out empty lines
+    lines = [line for line in diff_name_status.strip().split("\n") if line.strip()]
+
+    for line in lines:
+        if not line.strip():
+            continue
+
+        parts = line.split("\t")
+        if len(parts) < 2:
+            continue
+
+        status_code = parts[0].strip()
+        filename = parts[1].strip()
+
+        if not filter_path(path=filename):
+            continue
+
+        # Handle the status codes
+        if status_code.startswith("D"):
+            result["deleted"].append(filename)
+        elif status_code.startswith("A"):
+            result["new"].append(filename)
+        elif status_code.startswith("M"):
+            result["modified"].append(filename)
+        elif status_code.startswith("R") or status_code.startswith("C"):
+            result["modified"].append(filename)
+            continue
+
+    logger.info("Parsed diff name status!")
+    return result
+
+
 def get_diff_changes_per_page(
     import_tree: dict, git_command: GitCommand
 ) -> dict[str, list[str]]:
@@ -192,7 +239,9 @@ def get_diff_changes_per_page(
 
         if is_nextjs_page(file_path=old_path):
             new_diff = parsed_diff.to_llm_format(file_change=file_change)
-            diff_changes_per_page[old_path].append(new_diff)
+            git_prefix_path = get_git_prefix_path()
+            relative_path = old_path[len(git_prefix_path) :].lstrip("/")
+            diff_changes_per_page[relative_path].append(new_diff)
         else:
             pages = find_pages_that_use_file(
                 file_path=old_path, import_tree=import_tree
@@ -204,3 +253,8 @@ def get_diff_changes_per_page(
                     diff_changes_per_page[page].append(new_diff)
 
     return diff_changes_per_page
+
+
+def get_git_prefix_path():
+    """Get the git prefix path."""
+    return run_git_command(cmd_key=GitCommand.GIT_WORKTREE_PREFIX).strip()

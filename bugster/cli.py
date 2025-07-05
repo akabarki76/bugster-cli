@@ -123,7 +123,9 @@ def _run_tests(
         False, "--silent", "-s", help="Run in silent mode (less verbose output)"
     ),
     stream_results: bool = typer.Option(
-        True, "--stream-results/--no-stream-results", help="Stream test results. Enabled by default"
+        True,
+        "--stream-results/--no-stream-results",
+        help="Stream test results. Enabled by default",
     ),
     output: Optional[str] = typer.Option(
         None, "--output", help="Save test results to JSON file"
@@ -173,7 +175,7 @@ def _analyze_codebase(
         help="Show detailed logs during analysis",
     ),
     force: bool = typer.Option(
-        False,
+        True,
         "-f",
         "--force",
         help="Force analysis even if the codebase has already been analyzed",
@@ -181,7 +183,7 @@ def _analyze_codebase(
     page: Optional[str] = typer.Option(
         None,
         "--page",
-        help="Generate specs only for specific pages (comma-separated). Example: --page=settings,auth,flows",
+        help="Generate specs only for specific page files (comma-separated relative file paths). Example: --page 'pages/settings.tsx','pages/auth.tsx'",
     ),
     count: Optional[int] = typer.Option(
         None,
@@ -192,11 +194,55 @@ def _analyze_codebase(
     ),
 ):
     """Analyze your codebase and generate test specs."""
+    from pathlib import Path
+
     from bugster.commands.analyze import analyze_command
+
     page_filter = None
+
     if page:
-        page_filter = [p.strip() for p in page.split(",") if p.strip()]
-    analyze_command(options={"show_logs": show_logs, "force": force, "page_filter": page_filter, "count": count})
+        page_paths = [p.strip() for p in page.split(",") if p.strip()]
+        validated_paths = []
+        project_root = Path.cwd()
+
+        for path_str in page_paths:
+            file_path = Path(path_str)
+
+            if file_path.is_absolute():
+                try:
+                    # Convert absolute path to relative if it's within the project.
+                    file_path = file_path.relative_to(project_root)
+                    print(f"Absolute path converted to relative: {file_path}")
+                except ValueError:
+                    # Path is not within the project directory.
+                    raise typer.BadParameter(
+                        f"Absolute path '{path_str}' is outside the project directory."
+                    )
+
+            # Validate each path exists
+            if not file_path.exists():
+                raise typer.BadParameter(f"File not found: {file_path}")
+
+            if not file_path.is_file():
+                raise typer.BadParameter(f"Path is not a file: {file_path}")
+
+            if file_path.suffix not in [".js", ".jsx", ".ts", ".tsx"]:
+                raise typer.BadParameter(
+                    f"Invalid file type: {file_path}. Must be a JavaScript/TypeScript file."
+                )
+
+            validated_paths.append(str(file_path))
+
+        page_filter = validated_paths
+
+    analyze_command(
+        options={
+            "show_logs": show_logs,
+            "force": force,
+            "page_filter": page_filter,
+            "count": count,
+        }
+    )
 
 
 # Register the same function with two different command names
@@ -220,6 +266,11 @@ def update(
         "--show-logs",
         help="Show detailed logs during analysis",
     ),
+    against_default: bool = typer.Option(
+        False,
+        "--against-default",
+        help="Compare against the default branch instead of HEAD",
+    ),
 ):
     """Update your test specs with the latest changes."""
     from bugster.commands.update import update_command
@@ -229,6 +280,7 @@ def update(
         suggest_only=suggest_only,
         delete_only=delete_only,
         show_logs=show_logs,
+        against_default=against_default,
     )
 
 
@@ -256,21 +308,6 @@ def sync(
     from bugster.commands.sync import sync_command
 
     sync_command(branch, pull, push, clean_remote, dry_run, prefer)
-
-
-@app.command(help=CLIMessages.get_upgrade_help())
-def upgrade(
-    yes: bool = typer.Option(
-        False,
-        "--yes",
-        "-y",
-        help="Automatically confirm the upgrade.",
-    ),
-):
-    """Upgrade Bugster CLI to the latest version."""
-    from bugster.commands.upgrade import upgrade_command
-
-    upgrade_command(yes=yes)
 
 
 @app.command()

@@ -65,7 +65,7 @@ setup(
         "typing-inspection==0.4.1",
         "typing_extensions==4.13.2",
         "urllib3==2.5.0",
-        "uvicorn==0.34.2",
+        "uvicorn==0.35.0",
         "websockets==15.0.1",
         "yarl==1.20.0",
         "zipp==3.21.0",

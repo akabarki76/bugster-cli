@@ -68,7 +68,7 @@ setup(
         "uvicorn==0.35.0",
         "websockets==15.0.1",
         "yarl==1.20.0",
-        "zipp==3.21.0",
+        "zipp==3.23.0",
     
     ],
     entry_points={

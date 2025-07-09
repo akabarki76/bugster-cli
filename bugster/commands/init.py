@@ -267,6 +267,7 @@ def init_command(
         "project_id": project_id,
         "base_url": base_url,
         "credentials": credentials,
+        "x-vercel-protection-bypass": "",
     }
     with open(CONFIG_PATH, "w") as f:
         yaml.dump(config, f, default_flow_style=False)

@@ -62,6 +62,14 @@ def analyze_command(options: dict = {}):
             TestCasesService().generate_test_cases(page_filter=page_filter, count=count)
             console.print()
 
+            if not has_yaml_test_cases():
+                with BugsterHTTPClient() as client:
+                    client.set_headers({"x-api-key": get_api_key()})
+                    client.patch(
+                        "/api/v1/users/me/onboarding-status",
+                        json={"generate": "completed"},
+                    )
+
             if page_filter:
                 console.print("📁 Test specs generated only for files:")
 
@@ -73,14 +81,6 @@ def analyze_command(options: dict = {}):
             else:
                 console.print("📁 Test specs saved to:")
                 console.print(f"   {os.path.relpath(TESTS_DIR, WORKING_DIR)}")
-
-            if not has_yaml_test_cases():
-                with BugsterHTTPClient() as client:
-                    client.set_headers({"x-api-key": get_api_key()})
-                    client.patch(
-                        "/api/v1/users/me/onboarding-status",
-                        json={"generate": "completed"},
-                    )
     except Exception as err:
         console.print(f"[red]Error: {str(err)}[/red]")
         raise typer.Exit(1)

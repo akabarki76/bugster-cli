@@ -1,5 +1,6 @@
 # bugster/libs/settings.py
 from enum import Enum
+from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,7 +20,7 @@ class LibsSettings(BaseSettings):
     # API Configuration
     bugster_api_url: str = Field(default="api_url_placeholder")
     websocket_url: str = Field(default="websocket_url_placeholder")
-    generate_api_url: str = Field(default="generate_api_url_placeholder")
+    generate_api_url: Optional[str] = Field(default=None)
 
     # PostHog Analytics Configuration
     posthog_api_key: str = Field(default="phc_api_key_placeholder")

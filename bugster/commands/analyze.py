@@ -19,6 +19,23 @@ from bugster.utils.user_config import get_api_key
 console = Console()
 
 
+def has_yaml_test_cases() -> bool:
+    """Check if there are any YAML test case files in the TESTS_DIR."""
+    if not TESTS_DIR.exists():
+        return False
+
+    # Look for .yaml or .yml files recursively in TESTS_DIR
+    for file_path in TESTS_DIR.rglob("*.yaml"):
+        if file_path.is_file():
+            return True
+
+    for file_path in TESTS_DIR.rglob("*.yml"):
+        if file_path.is_file():
+            return True
+
+    return False
+
+
 @require_api_key
 @track_command("generate")
 def analyze_command(options: dict = {}):
@@ -57,7 +74,7 @@ def analyze_command(options: dict = {}):
                 console.print("📁 Test specs saved to:")
                 console.print(f"   {os.path.relpath(TESTS_DIR, WORKING_DIR)}")
 
-            if not TESTS_DIR.exists():
+            if not has_yaml_test_cases():
                 with BugsterHTTPClient() as client:
                     client.set_headers({"x-api-key": get_api_key()})
                     client.patch(

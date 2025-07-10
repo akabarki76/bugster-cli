@@ -115,7 +115,7 @@ class TestCasesService:
             payload = {"json": analysis_data, "data": data}
 
             with BugsterHTTPClient(
-                url=libs_settings.generate_api_url or libs_settings.bugster_api_url
+                base_url=libs_settings.generate_api_url or libs_settings.bugster_api_url
             ) as client:
                 api_key = get_api_key()
 
@@ -181,7 +181,7 @@ class TestCasesService:
     def _check_results(self, job_id: str) -> str:
         """Get the status of a job."""
         with BugsterHTTPClient(
-            url=libs_settings.generate_api_url or libs_settings.bugster_api_url
+            base_url=libs_settings.generate_api_url or libs_settings.bugster_api_url
         ) as client:
             api_key = get_api_key()
 

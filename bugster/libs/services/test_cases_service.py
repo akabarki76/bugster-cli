@@ -268,13 +268,16 @@ class TestCasesService:
 
         logger.info("Saving test cases as YAML files...")
 
-        if not has_yaml_test_cases():
-            with BugsterHTTPClient() as client:
-                client.set_headers({"x-api-key": get_api_key()})
-                client.patch(
-                    "/api/v1/users/me/onboarding-status",
-                    json={"generate": "completed"},
-                )
+        try:
+            if not has_yaml_test_cases():
+                with BugsterHTTPClient() as client:
+                    client.set_headers({"x-api-key": get_api_key()})
+                    client.patch(
+                        "/api/v1/users/me/onboarding-status",
+                        json={"generate": "completed"},
+                    )
+        except Exception as err:
+            logger.error("Error updating onboarding status: {}", err)
 
         for test_case in test_cases:
             self._save_test_case_as_yaml(test_case=test_case)

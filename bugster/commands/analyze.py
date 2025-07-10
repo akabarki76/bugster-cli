@@ -10,30 +10,11 @@ from bugster.analyzer.utils.analysis_tracker import (
     analysis_tracker,
     has_analysis_completed,
 )
-from bugster.clients.http_client import BugsterHTTPClient
 from bugster.commands.middleware import require_api_key
 from bugster.constants import TESTS_DIR, WORKING_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
-from bugster.utils.user_config import get_api_key
 
 console = Console()
-
-
-def has_yaml_test_cases() -> bool:
-    """Check if there are any YAML test case files in the TESTS_DIR."""
-    if not TESTS_DIR.exists():
-        return False
-
-    # Look for .yaml or .yml files recursively in TESTS_DIR
-    for file_path in TESTS_DIR.rglob("*.yaml"):
-        if file_path.is_file():
-            return True
-
-    for file_path in TESTS_DIR.rglob("*.yml"):
-        if file_path.is_file():
-            return True
-
-    return False
 
 
 @require_api_key
@@ -61,14 +42,6 @@ def analyze_command(options: dict = {}):
 
             TestCasesService().generate_test_cases(page_filter=page_filter, count=count)
             console.print()
-
-            if not has_yaml_test_cases():
-                with BugsterHTTPClient() as client:
-                    client.set_headers({"x-api-key": get_api_key()})
-                    client.patch(
-                        "/api/v1/users/me/onboarding-status",
-                        json={"generate": "completed"},
-                    )
 
             if page_filter:
                 console.print("📁 Test specs generated only for files:")

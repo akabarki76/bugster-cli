@@ -10,9 +10,11 @@ from bugster.analyzer.utils.analysis_tracker import (
     analysis_tracker,
     has_analysis_completed,
 )
+from bugster.clients.http_client import BugsterHTTPClient
 from bugster.commands.middleware import require_api_key
 from bugster.constants import TESTS_DIR, WORKING_DIR
 from bugster.libs.services.test_cases_service import TestCasesService
+from bugster.utils.user_config import get_api_key
 
 console = Console()
 
@@ -54,6 +56,14 @@ def analyze_command(options: dict = {}):
             else:
                 console.print("📁 Test specs saved to:")
                 console.print(f"   {os.path.relpath(TESTS_DIR, WORKING_DIR)}")
+
+            if not TESTS_DIR.exists():
+                with BugsterHTTPClient() as client:
+                    client.set_headers({"x-api-key": get_api_key()})
+                    client.patch(
+                        "/api/v1/users/me/onboarding-status",
+                        json={"generate": "completed"},
+                    )
     except Exception as err:
         console.print(f"[red]Error: {str(err)}[/red]")
         raise typer.Exit(1)

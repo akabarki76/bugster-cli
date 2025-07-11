@@ -132,6 +132,12 @@ def init(
     no_credentials: bool = typer.Option(
         False, "--no-credentials", help="Skip credential setup entirely"
     ),
+    bypass_protection: Optional[str] = typer.Option(
+        None, "--bypass-protection", help="Protection bypass secret for the specified platform"
+    ),
+    platform: str = typer.Option(
+        "vercel", "--platform", help="Platform type (vercel or railway, default: vercel)"
+    ),
 ):
     """Initialize Bugster CLI configuration in your project."""
     from bugster.commands.init import init_command
@@ -145,6 +151,8 @@ def init(
         credential_name=credential_name,
         no_auth=no_auth,
         no_credentials=no_credentials,
+        bypass_protection=bypass_protection,
+        platform=platform,
     )
 
 

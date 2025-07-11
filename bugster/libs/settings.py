@@ -1,6 +1,5 @@
 # bugster/libs/settings.py
 from enum import Enum
-from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict

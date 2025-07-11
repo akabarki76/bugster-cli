@@ -96,9 +96,16 @@ def init_command(
     credential_name: str = None,
     no_auth: bool = False,
     no_credentials: bool = False,
+    bypass_protection: str = None,
+    platform: str = "vercel",
 ):
     """Initialize Bugster CLI configuration."""
     InitMessages.welcome()
+
+    # Validate platform flag
+    if platform not in ["vercel", "railway"]:
+        console.print("[red]Error: --platform must be either 'vercel' or 'railway'.[/red]")
+        raise typer.Exit(1)
 
     # Handle API key authentication
     current_api_key = get_api_key()
@@ -267,8 +274,20 @@ def init_command(
         "project_id": project_id,
         "base_url": base_url,
         "credentials": credentials,
-        "x-vercel-protection-bypass": "",
     }
+    
+    # Add platform-specific protection bypass headers
+    if bypass_protection:
+        if platform == "vercel":
+            config["x-vercel-protection-bypass"] = bypass_protection
+        elif platform == "railway":
+            config["x-railway-protection-bypass"] = bypass_protection
+    else:
+        # Set empty header based on platform for backward compatibility
+        if platform == "vercel":
+            config["x-vercel-protection-bypass"] = ""
+        elif platform == "railway":
+            config["x-railway-protection-bypass"] = ""
     with open(CONFIG_PATH, "w") as f:
         yaml.dump(config, f, default_flow_style=False)
 

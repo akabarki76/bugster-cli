@@ -123,4 +123,4 @@ class BugsterHTTPClient(HTTPClient):
 
     def __init__(self):
         """Initialize the HTTP client."""
-        super().__init__(libs_settings.bugster_api_url)
+        super().__init__(base_url=libs_settings.bugster_api_url)

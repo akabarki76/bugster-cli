@@ -41,7 +41,7 @@ setup(
         "mdurl==0.1.2",
         "packaging==25.0",
         "pathspec==0.12.1",
-        "posthog==5.0.0",
+        "posthog==6.1.0",
         "pydantic==2.11.7",
         "pydantic-settings==2.10.1",
         "pydantic_core==2.35.2",

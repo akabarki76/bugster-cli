@@ -17,7 +17,7 @@ from bugster.utils.yaml_spec import load_spec
 
 console = Console()
 
-
+ 
 def load_config() -> Config:
     """Load configuration from config.yaml."""
     if not CONFIG_PATH.exists():

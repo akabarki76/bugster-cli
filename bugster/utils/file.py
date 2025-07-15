@@ -9,6 +9,7 @@ import uuid
 import typer
 import yaml
 from rich.console import Console
+from loguru import logger
 
 from bugster.constants import CONFIG_PATH, TESTS_DIR
 from bugster.types import Config
@@ -16,7 +17,7 @@ from bugster.utils.yaml_spec import load_spec
 
 console = Console()
 
-
+ 
 def load_config() -> Config:
     """Load configuration from config.yaml."""
     if not CONFIG_PATH.exists():
@@ -197,3 +198,41 @@ def merge_always_run_with_affected_tests(affected_tests: List[dict], always_run_
             processed_files.add(file_path)
     
     return merged_tests
+
+def check_and_update_project_commands(command_name: str) -> bool:
+    """Check if a command has been executed before and update the project.json file.
+    :param command_name: The name of the command to check (e.g., 'test')
+    :param bool: True if this is the first execution, False if already executed
+    """
+    import json
+    import os
+
+    from bugster.constants import BUGSTER_DIR
+
+    PROJECT_JSON_PATH = os.path.join(BUGSTER_DIR, "project.json")
+
+    try:
+        if not os.path.exists(PROJECT_JSON_PATH):
+            return True
+
+        with open(PROJECT_JSON_PATH, encoding="utf-8") as f:
+            project_info = json.load(f)
+
+        if "data" not in project_info:
+            project_info["data"] = {}
+
+        if "commands" not in project_info["data"]:
+            project_info["data"]["commands"] = {}
+
+        if command_name not in project_info["data"]["commands"]:
+            project_info["data"]["commands"][command_name] = {"firstExecuted": True}
+
+            with open(PROJECT_JSON_PATH, "w", encoding="utf-8") as f:
+                json.dump(project_info, f, indent=2)
+
+            return True
+
+        return False
+    except Exception as err:
+        logger.error("Error updating project.json: {}", err)
+        return True

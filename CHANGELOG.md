@@ -5,6 +5,11 @@ All notable changes to Bugster CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.25]
+
+### Changed
+- Added platform flags to `bugster init` for faster setup
+
 ## [0.3.24]
 
 ### Changed

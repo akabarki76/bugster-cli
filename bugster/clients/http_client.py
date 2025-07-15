@@ -49,7 +49,6 @@ class HTTPClient:
         """Make a PATCH request."""
         return self._make_request("PATCH", endpoint, data=data, json=json, **kwargs)
 
-
     def post(
         self,
         endpoint: str,

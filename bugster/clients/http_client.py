@@ -39,6 +39,17 @@ class HTTPClient:
         """Make a GET request."""
         return self._make_request("GET", endpoint, params=params, **kwargs)
 
+    def patch(
+        self,
+        endpoint: str,
+        data: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+        **kwargs, 
+    ) -> requests.Response:
+        """Make a PATCH request."""
+        return self._make_request("PATCH", endpoint, data=data, json=json, **kwargs)
+
+
     def post(
         self,
         endpoint: str,

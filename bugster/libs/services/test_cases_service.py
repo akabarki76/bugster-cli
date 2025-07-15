@@ -71,7 +71,7 @@ class TestCasesService:
 
         if not self.analysis_json_path:
             raise BugsterError("Analysis JSON path is not set")
-
+ 
         if not os.path.exists(self.analysis_json_path):
             raise BugsterError(
                 "Analysis JSON file not found, execute bugster analyze first"

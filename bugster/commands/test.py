@@ -15,7 +15,6 @@ from rich.style import Style
 from rich.table import Table
 
 from bugster.analytics import track_command
-from bugster.clients.http_client import BugsterHTTPClient
 from bugster.clients.mcp_client import MCPStdioClient
 from bugster.clients.ws_client import WebSocketClient
 from bugster.commands.middleware import require_api_key
@@ -38,14 +37,12 @@ from bugster.types import (
 )
 from bugster.utils.console_messages import RunMessages
 from bugster.utils.file import (
-    check_and_update_project_commands,
-    get_mcp_config_path,
-    load_always_run_tests,
-    load_config,
-    load_test_files,
-    merge_always_run_with_affected_tests,
+    get_mcp_config_path, 
+    load_config, 
+    load_test_files, 
+    load_always_run_tests, 
+    merge_always_run_with_affected_tests
 )
-from bugster.utils.user_config import get_api_key
 
 console = Console()
 # Color palette for parallel test execution
@@ -715,24 +712,18 @@ async def test_command(
             try:
                 affected_tests = DetectAffectedSpecsService().run()
                 # Merge affected tests with always-run tests
-                test_files = merge_always_run_with_affected_tests(
-                    affected_tests, always_run_tests
-                )
+                test_files = merge_always_run_with_affected_tests(affected_tests, always_run_tests)
             except Exception as e:
                 RunMessages.error(
                     f"Failed to detect affected specs: {e}. \nRunning all tests..."
                 )
                 test_files = load_test_files(path)
                 # Still merge with always-run tests
-                test_files = merge_always_run_with_affected_tests(
-                    test_files, always_run_tests
-                )
+                test_files = merge_always_run_with_affected_tests(test_files, always_run_tests)
         else:
             test_files = load_test_files(path)
             # Merge all tests with always-run tests
-            test_files = merge_always_run_with_affected_tests(
-                test_files, always_run_tests
-            )
+            test_files = merge_always_run_with_affected_tests(test_files, always_run_tests)
 
         if not test_files:
             RunMessages.no_tests_found()
@@ -741,30 +732,26 @@ async def test_command(
         # Separate always-run tests from regular tests
         regular_tests = [tf for tf in test_files if not tf.get("always_run", False)]
         always_run_tests_list = [tf for tf in test_files if tf.get("always_run", False)]
-
+        
         # Apply limit only to regular tests (not always-run)
         original_count = count_total_tests(regular_tests)
-        limited_regular_tests, folder_distribution = apply_test_limit(
-            regular_tests, max_tests
-        )
+        limited_regular_tests, folder_distribution = apply_test_limit(regular_tests, max_tests)
         selected_count = count_total_tests(limited_regular_tests)
-
+        
         # Combine limited regular tests with always-run tests
         final_test_files = always_run_tests_list + limited_regular_tests
         total_final_count = count_total_tests(final_test_files)
-
+        
         # Print test limit information if limiting was applied
         if int(original_count) > int(max_tests):
             always_run_count = count_total_tests(always_run_tests_list)
-
+            
             # Calculate folder distribution for always-run tests
             always_run_distribution = {}
             for test_file in always_run_tests_list:
                 folder = test_file["file"].parent.name
-                always_run_distribution[folder] = always_run_distribution.get(
-                    folder, 0
-                ) + len(test_file["content"])
-
+                always_run_distribution[folder] = always_run_distribution.get(folder, 0) + len(test_file["content"])
+            
             console.print(
                 RunMessages.create_test_limit_panel(
                     original_count=original_count,
@@ -772,19 +759,15 @@ async def test_command(
                     max_tests=max_tests,
                     folder_distribution=folder_distribution,
                     always_run_count=always_run_count,
-                    always_run_distribution=always_run_distribution,
+                    always_run_distribution=always_run_distribution
                 )
             )
-
+        
         # Show always-run information
         if always_run_tests_list:
             always_run_count = count_total_tests(always_run_tests_list)
-            console.print(
-                f"[dim]Always-run tests: {always_run_count} (additional to limit)[/dim]"
-            )
-            console.print(
-                f"[dim]Total tests to run: {total_final_count} (regular: {selected_count} + always-run: {always_run_count})[/dim]"
-            )
+            console.print(f"[dim]Always-run tests: {always_run_count} (additional to limit)[/dim]")
+            console.print(f"[dim]Total tests to run: {total_final_count} (regular: {selected_count} + always-run: {always_run_count})[/dim]")
 
         # Use the final combined test files for execution
         test_files = final_test_files
@@ -907,13 +890,3 @@ async def test_command(
     except Exception as e:
         RunMessages.error(e)
         raise typer.Exit(1) from None
-    finally:
-        is_first_run = check_and_update_project_commands(command_name="test")
-
-        if is_first_run:
-            with BugsterHTTPClient() as client:
-                client.set_headers({"x-api-key": get_api_key()})
-                client.patch(
-                    "/api/v1/users/me/onboarding-status",
-                    json={"run": "completed"},
-                )

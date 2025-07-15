@@ -63,7 +63,7 @@ setup(
         "typer==0.15.4",
         "types-requests==2.32.4.20250611",
         "typing-inspection==0.4.1",
-        "typing_extensions==4.13.2",
+        "typing_extensions==4.14.1",
         "urllib3==2.5.0",
         "uvicorn==0.35.0",
         "websockets==15.0.1",

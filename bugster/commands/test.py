@@ -37,13 +37,16 @@ from bugster.types import (
 )
 from bugster.utils.console_messages import RunMessages
 from bugster.utils.file import (
+    check_and_update_project_commands,
     get_mcp_config_path, 
     load_config, 
     load_test_files, 
     load_always_run_tests, 
     merge_always_run_with_affected_tests
 )
-
+from bugster.utils.user_config import get_api_key
+from bugster.clients.http_client import BugsterHTTPClient
+    
 console = Console()
 # Color palette for parallel test execution
 TEST_COLORS = [
@@ -890,3 +893,13 @@ async def test_command(
     except Exception as e:
         RunMessages.error(e)
         raise typer.Exit(1) from None
+    finally:
+        is_first_run = check_and_update_project_commands(command_name="test")
+
+        if is_first_run:
+            with BugsterHTTPClient() as client:
+                client.set_headers({"x-api-key": get_api_key()})
+                client.patch(
+                    "/api/v1/users/me/onboarding-status",
+                    json={"run": "completed"},
+                )

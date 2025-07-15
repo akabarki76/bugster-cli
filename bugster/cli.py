@@ -156,6 +156,21 @@ def init(
     )
 
 
+@app.command()
+def auth(
+    api_key: Optional[str] = typer.Option(
+        None, "--api-key", help="Bugster API key to set (starts with 'bugster_')"
+    ),
+    clear: bool = typer.Option(
+        False, "--clear", help="Clear the existing API key"
+    ),
+):
+    """Authenticate with Bugster API key."""
+    from bugster.commands.auth import auth_command
+
+    auth_command(api_key=api_key, clear=clear)
+
+
 def _run_tests(
     path: Optional[str] = typer.Argument(None, help="Path to test file or directory"),
     headless: Optional[bool] = typer.Option(

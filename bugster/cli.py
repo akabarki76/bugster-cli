@@ -197,7 +197,7 @@ def _run_tests(
         None, "--only-affected", help="Only run tests for affected files or directories"
     ),
     max_concurrent: Optional[int] = typer.Option(
-        5, "--max-concurrent", help="Maximum number of concurrent tests"
+        5, "--max-concurrent", "--parallel", help="Maximum number of concurrent tests"
     ),
     verbose: Optional[bool] = typer.Option(False, "--verbose", help="Verbose output"),
 ):
@@ -399,7 +399,7 @@ def destructive(
     ),
     base_url: Optional[str] = typer.Option(None, help="Override base URL from config"),
     max_concurrent: Optional[int] = typer.Option(
-        None, help="Maximum number of concurrent agents (default: 3)"
+        None, "--max-concurrent", "--parallel", help="Maximum number of concurrent agents (default: 3)"
     ),
     verbose: bool = typer.Option(False, help="Show detailed agent execution logs"),
     run_id: Optional[str] = typer.Option(

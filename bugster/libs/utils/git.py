@@ -28,6 +28,7 @@ def run_git_command(
             capture_output=capture_output,
             text=text,
             check=check,
+            encoding="utf-8",
         )
         return result.stdout
     finally:

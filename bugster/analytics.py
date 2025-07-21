@@ -117,13 +117,13 @@ class PostHogClient:
 
         try:
             is_github_app = os.getenv("IS_GITHUB_APP") == "true"
+            source = "github_cli" if is_github_app else "cli"
 
             # Add base properties to all events
             base_properties = {
                 "environment": self.environment,
                 "timestamp": datetime.utcnow().isoformat(),
-                "source": "cli",
-                "execution": "automatic" if is_github_app else "manual",
+                "source": source,
             }
 
             # Merge with event-specific properties

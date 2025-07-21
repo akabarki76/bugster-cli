@@ -46,7 +46,7 @@ setup(
         "pydantic-settings==2.10.1",
         "pydantic_core==2.35.2",
         "Pygments==2.19.1",
-        "pyinstaller-hooks-contrib==2025.5",
+        "pyinstaller-hooks-contrib==2025.6",
         "python-dotenv==1.1.1",
         "python-multipart==0.0.20",
         "PyYAML==6.0.2",

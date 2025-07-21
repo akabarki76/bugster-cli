@@ -60,7 +60,7 @@ setup(
         "sniffio==1.3.1",
         "sse-starlette==2.4.1",
         "starlette==0.47.1",
-        "typer==0.15.4",
+        "typer==0.16.0",
         "types-requests==2.32.4.20250611",
         "typing-inspection==0.4.1",
         "typing_extensions==4.14.1",

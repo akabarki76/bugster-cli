@@ -20,8 +20,7 @@ import typer
 
 from bugster.libs.settings import libs_settings
 from bugster.utils.file import load_config
-from bugster.utils.user_config import get_api_key
-
+from bugster.utils.user_config import get_api_key, extract_organization_id
 logger = logging.getLogger(__name__)
 
 # Privacy and opt-out configuration
@@ -59,37 +58,6 @@ class PostHogClient:
             except Exception as e:
                 logger.debug(f"Failed to setup PostHog: {e}")
                 self.enabled = False
-
-    @staticmethod
-    def extract_organization_id(api_key: str) -> str:
-        """Extracts the organization ID from an API key.
-
-        Args:
-            api_key: The API key in format bugster_random1orgid_random2
-
-        Returns:
-            The organization ID embedded in the API key
-
-        Raises:
-            ValueError: If the API key format is invalid
-        """
-        if not api_key.startswith("bugster_"):
-            raise ValueError("Invalid API key format: must start with 'bugster_'")
-
-        # Remove the "bugster_" prefix
-        without_prefix = api_key[8:]  # "bugster_" is 8 characters
-
-        if (
-            len(without_prefix) <= 32
-        ):  # Must have at least 32 chars for the two random parts
-            raise ValueError("Invalid API key format: insufficient length")
-
-        # Extract organization ID by removing first 16 and last 16 characters
-        organization_id = without_prefix[16:-16]
-        if not organization_id:
-            raise ValueError("Invalid API key format: no organization ID found")
-        organization_id = "org_" + organization_id
-        return organization_id
 
     def _should_disable_analytics(self) -> bool:
         """Check if analytics should be disabled based on user preferences."""
@@ -275,7 +243,7 @@ def track_command(command_name: str):
                         # Get API key and extract organization ID
                         api_key = get_api_key()
                         if api_key:
-                            organization_id = analytics.extract_organization_id(api_key)
+                            organization_id = extract_organization_id(api_key)
 
                             # Get project ID from config
                             project_id = None

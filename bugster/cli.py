@@ -440,6 +440,20 @@ def destructive(
         )
     )
 
+@app.command()
+def install(
+    github: bool = Option(
+        False, "--github", help="Install GitHub App integration"
+    ),
+):
+    """Install integrations for your Bugster project."""
+    if github:
+        from bugster.commands.install import install_github_command
+        install_github_command()
+    else:
+        console.print("[red]Please specify an integration to install (e.g., --github)[/red]")
+        raise Exit(1)
+
 
 def main():
     app()

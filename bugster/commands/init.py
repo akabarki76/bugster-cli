@@ -5,7 +5,6 @@ import time
 from pathlib import Path
 
 import typer
-import yaml
 from loguru import logger
 from rich.console import Console
 from rich.prompt import Confirm, Prompt
@@ -84,6 +83,104 @@ def generate_project_id(project_name: str) -> str:
     # Convert project name to lowercase and replace spaces with dashes
     safe_name = project_name.lower().replace(" ", "-")
     return f"{safe_name}-{timestamp}"
+
+
+def generate_config_yaml_with_template(
+    project_name: str,
+    project_id: str,
+    base_url: str,
+    credentials: list,
+    bypass_protection: str = "",
+    platform: str = "vercel",
+) -> str:
+    """Generate config.yaml content with commented template options."""
+
+    # Helper function to format YAML string values
+    def format_yaml_string(value: str) -> str:
+        """Format a string value for YAML, adding quotes if needed."""
+        if " " in value or ":" in value or value.startswith("#"):
+            return f'"{value}"'
+        return value
+
+    # Generate the main config with active values
+    config_lines = [
+        "# Bugster Configuration File",
+        "# This file contains your project configuration and test execution preferences.",
+        "",
+        "# Project Information",
+        f"project_name: {format_yaml_string(project_name)}",
+        f"project_id: {format_yaml_string(project_id)}",
+        f"base_url: {format_yaml_string(base_url)}",
+        "",
+        "# Project Authentication",
+        "credentials:",
+    ]
+
+    # Add credentials
+    for cred in credentials:
+        config_lines.extend(
+            [
+                f"  - id: {format_yaml_string(cred['id'])}",
+                f"    username: {format_yaml_string(cred['username'])}",
+                f"    password: {format_yaml_string(cred['password'])}",
+            ]
+        )
+
+    config_lines.append("")
+
+    # Add platform-specific protection bypass section
+    if platform == "vercel":
+        config_lines.extend(
+            [
+                "# Vercel Configuration",
+                "# You can create the Vercel Protection Bypass Secret for Automation in this link:",
+                "# https://vercel.com/d?to=/[team]/[project]/settings/deployment-protection&title=Deployment+Protection+settings",
+            ]
+        )
+        if bypass_protection:
+            config_lines.append(
+                f"x-vercel-protection-bypass: {format_yaml_string(bypass_protection)}"
+            )
+        else:
+            config_lines.append("# x-vercel-protection-bypass: your-bypass-secret")
+    elif platform == "railway":
+        config_lines.extend(
+            [
+                "# Railway Configuration",
+                "# Add your Railway protection bypass secret below:",
+            ]
+        )
+        if bypass_protection:
+            config_lines.append(
+                f"x-railway-protection-bypass: {format_yaml_string(bypass_protection)}"
+            )
+        else:
+            config_lines.append("# x-railway-protection-bypass: your-bypass-secret")
+
+    config_lines.extend(
+        [
+            "",
+            "",
+            "# Test Execution Preferences",
+            "# Uncomment and modify the options below to customize test execution behavior.",
+            "# CLI options will override these settings when specified.",
+            "# preferences:",
+            "#   tests:",
+            "#     always_run:",
+            "#       - .bugster/tests/test1.yaml",
+            "#       - .bugster/tests/test2.yaml",
+            "#     limit: 5                    # Maximum number of tests to run",
+            "#     headless: false             # Run tests in headless mode",
+            "#     silent: false               # Run tests in silent mode",
+            "#     verbose: false              # Enable verbose output",
+            "#     only_affected: false        # Only run tests for affected files",
+            "#     parallel: 5                 # Maximum number of concurrent tests",
+            "#     output: bugster_output.json # Save test results to JSON file",
+            "",
+        ]
+    )
+
+    return "\n".join(config_lines)
 
 
 @track_command("init")
@@ -285,27 +382,17 @@ def init_command(
     update_gitignore()
 
     # Save config
-    config = {
-        "project_name": project_name,
-        "project_id": project_id,
-        "base_url": base_url,
-        "credentials": credentials,
-    }
+    config_content = generate_config_yaml_with_template(
+        project_name=project_name,
+        project_id=project_id,
+        base_url=base_url,
+        credentials=credentials,
+        bypass_protection=bypass_protection or "",
+        platform=platform,
+    )
 
-    # Add platform-specific protection bypass headers
-    if bypass_protection:
-        if platform == "vercel":
-            config["x-vercel-protection-bypass"] = bypass_protection
-        elif platform == "railway":
-            config["x-railway-protection-bypass"] = bypass_protection
-    else:
-        # Set empty header based on platform for backward compatibility
-        if platform == "vercel":
-            config["x-vercel-protection-bypass"] = ""
-        elif platform == "railway":
-            config["x-railway-protection-bypass"] = ""
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-        yaml.dump(config, f, default_flow_style=False)
+        f.write(config_content)
 
     # Show success message and summary
     InitMessages.initialization_success()

@@ -24,7 +24,6 @@ from bugster.libs.services.results_stream_service import ResultsStreamService
 from bugster.libs.services.run_limits_service import (
     apply_test_limit,
     count_total_tests,
-    get_test_limit_from_config,
 )
 from bugster.libs.services.update_service import DetectAffectedSpecsService
 from bugster.types import (
@@ -42,6 +41,7 @@ from bugster.utils.file import (
     get_mcp_config_path,
     load_always_run_tests,
     load_config,
+    load_test_execution_config,
     load_test_files,
     merge_always_run_with_affected_tests,
 )
@@ -692,15 +692,16 @@ def apply_vercel_protection_bypass(config: Config) -> Config:
 @track_command("run")
 async def test_command(
     test_path: Optional[str] = None,
-    headless: Optional[bool] = False,
-    silent: Optional[bool] = False,
+    headless: Optional[bool] = None,
+    silent: Optional[bool] = None,
     stream_results: bool = True,
     output: Optional[str] = None,
     run_id: Optional[str] = None,
     base_url: Optional[str] = None,
     only_affected: Optional[bool] = None,
     max_concurrent: Optional[int] = None,
-    verbose: Optional[bool] = False,
+    verbose: Optional[bool] = None,
+    limit: Optional[int] = None,
 ) -> None:
     """Run Bugster tests."""
     total_start_time = time.time()
@@ -708,7 +709,28 @@ async def test_command(
     try:
         # Load configuration and test files
         config = load_config()
-        max_tests = get_test_limit_from_config()
+
+        # Load test execution configuration with CLI options taking precedence
+        exec_config = load_test_execution_config(
+            config=config,
+            headless=headless,
+            silent=silent,
+            verbose=verbose,
+            only_affected=only_affected,
+            max_concurrent=max_concurrent,
+            output=output,
+            limit=limit,
+        )
+
+        # Use resolved configuration values
+        headless = exec_config["headless"]
+        silent = exec_config["silent"]
+        verbose = exec_config["verbose"]
+        only_affected = exec_config["only_affected"]
+        max_concurrent = exec_config["max_concurrent"]
+        output = exec_config["output"]
+        max_tests = exec_config["limit"]
+
         if base_url:
             # Override the base URL in the config
             # Used for CI/CD pipelines

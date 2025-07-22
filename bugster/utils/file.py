@@ -249,3 +249,64 @@ def check_and_update_project_commands(command_name: str) -> bool:
     except Exception as err:
         logger.error("Error updating project.json: {}", err)
         return True
+
+
+def load_test_execution_config(
+    config: Config,
+    # CLI options
+    headless: Optional[bool] = None,
+    silent: Optional[bool] = None,
+    verbose: Optional[bool] = None,
+    only_affected: Optional[bool] = None,
+    max_concurrent: Optional[int] = None,
+    output: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> dict:
+    """
+    Load test execution configuration with CLI options taking precedence over config.yaml.
+
+    Returns a dictionary with resolved configuration values.
+    """
+    # Get config preferences
+    prefs = config.preferences
+
+    resolved_config = {}
+
+    # Resolve each configuration option (CLI options override config.yaml)
+    resolved_config["headless"] = (
+        headless if headless is not None else (prefs.headless if prefs else False)
+    )
+    resolved_config["silent"] = (
+        silent if silent is not None else (prefs.silent if prefs else False)
+    )
+    resolved_config["verbose"] = (
+        verbose if verbose is not None else (prefs.verbose if prefs else False)
+    )
+    resolved_config["only_affected"] = (
+        only_affected
+        if only_affected is not None
+        else (prefs.only_affected if prefs else False)
+    )
+    resolved_config["output"] = (
+        output if output is not None else (prefs.output if prefs else None)
+    )
+
+    # For max_concurrent, check both CLI options and config (parallel is alias)
+    if max_concurrent is not None:
+        resolved_config["max_concurrent"] = max_concurrent
+    elif prefs and prefs.parallel is not None:
+        resolved_config["max_concurrent"] = prefs.parallel
+    else:
+        resolved_config["max_concurrent"] = 3  # default
+
+    # For limit, get from CLI, config, or fallback to service function
+    if limit is not None:
+        resolved_config["limit"] = limit
+    elif prefs and prefs.limit is not None:
+        resolved_config["limit"] = prefs.limit
+    else:
+        from bugster.libs.services.run_limits_service import get_test_limit_from_config
+
+        resolved_config["limit"] = get_test_limit_from_config()
+
+    return resolved_config

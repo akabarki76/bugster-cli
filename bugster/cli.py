@@ -440,6 +440,22 @@ def destructive(
         )
     )
 
+
+@app.command()
+def config(
+    bypass_protection: Optional[bool] = Option(
+        None,
+        "--bypass-protection",
+        flag_value=True,
+        help="Set Vercel protection bypass secret. Use without a value for interactive setup.",
+    ),      
+):
+    """Configure Bugster project settings."""
+    from bugster.commands.config import config_command
+
+    config_command(bypass_protection=bypass_protection)
+
+
 @app.command()
 def install(
     github: bool = Option(

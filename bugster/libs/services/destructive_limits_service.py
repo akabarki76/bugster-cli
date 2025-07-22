@@ -166,7 +166,7 @@ def get_destructive_limit_from_config() -> Optional[int]:
             return config.preferences.destructive_limit
 
         # Default limit for destructive agents
-        return 2
+        return 4
     except Exception:
         # If config loading fails, return default
-        return 2
+        return 4

@@ -409,7 +409,7 @@ def destructive(
     headless: bool = Option(False, help="Run agents in headless mode"),
     silent: bool = Option(False, help="Run agents silently"),
     stream_results: bool = Option(
-        False, "--stream-results", help="Stream destructive results as they complete"
+        True, "--stream-results/--no-stream-results", help="Stream destructive results as they complete"
     ),
     base_url: Optional[str] = Option(None, help="Override base URL from config"),
     max_concurrent: Optional[int] = Option(
@@ -421,6 +421,12 @@ def destructive(
     verbose: bool = Option(False, help="Show detailed agent execution logs"),
     run_id: Optional[str] = Option(
         None, "--run-id", help="Run ID to associate with the destructive test run"
+    ),
+    limit: Optional[int] = Option(
+        None,
+        "--limit",
+        help="Maximum number of destructive agents to run (default: 5)",
+        min=1,
     ),
 ):
     """Run destructive agents to find potential bugs in changed pages."""
@@ -437,8 +443,39 @@ def destructive(
             max_concurrent,
             verbose,
             run_id,
+            limit,
         )
     )
+
+
+@app.command()
+def config(
+    bypass_protection: Optional[bool] = Option(
+        None,
+        "--bypass-protection",
+        flag_value=True,
+        help="Set Vercel protection bypass secret. Use without a value for interactive setup.",
+    ),      
+):
+    """Configure Bugster project settings."""
+    from bugster.commands.config import config_command
+
+    config_command(bypass_protection=bypass_protection)
+
+
+@app.command()
+def install(
+    github: bool = Option(
+        False, "--github", help="Install GitHub App integration"
+    ),
+):
+    """Install integrations for your Bugster project."""
+    if github:
+        from bugster.commands.install import install_github_command
+        install_github_command()
+    else:
+        console.print("[red]Please specify an integration to install (e.g., --github)[/red]")
+        raise Exit(1)
 
 
 def main():

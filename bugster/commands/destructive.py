@@ -20,6 +20,11 @@ from bugster.commands.sync import get_current_branch
 from bugster.commands.test import apply_vercel_protection_bypass
 from bugster.libs.services.destructive_service import DestructiveService
 from bugster.libs.services.destructive_stream_service import DestructiveStreamService
+from bugster.libs.services.destructive_limits_service import (
+    apply_destructive_agent_limit,
+    count_total_agents,
+    get_destructive_limit_from_config,
+)
 from bugster.types import (
     Config,
     NamedDestructiveResult,
@@ -533,6 +538,7 @@ async def destructive_command(
     max_concurrent: Optional[int] = None,
     verbose: Optional[bool] = False,
     run_id: Optional[str] = None,
+    limit: Optional[int] = None,
 ) -> None:
     """Run destructive agents to find potential bugs in changed pages."""
     total_start_time = time.time()
@@ -571,6 +577,31 @@ async def destructive_command(
         if not all_agent_tasks:
             DestructiveMessages.no_agents_assigned()
             return
+
+        # Show available agents before applying limits
+        if not silent:
+            DestructiveMessages.create_available_agents_panel(all_agent_tasks)
+
+        # Apply agent limit logic
+        max_agents = limit if limit is not None else get_destructive_limit_from_config()
+        original_count = count_total_agents(all_agent_tasks)
+        limited_agent_tasks, agent_distribution = apply_destructive_agent_limit(
+            all_agent_tasks, max_agents
+        )
+        selected_count = count_total_agents(limited_agent_tasks)
+
+        # Print agent limit information if limiting was applied
+        if original_count > max_agents:
+            if not silent:
+                DestructiveMessages.create_agent_limit_panel(
+                    original_count=original_count,
+                    selected_count=selected_count,
+                    max_agents=max_agents,
+                    agent_distribution=agent_distribution,
+                )
+
+        # Use the limited agent tasks for execution
+        all_agent_tasks = limited_agent_tasks
 
         # Determine max concurrent agents (default to 3 for safety)
         max_concurrent = max_concurrent or 3

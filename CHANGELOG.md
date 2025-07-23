@@ -5,6 +5,24 @@ All notable changes to Bugster CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.30]
+
+### Added
+- `bugster config`  command
+This command will be used to access and manipulate the data inside config.yaml ( so as to avoid human error)
+
+Right now the only flag available is --bypass-protection. This will guide users on how to get the x-vercel-bypass-secret by re-directing them with the Deeplink cc: @giovaborgogno
+
+- `bugster install` command
+This command will be used to handle outside integrations with your Bugster account for users that dont want to switch context setting up the account ( especially during Manual Onboarding) 
+
+Right now the only flag available is --github. This will re-direct the user to the Github App Installation Link. I proposed to add a Terminal re-direction in further iterations after the installation process has been finished successfully.
+
+### Changed
+- Destructive Agent Limits
+Up to 4 as default. Later on we can parametrize with the subscription tiers
+Prioritization of UI crashers instead of Form Destroyers ( FD will run when all UI Crashers are ok)
+
 ## [0.3.26]
 
 ### Added

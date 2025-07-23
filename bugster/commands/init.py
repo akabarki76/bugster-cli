@@ -264,11 +264,11 @@ def init_command(
     # Project setup
     InitMessages.project_setup()
 
-    # Use provided project name or prompt for it
+    # Use provided project name or default to current directory name
     if project_name is None:
-        project_name = Prompt.ask("🏷️  Project name", default=Path.cwd().name)
-    else:
-        console.print(f"🏷️  Project name: {project_name}")
+        project_name = Path.cwd().name
+    
+    console.print(f"🏷️  Project name: {project_name}")
 
     project_path = ""
     with contextlib.suppress(Exception):

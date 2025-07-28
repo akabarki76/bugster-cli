@@ -24,7 +24,7 @@ def load_user_config() -> dict:
         return {}
 
     try:
-        with open(config_file) as f:
+        with open(config_file, encoding="utf-8") as f:
             return json.load(f)
     except json.JSONDecodeError:
         return {}
@@ -34,23 +34,36 @@ def save_user_config(config: dict) -> None:
     """Save configuration to file."""
     config_file = get_user_config_file()
 
-    # Create parent directories if they don't exist
     config_file.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(config_file, "w") as f:
+    with open(config_file, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2)
 
+def extract_organization_id(api_key: str) -> str:
+    if not api_key.startswith("bugster_"):
+        raise ValueError("Invalid API key format: must start with 'bugster_'")
+
+    without_prefix = api_key[8:]
+
+    if (
+        len(without_prefix) <= 32
+    ):
+        raise ValueError("Invalid API key format: insufficient length")
+
+    organization_id = without_prefix[16:-16]
+    if not organization_id:
+        raise ValueError("Invalid API key format: no organization ID found")
+    organization_id = "org_" + organization_id
+    return organization_id
 
 def get_api_key() -> Optional[str]:
     """Get API key from environment or config file."""
-    # First check environment variable
     api_key = os.getenv(ENV_API_KEY)
 
     if api_key:
         logger.info("API key found in environment variable")
         return api_key
 
-    # Then check config file
     config = load_user_config()
     logger.info("API key found in config file")
     return config.get("apiKey")

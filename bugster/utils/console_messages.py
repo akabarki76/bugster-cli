@@ -693,6 +693,89 @@ class DestructiveMessages:
         )
 
     @staticmethod
+    def create_available_agents_panel(all_agent_tasks):
+        """Create and show panel with all available destructive agents before limits."""
+        if not all_agent_tasks:
+            return
+
+        # Group agents by type for display
+        from bugster.libs.services.destructive_limits_service import get_agent_type
+        
+        agent_groups = {}
+        page_agent_map = {}
+        
+        for page, agent, diff in all_agent_tasks:
+            agent_type = get_agent_type(agent)
+            
+            if agent_type not in agent_groups:
+                agent_groups[agent_type] = []
+            agent_groups[agent_type].append((page, agent))
+            
+            # Track unique pages
+            if page not in page_agent_map:
+                page_agent_map[page] = []
+            page_agent_map[page].append(agent)
+
+        content = []
+        content.append(f"[bold]📋 Available Destructive Agents[/bold]")
+        content.append("")
+        
+        # Show summary
+        total_agents = len(all_agent_tasks)
+        total_pages = len(page_agent_map)
+        content.append(f"📊 [bold]Summary:[/bold] {total_agents} agents across {total_pages} pages")
+        content.append("")
+
+        # Show by agent type with priority indicators
+        priority_types = ["UI Crashers", "From Destroyer"]
+        
+        # Show priority types first
+        for agent_type in priority_types:
+            if agent_type in agent_groups:
+                agents = agent_groups[agent_type]
+                priority_indicator = "🔥" if agent_type == "UI Crashers" else "⚡"
+                content.append(f"{priority_indicator} [bold]{agent_type}[/bold] ({len(agents)} agents)")
+                
+                # Group by page for cleaner display
+                page_groups = {}
+                for page, agent in agents:
+                    clean_page = page.replace("apps/", "").replace("src/", "")
+                    if clean_page not in page_groups:
+                        page_groups[clean_page] = []
+                    page_groups[clean_page].append(agent)
+                
+                for page, page_agents in sorted(page_groups.items()):
+                    content.append(f"   📄 [{BugsterColors.TEXT_DIM}]{page}[/{BugsterColors.TEXT_DIM}]: {', '.join(page_agents)}")
+                
+                content.append("")
+
+        # Show other types
+        for agent_type, agents in sorted(agent_groups.items()):
+            if agent_type not in priority_types:
+                content.append(f"🤖 [bold]{agent_type}[/bold] ({len(agents)} agents)")
+                
+                # Group by page for cleaner display
+                page_groups = {}
+                for page, agent in agents:
+                    clean_page = page.replace("apps/", "").replace("src/", "")
+                    if clean_page not in page_groups:
+                        page_groups[clean_page] = []
+                    page_groups[clean_page].append(agent)
+                
+                for page, page_agents in sorted(page_groups.items()):
+                    content.append(f"   📄 [{BugsterColors.TEXT_DIM}]{page}[/{BugsterColors.TEXT_DIM}]: {', '.join(page_agents)}")
+                
+                content.append("")
+
+        panel_content = "\n".join(content).strip()
+        panel = Panel(
+            panel_content,
+            title="🤖 Destructive Agents Discovery",
+            border_style=BugsterColors.INFO,
+        )
+        console.print(panel)
+
+    @staticmethod
     def no_agents_assigned():
         """Show no agents assigned message."""
         console.print(
@@ -788,6 +871,57 @@ class DestructiveMessages:
                     padding=(1, 2),
                 )
             )
+
+    @staticmethod
+    def create_agent_limit_panel(
+        original_count: int,
+        selected_count: int,
+        max_agents: int,
+        agent_distribution: dict,
+    ):
+        """Create a panel showing destructive agent limit information."""
+        content = []
+
+        if selected_count < original_count:
+            content.append(
+                f"[bold]Agent limit applied:[/bold] Running {selected_count} out of {original_count} agents (limit: {max_agents})"
+            )
+
+            content.append("")  # Empty line for spacing
+            content.append("[bold]Distribution by agent type:[/bold]")
+
+            # Add agent type distribution with priority indicators
+            priority_types = ["UI Crashers", "From Destroyer"]
+            
+            # Show priority types first
+            for agent_type in priority_types:
+                if agent_type in agent_distribution:
+                    count = agent_distribution[agent_type]
+                    priority_indicator = "🔥" if agent_type == "UI Crashers" else "⚡"
+                    content.append(
+                        f"{priority_indicator} [{BugsterColors.TEXT_DIM}]{agent_type}[/{BugsterColors.TEXT_DIM}] (priority)"
+                    )
+                    content.append(
+                        f"   ▸ [{BugsterColors.TEXT_PRIMARY}]{count} agents[/{BugsterColors.TEXT_PRIMARY}]"
+                    )
+
+            # Show other types
+            for agent_type, count in sorted(agent_distribution.items()):
+                if agent_type not in priority_types:
+                    content.append(
+                        f"🤖 [{BugsterColors.TEXT_DIM}]{agent_type}[/{BugsterColors.TEXT_DIM}]"
+                    )
+                    content.append(
+                        f"   ▸ [{BugsterColors.TEXT_PRIMARY}]{count} agents[/{BugsterColors.TEXT_PRIMARY}]"
+                    )
+
+        panel_content = "\n".join(content)
+        panel = Panel(
+            panel_content,
+            title="⚠️  Agent Limit Applied",
+            border_style=BugsterColors.WARNING,
+        )
+        console.print(panel)
 
     @staticmethod
     def error(message):

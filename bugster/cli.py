@@ -178,10 +178,10 @@ def auth(
 def _run_tests(
     path: Optional[str] = Argument(None, help="Path to test file or directory"),
     headless: Optional[bool] = Option(
-        False, "--headless", help="Run tests in headless mode"
+        None, "--headless", help="Run tests in headless mode"
     ),
     silent: Optional[bool] = Option(
-        False, "--silent", "-s", help="Run in silent mode (less verbose output)"
+        None, "--silent", "-s", help="Run in silent mode (less verbose output)"
     ),
     stream_results: bool = Option(
         True,
@@ -203,7 +203,10 @@ def _run_tests(
     max_concurrent: Optional[int] = Option(
         5, "--max-concurrent", "--parallel", help="Maximum number of concurrent tests"
     ),
-    verbose: Optional[bool] = Option(False, "--verbose", help="Verbose output"),
+    verbose: Optional[bool] = Option(None, "--verbose", help="Verbose output"),
+    limit: Optional[int] = Option(
+        None, "--limit", help="Maximum number of tests to run", min=1
+    ),
 ):
     """Run your Bugster tests."""
     import asyncio
@@ -222,6 +225,7 @@ def _run_tests(
             only_affected,
             max_concurrent,
             verbose,
+            limit,
         )
     )
 
@@ -334,6 +338,11 @@ def update(
         "--against-default",
         help="Compare against the default branch instead of HEAD",
     ),
+    against_last_update: bool = Option(
+        False,
+        "--against-last-update",
+        help="Compare against the commit from the last update run",
+    ),
 ):
     """Update your test specs with the latest changes."""
     from bugster.commands.update import update_command
@@ -344,6 +353,7 @@ def update(
         delete_only=delete_only,
         show_logs=show_logs,
         against_default=against_default,
+        against_last_update=against_last_update,
     )
 
 
@@ -399,7 +409,7 @@ def destructive(
     headless: bool = Option(False, help="Run agents in headless mode"),
     silent: bool = Option(False, help="Run agents silently"),
     stream_results: bool = Option(
-        False, "--stream-results", help="Stream destructive results as they complete"
+        True, "--stream-results/--no-stream-results", help="Stream destructive results as they complete"
     ),
     base_url: Optional[str] = Option(None, help="Override base URL from config"),
     max_concurrent: Optional[int] = Option(
@@ -411,6 +421,12 @@ def destructive(
     verbose: bool = Option(False, help="Show detailed agent execution logs"),
     run_id: Optional[str] = Option(
         None, "--run-id", help="Run ID to associate with the destructive test run"
+    ),
+    limit: Optional[int] = Option(
+        None,
+        "--limit",
+        help="Maximum number of destructive agents to run (default: 5)",
+        min=1,
     ),
 ):
     """Run destructive agents to find potential bugs in changed pages."""
@@ -427,8 +443,39 @@ def destructive(
             max_concurrent,
             verbose,
             run_id,
+            limit,
         )
     )
+
+
+@app.command()
+def config(
+    bypass_protection: Optional[bool] = Option(
+        None,
+        "--bypass-protection",
+        flag_value=True,
+        help="Set Vercel protection bypass secret. Use without a value for interactive setup.",
+    ),      
+):
+    """Configure Bugster project settings."""
+    from bugster.commands.config import config_command
+
+    config_command(bypass_protection=bypass_protection)
+
+
+@app.command()
+def install(
+    github: bool = Option(
+        False, "--github", help="Install GitHub App integration"
+    ),
+):
+    """Install integrations for your Bugster project."""
+    if github:
+        from bugster.commands.install import install_github_command
+        install_github_command()
+    else:
+        console.print("[red]Please specify an integration to install (e.g., --github)[/red]")
+        raise Exit(1)
 
 
 def main():

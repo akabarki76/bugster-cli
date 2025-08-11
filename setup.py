@@ -33,7 +33,7 @@ setup(
         "httpcore==1.0.9",
         "httpx==0.28.1",
         "httpx-sse==0.4.1",
-        "huggingface-hub==0.33.4",
+        "huggingface-hub==0.34.4",
         "idna==3.10",
         "markdown-it-py==3.0.0",
         "MarkupSafe==3.0.2",
